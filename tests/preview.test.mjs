@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
+import { Script } from 'node:vm';
 const html = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
 
 test('independent static preview has original sanctuary scene', () => {
@@ -43,4 +44,10 @@ test('release view is brought into focus without exposing wish content', () => {
   assert.ok(html.includes("body.classList.toggle('no-motion',quiet)"));
   assert.ok(html.includes('class="ripple"'));
   assert.doesNotMatch(html, /fetch\s*\(|XMLHttpRequest|WebSocket|sendBeacon/);
+});
+
+test('inline JavaScript compiles', () => {
+  const match=html.match(/<script>([\s\S]*?)<\/script>/);
+  assert.ok(match,'one inline script is present');
+  assert.doesNotThrow(()=>new Script(match[1]));
 });
