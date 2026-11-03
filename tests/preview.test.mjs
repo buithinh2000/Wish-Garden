@@ -25,3 +25,10 @@ test('preview has no misleading community count or external service integration'
   assert.doesNotMatch(html, /fetch\s*\(|XMLHttpRequest|WebSocket|sendBeacon/);
   assert.doesNotMatch(html, /google-analytics|gtag\(|firebase|supabase/i);
 });
+
+test('release ritual has accessible skip and constellation completion', () => {
+  for (const token of ['id="skipRitual"', 'id="finishNote"', 'class="constellation"', 'function finishRitual()', 'ritualTimer=setTimeout(finishRitual,3500)', "if(quiet)finishRitual()"]) {
+    assert.ok(html.includes(token), token);
+  }
+  assert.match(html, /id="sky" hidden/);
+});
