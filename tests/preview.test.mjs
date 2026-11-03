@@ -32,3 +32,15 @@ test('release ritual has accessible skip and constellation completion', () => {
   }
   assert.match(html, /id="sky" hidden/);
 });
+
+test('sanctuary lighting supports bilingual dawn/twilight controls', () => {
+  for (const token of ['id="twilight"', 'id="dawn"', 'aria-pressed="true"', "setScene('twilight')", "setScene('dawn')", "body.dawn", '☀ Bình minh']) {
+    assert.ok(html.includes(token), token);
+  }
+});
+test('release view is brought into focus without exposing wish content', () => {
+  assert.ok(html.includes("scrollIntoView({behavior:quiet?'instant':'smooth',block:'center'})"));
+  assert.ok(html.includes("body.classList.toggle('no-motion',quiet)"));
+  assert.ok(html.includes('class="ripple"'));
+  assert.doesNotMatch(html, /fetch\s*\(|XMLHttpRequest|WebSocket|sendBeacon/);
+});
