@@ -35,7 +35,7 @@ jobs:
       - name: Install browser test runner
         run: |
           npm install --no-save playwright@1.56.1 three@0.180.0 esbuild@0.25.12 @gltf-transform/cli@4.5.1
-          npx playwright install --with-deps chromium
+          npx playwright install chromium
       - name: Build locally hosted 3D visitor
         run: |
           mkdir -p assets
