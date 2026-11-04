@@ -23,14 +23,15 @@ async function receiptHash(batchId,secret){
  const bytes=new Uint8Array(await crypto.subtle.digest('SHA-256',encoded));
  return [...bytes].map(x=>x.toString(16).padStart(2,'0')).join('');
 }
-async function turnstile(token,secret){
- if(!secret)return false; // fail closed before production
+async function turnstile(token,secret,expectedHostname){
+ if(!secret||!expectedHostname)return false; // fail closed before production
  const body=new URLSearchParams({secret,response:token});
  try{
   const result=await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify',
    {method:'POST',body,signal:AbortSignal.timeout(5000)});
   if(!result.ok)return false;
-  return (await result.json()).success===true;
+  const verification=await result.json();
+  return verification.success===true&&verification.hostname===expectedHostname;
  }catch{return false}
 }
 function validOrigin(request,env){
@@ -67,11 +68,11 @@ export async function handle(request,env,now=new Date()){
     privacyThresholdReached:total>=20},200,headers);
  }
  if(!['POST','DELETE'].includes(request.method))return json({error:'METHOD_NOT_ALLOWED'},405,headers);
- if(!env.TURNSTILE_SECRET)return json({error:'CHALLENGE_NOT_CONFIGURED'},503,headers);
+ if(!env.TURNSTILE_SECRET||!env.TURNSTILE_HOSTNAME)return json({error:'CHALLENGE_NOT_CONFIGURED'},503,headers);
  if(now.toISOString()>=batch.cutoffUtc)return json({error:'BATCH_LOCKED'},409,headers);
  const data=await parseBody(request);
  if(!inputValid(data)||data.batchId!==batch.batchId)return json({error:'INVALID_INPUT'},400,headers);
- if(!await turnstile(data.challenge,env.TURNSTILE_SECRET))return json({error:'CHALLENGE_FAILED'},403,headers);
+ if(!await turnstile(data.challenge,env.TURNSTILE_SECRET,env.TURNSTILE_HOSTNAME))return json({error:'CHALLENGE_FAILED'},403,headers);
  const hash=await receiptHash(data.batchId,data.secret);
  if(request.method==='POST'){
   const result=await env.DB.prepare('INSERT INTO participation(receipt_hash,batch_id,topic,created_at,withdrawn_at) VALUES(?,?,?,?,NULL) ON CONFLICT(receipt_hash) DO UPDATE SET topic=excluded.topic,withdrawn_at=NULL WHERE participation.batch_id=excluded.batch_id AND participation.withdrawn_at IS NULL').bind(hash,data.batchId,data.topic,now.toISOString()).run();
