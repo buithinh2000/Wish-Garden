@@ -28,6 +28,12 @@ try{
   page.on('pageerror',e=>errors.push(e.message));
   await page.goto('http://127.0.0.1:'+port+'/');
   await page.locator('#hero').waitFor();
+  assert.equal(await page.locator('.garden').getAttribute('aria-hidden'),null,'sanctuary controls cannot be hidden from accessibility tree');
+  const scene=await page.locator('.garden').boundingBox();
+  assert.ok(scene && scene.width>viewport.width*.95,'cinematic sanctuary fills screen width');
+  const layers=await page.locator('.ground-mist,.wish-path,.lantern-glow,.visitor-shadow').count();
+  assert.ok(layers>=5,'atmospheric scene layers present');
+
   assert.equal(await page.locator('#prayerPanel').isVisible(),false,'initial form hidden');
   await page.screenshot({path:'qa-screenshots/'+viewport.width+'-sanctuary.png',fullPage:false});
   const hasWebGL=await page.evaluate(()=>!!window.WishAvatar3D);
