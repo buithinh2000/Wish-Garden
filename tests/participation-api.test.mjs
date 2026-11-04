@@ -28,7 +28,7 @@ function mockDB(){
   return {results:[...counts].map(([topic,n])=>({topic,n}))};
  }};}};
 }
-const env=()=>({DB:mockDB(),ALLOWED_ORIGIN:ORIGIN,TURNSTILE_SECRET:'test-server-secret'});
+const env=()=>({DB:mockDB(),ALLOWED_ORIGIN:ORIGIN,TURNSTILE_SECRET:'test-server-secret',TURNSTILE_HOSTNAME:'buithinh2000.github.io'});
 function req(method,path='/api/v1/participation',body=null,origin=ORIGIN){
  return new Request('https://api.example.test'+path,{method,headers:{origin,...(body?{'content-type':'application/json'}:{})},body:body?JSON.stringify(body):undefined});
 }
@@ -50,7 +50,7 @@ test('request requires exact configured origin and server-side challenge',async(
 });
 test('register, deduplicate, summarize privately, withdraw, forbid revoked receipt replay', {concurrency:false},async()=>{
  const e=env(),original=globalThis.fetch;
- globalThis.fetch=async()=>Response.json({success:true});
+ globalThis.fetch=async()=>Response.json({success:true,hostname:'buithinh2000.github.io'});
  try{
   let res=await handle(req('POST','/api/v1/participation',payload),e,NOW);
   assert.equal(res.status,201);
@@ -78,4 +78,21 @@ test('cutoff locks new consent before planned ceremony; no claims of RF emission
  const r=await handle(req('POST','/api/v1/participation',payload),e,cutoff);
  assert.equal(r.status,409);
  assert.equal((await r.json()).error,'BATCH_LOCKED');
+});
+
+test('Turnstile tokens from another host cannot register participation',async()=>{
+ const e=env(),original=globalThis.fetch;
+ globalThis.fetch=async()=>Response.json({success:true,hostname:'other.example'});
+ try{
+  const response=await handle(req('POST','/api/v1/participation',payload),e,NOW);
+  assert.equal(response.status,403);
+  assert.equal((await response.json()).error,'CHALLENGE_FAILED');
+  assert.equal(e.DB.rows.size,0);
+ }finally{globalThis.fetch=original}
+});
+test('missing Turnstile hostname prevents writes even with a valid challenge secret',async()=>{
+ const e=env();delete e.TURNSTILE_HOSTNAME;
+ const response=await handle(req('POST','/api/v1/participation',payload),e,NOW);
+ assert.equal(response.status,503);
+ assert.equal(e.DB.rows.size,0);
 });
