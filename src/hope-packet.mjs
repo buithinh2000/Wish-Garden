@@ -1,5 +1,5 @@
 /* Wish Garden V0.4: public project-only RF draft, never a sent receipt.
-   Intentionally contains no localStorage, wish access or provider requests. */
+   Intentionally does not read browser storage, personal wishes, or contact radio providers. */
 export const DEFAULT_PHRASE='WISH GARDEN | PEACE, FAMILY, HEALTH AND HOPE FROM EARTH';
 export function planFor(now=new Date()){
  const days=[[2,30],[5,30],[8,30],[11,30]];
