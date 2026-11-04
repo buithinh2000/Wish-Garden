@@ -62,6 +62,10 @@ try{
 
   await page.locator('#wish').waitFor({state:'visible'});
   if(hasWebGL)assert.equal(await page.evaluate(()=>window.WishAvatar3D.getPose()),'pray');
+  const handsDistance=await page.evaluate(()=>window.WishAvatar3D?.getPrayerDistance?.());
+  console.log('Maya prayer hands separation (scene units):',handsDistance);
+  assert.ok(Number.isFinite(handsDistance)&&handsDistance<0.20,
+    'both hand bones must meet near the chest during prayer, not merely raise arms');
   await page.locator('.garden').scrollIntoViewIfNeeded();
   await page.screenshot({path:'qa-screenshots/'+viewport.width+'-visitor-prayer.png',fullPage:false});
   await page.locator('#wish').scrollIntoViewIfNeeded();
