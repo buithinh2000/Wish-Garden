@@ -29,6 +29,11 @@ try{
   await page.goto('http://127.0.0.1:'+port+'/');
   await page.locator('#hero').waitFor();
   assert.equal(await page.locator('.garden').getAttribute('aria-hidden'),null,'sanctuary controls cannot be hidden from accessibility tree');
+  const sceneVisual=await page.locator('.garden').evaluate(el=>{const s=getComputedStyle(el);const svg=el.querySelector('.garden-art');return {image:s.backgroundImage,svg:getComputedStyle(svg).display}});
+  assert.ok(sceneVisual.image.includes('assets/forest.jpg'),'cinematic forest image applied');
+  assert.equal(sceneVisual.svg,'none','old diagram layer no longer obscures environment');
+  const imageLoaded=await page.evaluate(async()=>{const i=new Image();i.src='assets/forest.jpg';await i.decode();return i.naturalWidth>1000});
+  assert.ok(imageLoaded,'forest source loaded at image resolution');
   const scene=await page.locator('.garden').boundingBox();
   assert.ok(scene && scene.width>viewport.width*.95,'cinematic sanctuary fills screen width');
   const layers=await page.locator('.ground-mist,.wish-path,.lantern-glow,.visitor-shadow').count();
