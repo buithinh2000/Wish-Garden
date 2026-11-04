@@ -54,10 +54,23 @@ try{
   assert.equal(await page.locator('#ceremony').evaluate(el=>el.parentElement===document.querySelector('main')),true,'ceremony is not hidden inside the prayer form');
   assert.match(await page.locator('#ceremonyStatus').textContent(),/NO TRANSMISSION CONFIRMED/,'never mislabel planning as completed transmission');
   assert.match(await page.locator('#ceremonyCountdown').textContent(),/^\d{2,} : \d{2} : \d{2}$/,'countdown days hours minutes');
+  // V0.3: public/private journeys are visually distinct but evidence-truthful.
+  assert.equal(await page.locator('#hopeCapsuleJourney').isVisible(),true,'capsule journey is visible');
+  assert.equal(await page.locator('#hcPublic').getAttribute('aria-pressed'),'true','public capsule default');
+  assert.match(await page.locator('#hcTimeline').textContent(),/No issuance record/,'public cannot claim transmitted');
+  await page.locator('#hcMine').click();
+  assert.equal(await page.locator('#hcMine').getAttribute('aria-pressed'),'true','private tab selected');
+  assert.match(await page.locator('#hcTimeline').textContent(),/Not selected/,'no local participation without user action');
+  await page.locator('#hcPublic').click();
+  assert.match(await page.locator('#hcFoot').textContent(),/not an RF timeslot/,'planned UTC is not station slot');
   assert.equal(await page.evaluate(()=>localStorage.length),0,'no consent or transmission record stored by default');
   await page.locator('#ceremonyTopic').selectOption('2');
   await page.locator('#ceremonyJoin').click();
   assert.equal(await page.evaluate(()=>JSON.parse(localStorage.getItem('wg-ceremony-interest-01')||'[]').length),1,'explicit opt-in records local topic only');
+  await page.locator('#hcMine').click();
+  assert.match(await page.locator('#hcMessage').textContent(),/Health/,'local theme visible in private journey');
+  assert.match(await page.locator('#hcTimeline').textContent(),/requires fresh consent/,'local interest not global opt-in');
+
   assert.deepEqual(await page.evaluate(()=>Object.keys(JSON.parse(localStorage.getItem('wg-ceremony-interest-01'))[0]).sort()),['at','batch','id','topic'],'no original words or identity persisted');
   await page.locator('#ceremonyJoin').click();
   assert.equal(await page.evaluate(()=>JSON.parse(localStorage.getItem('wg-ceremony-interest-01')).length),1,'duplicate topic not counted twice');
