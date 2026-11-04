@@ -27,7 +27,7 @@ if(garden&&oldCanvas){
    lamp.position.set(-3,6,5);scene.add(lamp);
    const rim=new THREE.DirectionalLight(0x8fd6fa,1.25);
    rim.position.set(3,4,-5);scene.add(rim);
-   let mixer=null,model=null,current='idle',active=null,raf=0,last=performance.now(),walkUntil=0,theme='night';
+   let mixer=null,model=null,current='idle',active=null,raf=0,last=performance.now(),walkUntil=0,theme='night',limbs=null;
    const clips=new Map();
    const clock=new THREE.Clock();
    const setPose=(pose)=>{
@@ -58,7 +58,17 @@ if(garden&&oldCanvas){
       size();
       const dt=Math.min(.07,clock.getDelta());
       if(mixer)mixer.update(dt);
-      if(current==='pray'&&model){model.rotation.x=-.04;}
+      // The original idle pose is a wide-arm game stance. Correct shoulders and
+      // elbows AFTER animation sampling so the visitor rests arms at their side.
+      if(limbs){
+        const walking=current==='walk'&&!userReduced?Math.sin(performance.now()*.008)*.18:0;
+        const praying=current==='pray';
+        limbs.rightShoulder.rotation.z=praying?-.38:-1.18+walking;
+        limbs.leftShoulder.rotation.z=praying?.38:1.18-walking;
+        limbs.rightElbow.rotation.z=praying?2.45:.16;
+        limbs.leftElbow.rotation.z=praying?-2.45:-.16;
+      }
+      if(model)model.rotation.x=current==='pray'?.09:0;
       renderer.render(scene,camera);
       if(!userReduced||current==='walk'||performance.now()<walkUntil)raf=requestAnimationFrame(frame);
    }
@@ -82,6 +92,11 @@ if(garden&&oldCanvas){
      model.scale.setScalar(scale);
      model.position.y+=box.y*scale/2-1.35;
      model.rotation.y=Math.PI;
+     const rightShoulder=model.getObjectByName('wx9ery');
+     const leftShoulder=model.getObjectByName('tuy4up');
+     const rightElbow=model.getObjectByName('vsfhv4');
+     const leftElbow=model.getObjectByName('deh583');
+     if(rightShoulder&&leftShoulder&&rightElbow&&leftElbow)limbs={rightShoulder,leftShoulder,rightElbow,leftElbow};
      scene.add(model);
      mixer=new THREE.AnimationMixer(model);
      for(const clip of gltf.animations){clips.set(clip.name.toLowerCase(),clip); }
