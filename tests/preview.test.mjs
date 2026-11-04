@@ -57,3 +57,8 @@ test('immersive visitor view opens a separate prayer ritual', () => {
   assert.ok(html.includes('.panel{position:relative'));
   assert.ok(html.includes('.panel.open{display:block'));
 });
+
+test('full-screen release has accessible way back and visitor appearance selection',()=>{
+ for(const needle of ['id="closeSky"','id="returnGarden"','function leaveSky()','role="dialog"','aria-modal="true"','data-look="warm"','data-look="light"','document.body.style.overflow='])assert.ok(html.includes(needle),needle);
+ assert.ok(html.includes(".sky{position:fixed"));
+});
