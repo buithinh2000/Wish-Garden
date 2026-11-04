@@ -25,7 +25,8 @@ try{
   const context=await browser.newContext({viewport, reducedMotion:'reduce'});
   const page=await context.newPage();
   const errors=[];
-  page.on('pageerror',e=>errors.push(e.message));
+  page.on('pageerror',e=>{errors.push(e.message);console.error('PAGE JS ERROR:',e.stack||e.message);});
+  page.on('console',m=>{if(m.type()==='error'||m.type()==='warning')console.log('BROWSER CONSOLE:',m.type(),m.text());});
   await page.goto('http://127.0.0.1:'+port+'/');
   await page.locator('#hero').waitFor();
   await page.waitForFunction(()=>document.querySelector('.garden')?.classList.contains('rig-ready'),{timeout:15000});
@@ -50,6 +51,9 @@ try{
 
   assert.equal(await page.locator('input[name=keep]:checked').getAttribute('value'),'no','default no saving');
   await page.locator('#enter').click();
+  await page.waitForTimeout(1400);
+  console.log('Ritual after click:',await page.evaluate(()=>({garden:document.querySelector('.garden').className,panel:document.getElementById('prayerPanel').className,pose:window.WishAvatar3D?.getPose?.(),rig:document.querySelector('.garden').classList.contains('rig-ready')})));
+
   await page.locator('#wish').waitFor({state:'visible'});
   if(hasWebGL)assert.equal(await page.evaluate(()=>window.WishAvatar3D.getPose()),'pray');
   await page.screenshot({path:'qa-screenshots/'+viewport.width+'-prayer.png',fullPage:false});
