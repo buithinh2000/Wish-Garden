@@ -101,6 +101,7 @@ if(garden&&oldCanvas){
      mixer=new THREE.AnimationMixer(model);
      for(const clip of gltf.animations){clips.set(clip.name.toLowerCase(),clip); }
      if(![...clips.keys()].some(n=>n.includes('idle'))||![...clips.keys()].some(n=>n.includes('walk'))){console.warn('Wish Garden rig lacks suitable idle/walk clips');if(!isFallback){scene.remove(model);mixer=null;clips.clear();loadVisitor('assets/visitor-rig.glb',true);return;}canvas.remove();renderer.dispose();return;}
+     canvas.dataset.avatarSource=isFallback?'fantasy-fallback':'civilian-maya';
      window.WishAvatar3D=controller;
      garden.classList.add('rig-ready');
      setPose(garden.classList.contains('arrived')?'pray':garden.classList.contains('walking')?'walk':'idle');
