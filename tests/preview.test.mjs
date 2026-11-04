@@ -89,3 +89,9 @@ test('3D avatar keeps fallback, privacy, and motion protections', () => {
   assert.ok(html.includes("WishAvatar3D?.setReduced(quiet)"));
   assert.doesNotMatch(html, /<script[^>]+src=/i);
 });
+
+test('visual scene includes depth layers, realistic framing and accessible controls',()=>{
+ for(const token of ['class="ground-mist"','class="wish-path"','class="lantern-glow lantern-glow-one"','class="visitor-shadow"','.hero-content h1{max-width:12ch','@media(max-width:680px)'])assert.ok(html.includes(token),token);
+ assert.doesNotMatch(html, /<div class="garden" aria-hidden="true"/);
+ assert.ok(html.includes('aria-label="A quiet forest sanctuary with your visitor by the wishing tree"'));
+});
