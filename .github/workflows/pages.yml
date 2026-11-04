@@ -34,7 +34,7 @@ jobs:
           test "$(wc -c < assets/cosmos.jpg)" -gt 15000
       - name: Install browser test runner
         run: |
-          npm install --no-save playwright@1.56.1 three@0.180.0 esbuild@0.25.12
+          npm install --no-save playwright@1.56.1 three@0.180.0 esbuild@0.25.12 @gltf-transform/cli@4.5.1
           npx playwright install --with-deps chromium
       - name: Build locally hosted 3D visitor
         run: |
@@ -45,6 +45,10 @@ jobs:
           # CC0 MakeHuman-derived civilian character candidate, with casual clothes
           curl --fail --location --retry 2 --connect-timeout 15 --max-time 120 'https://files.innerscene.com/library/locomotion-collection-maya-3d-person-animated-1499b2fd/565cfb8a45b8a67a79c4/locomotion-collection-maya-3d-person-animated.glb' --output assets/visitor-human.glb
           test "$(wc -c < assets/visitor-human.glb)" -gt 1000000
+          # Reduce large PNG textures for smartphone-sized visitor canvas.
+          npx gltf-transform webp assets/visitor-human.glb assets/visitor-human-small.glb --resize 1024
+          mv assets/visitor-human-small.glb assets/visitor-human.glb
+          test "$(wc -c < assets/visitor-human.glb)" -lt 12000000
           npx esbuild src/visitor-rig.js --bundle --format=iife --target=es2020 --minify --outfile=assets/visitor-rig.bundle.js
           test -s assets/visitor-rig.bundle.js
       - name: Run desktop and mobile Chromium smoke
