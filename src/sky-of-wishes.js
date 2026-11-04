@@ -41,6 +41,7 @@ function draw(excludeId){
    button.addEventListener('click',()=>open(w,button));
    field.append(button);
  }
+ field.append(flare); // Light and stars share one responsive coordinate plane.
  skyHint.textContent=language==='vi'
   ?'Những ngôi sao riêng của bạn trên thiết bị này. Chạm để xem lại.'
   :'Only your own stars on this device. Tap a star to revisit.';
@@ -64,8 +65,7 @@ function start(entry){
  current=w;
  draw(w.id);
  // Flare and final star share the same absolute coordinate system.
- flare.style.left='calc(3% + 94% * '+(w.x/100)+')';
- flare.style.top='calc(12% + 73% * '+(w.y/100)+')';
+ flare.style.left=w.x+'%';flare.style.top=w.y+'%';
  flare.style.setProperty('--flare-color',palettes[Math.max(0,Math.min(5,w.topic))]);
  flare.hidden=false;
  if(document.body.classList.contains('no-motion')||matchMedia('(prefers-reduced-motion: reduce)').matches){
