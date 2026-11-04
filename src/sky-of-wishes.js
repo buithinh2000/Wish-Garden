@@ -13,7 +13,7 @@ const cardClose=document.getElementById('starMemoryClose');
 const skyHint=document.getElementById('skyHint');
 const storageKey='wg-preview-local-01';
 if(!sky||!field||!flare||!card)return;
-let current=null,starTimer=null,session=[],language='en',lastFocus=null;
+let current=null,starTimer=null,session=[],language='en',lastFocus=null,finishedStar=null;
 const palettes=['#b7e6ff','#f9d8a2','#9de7da','#c6c6ff','#e8c7ff','#f6e1b6'];
 const topics={
  en:['Peace','Family and loved ones','Health','Hope for the future','Remembrance','Gratitude'],
@@ -33,6 +33,7 @@ function draw(excludeId){
    const button=document.createElement('button');
    button.type='button';button.className='memory-star';
    button.style.left=w.x+'%';button.style.top=w.y+'%';
+   button.style.setProperty('--star-delay',String((hash(w.id)%3000)/1000)+'s');
    button.style.setProperty('--star-color',palettes[Math.max(0,Math.min(5,w.topic))]);
    button.dataset.starId=w.id;
    button.setAttribute('aria-label',w.saved?(language==='vi'?'Xem lời nguyện riêng đã lưu':'View your saved private wish'):(language==='vi'?'Xem lời nguyện vừa gửi':'View the wish from this visit'));
@@ -57,30 +58,32 @@ function closeCard(){card.hidden=true;if(lastFocus?.isConnected)lastFocus.focus(
 cardClose.addEventListener('click',closeCard);
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!card.hidden){e.stopImmediatePropagation();e.preventDefault();closeCard();}});
 function start(entry){
- closeCard();resetFlare();
+ closeCard();resetFlare();finishedStar=null;
  const w=normalize(entry,stored().length,!!entry.saved);
  if(!w.saved)session.push(w);
  current=w;
  draw(w.id);
- flare.style.left=w.x+'%';flare.style.top=w.y+'%';
+ // Flare and final star share the same absolute coordinate system.
+ flare.style.left='calc(3% + 94% * '+(w.x/100)+')';
+ flare.style.top='calc(12% + 73% * '+(w.y/100)+')';
  flare.style.setProperty('--flare-color',palettes[Math.max(0,Math.min(5,w.topic))]);
  flare.hidden=false;
  if(document.body.classList.contains('no-motion')||matchMedia('(prefers-reduced-motion: reduce)').matches){
    settle();return;
  }
  requestAnimationFrame(()=>flare.classList.add('launch'));
- starTimer=setTimeout(()=>{flare.classList.add('burst');},2350);
+ starTimer=setTimeout(()=>{flare.classList.add('burst');},2580);
 }
 function settle(){
  if(!current)return;
  resetFlare();
  draw();
  const target=[...field.querySelectorAll('.memory-star')].find(b=>b.dataset.starId===current.id);
- if(target)target.classList.add('new-star');
+ if(target){target.classList.add('new-star');finishedStar=target.dataset.starId;}
  current=null;
 }
-function refresh(){resetFlare();current=null;closeCard();session=session.filter(x=>!x.saved);draw();}
+function refresh(){resetFlare();current=null;finishedStar=null;closeCard();session=session.filter(x=>!x.saved);draw();}
 function setLanguage(value){language=value==='vi'?'vi':'en';draw();if(!card.hidden)closeCard();}
 draw();
-window.WishSky={release:start,finish:settle,refresh,show(){draw();},setLanguage,closeCard};
+window.WishSky={release:start,finish:settle,refresh,show(){resetFlare();current=null;draw();},setLanguage,closeCard,getActiveStar(){return finishedStar;}};
 })();
