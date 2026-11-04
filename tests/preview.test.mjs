@@ -47,9 +47,9 @@ test('release view is brought into focus without exposing wish content', () => {
 });
 
 test('inline JavaScript compiles', () => {
-  const match=html.match(/<script>([\s\S]*?)<\/script>/);
-  assert.ok(match,'one inline script is present');
-  assert.doesNotThrow(()=>new Script(match[1]));
+  const matches=[...html.matchAll(/<script>([\s\S]*?)<\/script>/g)];
+  assert.ok(matches.length>=2,'both ritual and WebGL scripts are present');
+  for (const match of matches) assert.doesNotThrow(()=>new Script(match[1]));
 });
 
 test('immersive visitor view opens a separate prayer ritual', () => {
@@ -74,4 +74,18 @@ test('walking respects reduced motion and has no networking', () => {
   assert.ok(html.includes("const delay=quiet?0:1250"));
   assert.ok(html.includes('body.no-motion .garden .avatar'));
   assert.doesNotMatch(html, /fetch\s*\(|XMLHttpRequest|WebSocket|sendBeacon/);
+});
+
+test('native WebGL 3D avatar has real mesh and action transitions', () => {
+  for (const token of [
+    'id="visitor3d"', "getContext('webgl'", 'gl.drawArrays(gl.TRIANGLES',
+    'window.WishAvatar3D={', "WishAvatar3D?.setPose('walk')",
+    "WishAvatar3D?.setPose('pray')", 'garden.webgl-ready .avatar{display:none}',
+    "garden.classList.remove('webgl-ready')"
+  ]) assert.ok(html.includes(token), token);
+});
+test('3D avatar keeps fallback, privacy, and motion protections', () => {
+  assert.match(html, /<svg class="avatar"/);
+  assert.ok(html.includes("WishAvatar3D?.setReduced(quiet)"));
+  assert.doesNotMatch(html, /<script[^>]+src=/i);
 });
