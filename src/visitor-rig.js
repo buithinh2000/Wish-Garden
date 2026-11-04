@@ -37,7 +37,7 @@ if(garden&&oldCanvas){
      if(desired&&active!==desired){
        const next=mixer.clipAction(desired);
        if(active)active.fadeOut(.25);
-       next.reset().fadeIn(.25).play();active=desired;
+       next.reset().fadeIn(.25).play();active=next;
      }
      if(pose==='pray'&&model){model.rotation.y=Math.PI;model.rotation.z=-.035;}
      else if(model){model.rotation.y=Math.PI;model.rotation.z=0;}
