@@ -22,7 +22,8 @@ test('bilingual and reduced motion features remain present', () => {
   for (const token of ['document.documentElement.lang', 'prefers-reduced-motion', 'id="motion"', 'id="lang"', 'role="status"']) assert.ok(html.includes(token), token);
 });
 test('preview has no misleading community count or external service integration', () => {
-  assert.doesNotMatch(html, /<script[^>]+src=/i);
+  assert.match(html, /<script src="assets\/visitor-rig\.bundle\.js" defer><\/script>/);
+  assert.doesNotMatch(html, /<script[^>]+src="https?:/i);
   assert.doesNotMatch(html, /fetch\s*\(|XMLHttpRequest|WebSocket|sendBeacon/);
   assert.doesNotMatch(html, /google-analytics|gtag\(|firebase|supabase/i);
 });
@@ -94,4 +95,10 @@ test('visual scene includes depth layers, realistic framing and accessible contr
  for(const token of ['class="ground-mist"','class="wish-path"','class="lantern-glow lantern-glow-one"','class="visitor-shadow"','.hero-content h1{max-width:12ch','@media(max-width:680px)'])assert.ok(html.includes(token),token);
  assert.doesNotMatch(html, /<div class="garden" aria-hidden="true"/);
  assert.ok(html.includes('aria-label="A quiet forest sanctuary with your visitor by the wishing tree"'));
+});
+
+test('rigged character is first-party and keeps safe fallback', () => {
+  assert.ok(html.includes('garden.rig-ready #visitor3d{display:none}'));
+  assert.ok(html.includes('garden.rig-ready #visitorRig{display:block}'));
+  assert.ok(html.includes("garden.classList.contains('rig-ready')"));
 });
