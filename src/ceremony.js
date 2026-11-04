@@ -49,6 +49,8 @@ journey.insertAdjacentHTML('beforeend',`
   <h3 id="hcTitle"></h3>
   <p id="hcMessage"></p>
   <ol class="hc-timeline" id="hcTimeline"></ol>
+  <div class="hc-personal-actions" id="hcActions" hidden><button type="button" id="hcSaveReceipt"></button><button type="button" id="hcSaveCalendar"></button></div>
+  <p id="hcHistory"></p>
   <p class="hc-foot" id="hcFoot"></p>
  </div>`);
 root.append(journey);
@@ -70,6 +72,10 @@ style.textContent=`
  #hopeCapsuleJourney .hc-timeline li.hc-local:before{background:#dec389}
  #hopeCapsuleJourney .hc-timeline strong{display:block;color:#fff2db;font-weight:600}
  #hopeCapsuleJourney .hc-timeline span{display:block;color:#bdc3d6;font-size:12px}
+ #hopeCapsuleJourney .hc-personal-actions{display:flex;gap:8px;flex-wrap:wrap;margin:14px 0}
+ #hopeCapsuleJourney .hc-personal-actions[hidden]{display:none}
+ #hopeCapsuleJourney .hc-personal-actions button{background:#ffffff17;color:#f6e9ce;border:1px solid #f6e9ce55;border-radius:12px;padding:9px 11px;font:inherit;font-size:13px}
+ #hopeCapsuleJourney .hc-personal-actions button:focus-visible{outline:3px solid #fff;outline-offset:2px}
  #hopeCapsuleJourney .hc-foot{padding-top:12px;border-top:1px solid #ffffff24;font-size:12px;color:#b7bbc9}
  @media(max-width:430px){#hopeCapsuleJourney .hc-body{padding:17px 15px}#hopeCapsuleJourney h3{font-size:22px}}
 `;
@@ -105,10 +111,43 @@ function renderJourney(){
   const strong=document.createElement('strong'),span=document.createElement('span');
   strong.textContent=title;span.textContent=desc;li.append(strong,span);return li;
  }));
+ const past=records().filter(x=>x.batch!==event.id);
+ $hc('hcHistory').textContent=mine&&past.length
+   ?(vi?'Các lựa chọn trên thiết bị từ những đợt khác: ':'Past local interests on this device: ')+past.length+'. '+(vi?'Không phải hồ sơ phát sóng.':'Not broadcast receipts.')
+   :'';
+ $hc('hcActions').hidden=!mine;
+ $hc('hcSaveReceipt').textContent=vi?'Xuất ghi nhận cục bộ (JSON)':'Export local record (JSON)';
+ $hc('hcSaveCalendar').textContent=vi?'Thêm mốc dự kiến vào lịch':'Add proposed date to calendar';
+ $hc('hcSaveReceipt').disabled=!local.length;
  $hc('hcFoot').textContent=mine
   ?(vi?'Lời nguyện riêng không nằm trong gói tín hiệu. Lựa chọn trên thiết bị chưa phải đăng ký phát sóng.':'Your private wish is never included in a radio packet. Local interest is not broadcast registration.')
   :(vi?'Mốc ngày không bảo đảm giờ phát. Không có hoạt cảnh hay đồng hồ nào chứng minh đã phát sóng.':'The proposed date is not an RF timeslot. No animation or countdown is evidence of a real transmission.');
 }
+// These downloads contain only this browser's minimal local choices, never a station receipt.
+function downloadText(name,contents,type){
+ const url=URL.createObjectURL(new Blob([contents],{type}));
+ const a=document.createElement('a');a.href=url;a.download=name;a.style.display='none';
+ document.body.append(a);a.click();a.remove();
+ setTimeout(()=>URL.revokeObjectURL(url),1000);
+}
+$hc('hcSaveReceipt').addEventListener('click',()=>{
+ const batch=upcoming().id,local=records().filter(x=>x.batch===batch);
+ if(!local.length)return;
+ const payload={version:1,kind:'local-interest-only',broadcastVerified:false,operatorReceipt:false,
+   submittedToServer:false,batch,topics:local.map(x=>({topic:categories.en[x.topic],markedAt:x.at}))};
+ downloadText('wish-garden-local-'+batch+'.json',JSON.stringify(payload,null,2),'application/json');
+});
+$hc('hcSaveCalendar').addEventListener('click',()=>{
+ const event=upcoming();
+ const timestamp=event.date.toISOString().replace(/[-:]/g,'').replace(/\\.\\d{3}/,'');
+ const uid='wish-garden-planning-'+event.id+'@local.invalid';
+ const lines=['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//Wish Garden//Hope Capsule Planning//EN',
+  'BEGIN:VEVENT','UID:'+uid,'DTSTAMP:'+timestamp,'DTSTART:'+timestamp,
+  'SUMMARY:Wish Garden - proposed ceremony milestone',
+  'DESCRIPTION:Planning reminder only. No station booking or real transmission confirmed.',
+  'END:VEVENT','END:VCALENDAR'];
+ downloadText('wish-garden-plan-'+event.id+'.ics',lines.join('\\r\\n')+'\\r\\n','text/calendar');
+});
 $hc('hcPublic').addEventListener('click',()=>{capsuleView='public';renderJourney();});
 $hc('hcMine').addEventListener('click',()=>{capsuleView='mine';renderJourney();});
 
