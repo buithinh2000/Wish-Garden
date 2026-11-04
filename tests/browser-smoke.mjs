@@ -11,7 +11,7 @@ const server=createServer(async(req,res)=>{
  const target=normalize(join(root,requested==='/'?'index.html':requested.replace(/^\//,'')));
  if(!target.startsWith(root)){res.writeHead(403).end();return;}
  try{const body=await readFile(target);
-   res.setHeader('Content-Type', target.endsWith('.html')?'text/html':target.endsWith('.jpg')?'image/jpeg':'text/plain');
+   res.setHeader('Content-Type', target.endsWith('.html')?'text/html':target.endsWith('.jpg')?'image/jpeg':target.endsWith('.mjs')||target.endsWith('.js')?'text/javascript':'text/plain');
    res.end(body);
  }catch{res.writeHead(404).end();}
 });
@@ -51,6 +51,18 @@ try{
 
   assert.equal(await page.locator('#prayerPanel').isVisible(),false,'initial form hidden');
   assert.equal(await page.locator('#ceremony').isVisible(),true,'planning countdown is visible before entering the ritual');
+  await page.locator('#hopePacketPreview').waitFor({state:'visible'});
+  assert.match(await page.locator('#hopePacketPreview').textContent(),/NOT SUBMITTED/,'draft preview must not claim on-air');
+  const draftInfo=await page.evaluate(()=>window.WishPacketPreview?.getDraft());
+  assert.equal(draftInfo.status,'DRAFT_NOT_SUBMITTED','browser public package is draft only');
+  assert.equal(draftInfo.consentedParticipantDataIncluded,false,'no private data in packet');
+  const draftDownload=page.waitForEvent('download');
+  await page.locator('#hopePacketPreview button').click();
+  const draftFile=await draftDownload;
+  assert.match(draftFile.suggestedFilename(),/wish-garden-draft-.*\.json/);
+  const draftJson=JSON.parse(await readFile(await draftFile.path(),'utf8'));
+  assert.equal(draftJson.operatorEvidenceUrl,null,'operator proof must not be fabricated');
+
   assert.equal(await page.locator('#ceremony').evaluate(el=>el.parentElement===document.querySelector('main')),true,'ceremony is not hidden inside the prayer form');
   assert.match(await page.locator('#ceremonyStatus').textContent(),/NO TRANSMISSION CONFIRMED/,'never mislabel planning as completed transmission');
   assert.match(await page.locator('#ceremonyCountdown').textContent(),/^\d{2,} : \d{2} : \d{2}$/,'countdown days hours minutes');
