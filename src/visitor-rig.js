@@ -61,7 +61,7 @@ if(garden&&oldCanvas){
       else if(mixer&&!prayerSolved)mixer.update(0);
       // The original idle pose is a wide-arm game stance. Correct shoulders and
       // elbows AFTER animation sampling so the visitor rests arms at their side.
-      if(limbs){
+      if(limbs&&(current!=='pray'||!prayerSolved)){
         const walking=current==='walk'&&!userReduced?Math.sin(performance.now()*.008)*.18:0;
         const praying=current==='pray';
         if(limbs.rightShoulder.name==='upperarm_r'){
