@@ -1,8 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { webcrypto } from 'node:crypto';
 import {handler,checkWish,verifyToken} from '../src/worker.mjs';
-globalThis.crypto=webcrypto;
 const origin='https://buithinh2000.github.io';
 const cfg={AUTH_ISSUER:'https://identity.example.test/',AUTH_AUDIENCE:'wish-garden-api',AUTH_JWKS_URL:'https://identity.example.test/keys',ALLOW_ORIGIN:origin,FEATURE_COLLECTIVE_HOPE:'false'};
 const b64=v=>Buffer.from(typeof v==='string'?v:JSON.stringify(v)).toString('base64url');
