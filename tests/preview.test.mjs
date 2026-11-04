@@ -119,3 +119,11 @@ test('sky light and stars share a responsive coordinate field',()=>{
  for(const t of ['.sky .memory-star{width:44px;height:44px','.sky .sky-flare.launch::before','@keyframes starTrail','@keyframes skyAscend','@keyframes skyBreathing'])assert.ok(html.includes(t),t);
  assert.doesNotMatch(skyJS,/fetch\s*\(|innerHTML\s*=/);
 });
+
+test('ceremony uses local-only opt-in, honest scheduling and proof-first archive',()=>{
+ const ceremony=readFileSync(new URL('../src/ceremony.js',import.meta.url),'utf8');
+ for(const needle of ['id="ceremony"','id="ceremonyCountdown"','id="ceremonyStatus"','id="ceremonyJoin"','id="ceremonyClear"','id="ceremonyArchive"','src/ceremony.js'])assert.ok(html.includes(needle),needle);
+ for(const needle of ['wg-ceremony-interest-01','Date.UTC(y,d.month,d.day,12,0,0)','PROPOSED DATE','NO TRANSMISSION CONFIRMED','localStorage.setItem(key','localStorage.removeItem(key)','panel.parentElement.insertBefore(root,panel)'])assert.ok(ceremony.includes(needle),needle);
+ assert.doesNotMatch(ceremony,/fetch\s*\(|XMLHttpRequest|WebSocket|sendBeacon|innerHTML\s*=/);
+ assert.doesNotThrow(()=>new Script(ceremony));
+});
