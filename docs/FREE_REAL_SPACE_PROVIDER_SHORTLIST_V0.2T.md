@@ -9,6 +9,14 @@
 - The free plan is offered through the website; **MCP/automated API requires a paid plan**, so do NOT call automation endpoints or scrape to submit. Use the normal free manual account UI for a first harmless project-only test.
 - Privacy: transmissions may be public and permanent; use exclusively a harmless project phrase, never personal wishes or user counts without current consent.
 
+## Critical review: actual SpaceSIO Terms (5 November 2026)
+Source: https://spacesio.com/terms (effective 7 July 2026), sections 1, 4 and 5.
+- SpaceSIO itself describes the offering as a **novelty/entertainment** service using relatively **low-power ground-based radio**. It explicitly **does not guarantee** that any particular signal leaves the atmosphere, reaches outer space, travels a measurable distance or is received.
+- Its signed issuance receipt attests to operation of its own equipment, NOT independent spectrum reception, space arrival or satellite relay. Do not treat a signed receipt, a simulated sky or a sonification as independent physical proof. The free plan is still a plausible no-cost **ground-station RF emission pilot** only.
+- Content submitted may be public and subject to broad service licensing including use for AI/model development. Never submit user wishes, private prayers, opted-in themes, names or user counts without separately informed, explicit consent and a privacy review. For the pilot, use only a nonsensitive project-owned phrase.
+- **Product wording:** `Operator reports a radio transmission from a ground station`, not `Your wish reached space`. `Independently verified` remains unavailable unless external reception or audit evidence is obtained.
+- **Decision gate:** SpaceSIO is a conditional pilot candidate, NOT an approved solution for the higher requirement of proven radio delivery into space. Keep evaluating a legitimate satellite / deep-space route if that stronger claim remains essential.
+
 ## Other free candidates
 - SpaceSpeak: https://www.spacespeak.com/Pricing — individual free text up to 2,000 chars; automated/API usage requires separate license and public pricing shows a USD 500 setup fee. Terms forbid automation without written permission: https://www.spacespeak.com/Learn/UserAgreement. Candidate for one manually submitted public project sentence, not an API.
 - gateto.space: https://gateto.space — first 32-character 'SMS to Space' free, later earn energy units; beta registration access and provider attestation remain unverified.
@@ -24,4 +32,4 @@
 6. One founder pilot at most. No payment, no user prayers, no bulk automated requests.
 
 ## Assessment
-SpaceSIO currently has the clearest publicly advertised *free allowance plus provider proof fields*, and is sufficient as a candidate for twice-yearly use. That does not yet establish verified physical radiation. Pilot status: **NOT SUBMITTED / NOT VERIFIED** as of this document.
+SpaceSIO currently advertises a free allowance plus operator-issued proof fields, and may be used for an initial ground-based transmission test; it is **not** established as a way to prove that a signal reached outer space. That does not yet establish verified physical radiation. Pilot status: **NOT SUBMITTED / NOT VERIFIED** as of this document.
