@@ -26,3 +26,6 @@ The cosmos source remains unchanged and is separately attributed in docs/CINEMAT
 
 ## Privacy
 No server transmission of wish text. Optional browser storage is not encrypted.
+
+## Visitor silhouette correction
+After a second screenshot review the experimental WebGL visitor looked too much like a simple mannequin. The procedural mesh was reshaped into a more coherent **rear-view hooded visitor** with overlapping fabric panels, dark/bright robe folds, integrated sleeves, a dark hood and a folded-hands prayer pose. This is still stylized geometry and remains substantially below the original cinematic reference quality. Before claiming visual acceptance, inspect screenshots from the latest run and conduct a real-device test.
