@@ -25,6 +25,13 @@ jobs:
           ! grep -Eiq 'google-analytics|gtag\(|firebase|supabase' index.html
       - name: Run preview invariant tests
         run: node --test tests/*.test.mjs
+      - name: Fetch licensed atmosphere artwork
+        run: |
+          mkdir -p assets
+          curl --fail --location --retry 3 --connect-timeout 15 --max-time 90 'https://images.unsplash.com/photo-1764798722469-a22f1752fc1c?auto=format&fit=crop&w=1600&q=76' --output assets/forest.jpg
+          curl --fail --location --retry 3 --connect-timeout 15 --max-time 90 'https://images.unsplash.com/photo-1661777032455-5582bf3eba07?auto=format&fit=crop&w=1600&q=76' --output assets/cosmos.jpg
+          test "$(wc -c < assets/forest.jpg)" -gt 15000
+          test "$(wc -c < assets/cosmos.jpg)" -gt 15000
       - name: Configure GitHub Pages
         uses: actions/configure-pages@v5
       - name: Upload static site
