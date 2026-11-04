@@ -72,7 +72,7 @@ export async function handle(request,env,now=new Date()){
  if(!await turnstile(data.challenge,env.TURNSTILE_SECRET))return json({error:'CHALLENGE_FAILED'},403,headers);
  const hash=await receiptHash(data.batchId,data.secret);
  if(request.method==='POST'){
-  await env.DB.prepare('INSERT INTO participation(receipt_hash,batch_id,topic,created_at,withdrawn_at) VALUES(?,?,?,?,NULL) ON CONFLICT(receipt_hash) DO UPDATE SET topic=excluded.topic,withdrawn_at=NULL WHERE participation.batch_id=excluded.batch_id').bind(hash,data.batchId,data.topic,now.toISOString()).run();
+  await env.DB.prepare('INSERT INTO participation(receipt_hash,batch_id,topic,created_at,withdrawn_at) VALUES(?,?,?,?,NULL) ON CONFLICT(receipt_hash) DO UPDATE SET topic=excluded.topic,withdrawn_at=NULL WHERE participation.batch_id=excluded.batch_id AND participation.withdrawn_at IS NULL').bind(hash,data.batchId,data.topic,now.toISOString()).run();
   return json({status:'REGISTERED_NOT_TRANSMITTED',batchId:batch.batchId,receiptCode:hash.slice(0,16),
     topic:topics[data.topic],cutoffUtc:batch.cutoffUtc,notice:'Only the selected theme is stored. Your private wish is not submitted or transmitted.'},201,headers);
  }
