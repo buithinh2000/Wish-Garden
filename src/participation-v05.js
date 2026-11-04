@@ -35,8 +35,8 @@ if(root){
   for(const [i,o] of [...topic.options].entries())o.textContent=topicLabels[vi?'vi':'en'][i];
   join.textContent=vi?'Ghi nhận vào gói chung':'Register theme';withdraw.textContent=vi?'Rút lại':'Withdraw';
   join.disabled=!configured()||!challengeReady||!checkbox.checked;
-  withdraw.disabled=!configured()||!challengeReady||!saved;
-  receipt.textContent=saved?(vi?'Mã biên nhận riêng: ':'Private receipt: ')+saved.code+' · '+(vi?'Đã ghi nhận, chưa phát sóng':'Registered, not transmitted'):'';
+  withdraw.disabled=!configured()||!challengeReady||!saved?.code;
+  receipt.textContent=saved?(saved.code?((vi?'Mã biên nhận riêng: ':'Private receipt: ')+saved.code+' · '+(vi?'Đã ghi nhận, chưa phát sóng':'Registered, not transmitted')):(vi?'Yêu cầu chưa xác nhận. Có thể thử lại với cùng mã riêng.':'Unconfirmed request; retry safely using the same secret.')):'';
   if(!configured())feedback.textContent=vi?'Dịch vụ ghi nhận toàn cầu chưa được kích hoạt. Bạn vẫn có thể sử dụng khu vườn và gói nháp cục bộ.':'Global registration is not active yet. The private garden and local draft remain available.';
  }
  async function submit(method){
@@ -44,13 +44,15 @@ if(root){
   const token=window.turnstile?.getResponse(challengeId);
   if(!token){feedback.textContent='Complete verification first';return}
   const prior=currentReceipt(),secret=prior?.secret||freshSecret(),batchId=activeBatch();
-  // Secrets are retained only in this browser. Never embedded into public capsule.
+  // Save an unconfirmed secret before network activity so retries reuse it.
+  // This does not count as successful registration or a radio receipt.
+  if(method==='POST'&&!prior){try{localStorage.setItem(key,JSON.stringify({batchId,secret,code:null,topic:Number(topic.value),status:'PENDING_NOT_CONFIRMED'}))}catch{feedback.textContent='Browser cannot preserve recovery secret; request not sent.';return}}
   const res=await fetch(cfg.api+'/api/v1/participation',{method,headers:{'Content-Type':'application/json'},
    body:JSON.stringify({batchId,topic:Number(topic.value),secret,challenge:token})});
   const result=await res.json();
   if(!res.ok){feedback.textContent=result.error||'Request failed';window.turnstile?.reset(challengeId);challengeReady=false;paint();return}
   if(method==='POST'){
-   try{localStorage.setItem(key,JSON.stringify({batchId,secret,code:result.receiptCode,topic:Number(topic.value)}))}
+   try{localStorage.setItem(key,JSON.stringify({batchId,secret,code:result.receiptCode,topic:Number(topic.value),status:'REGISTERED_NOT_TRANSMITTED'}))}
    catch{feedback.textContent='Registered, but your browser could not keep the recovery code. Contact support to discuss options.'}
   }else try{localStorage.removeItem(key)}catch{}
   feedback.textContent=method==='POST'?'Registered in the pending batch. No radio transmission has occurred.':'Withdrawal processed.';
