@@ -90,7 +90,7 @@ try{
   assert.equal(await page.locator('#sky').isVisible(),false);
   const localCount=await page.evaluate(()=>localStorage.length);
   assert.equal(localCount,0,'private wish should not be saved by default');
-  await page.locator('#mySky').click();
+  await page.locator('#mySkyFromPrayer').click();
   assert.equal(await page.locator('.memory-star').count(),1,'private unsaved star remains during current visit');
   await page.locator('#closeSky').click();
   await page.locator('#lang').click();
