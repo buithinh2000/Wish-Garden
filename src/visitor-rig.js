@@ -106,6 +106,10 @@ if(garden&&oldCanvas){
      const rightElbow=model.getObjectByName('lowerarm_r')||model.getObjectByName('vsfhv4');
      const leftElbow=model.getObjectByName('lowerarm_l')||model.getObjectByName('deh583');
      if(rightShoulder&&leftShoulder&&rightElbow&&leftElbow)limbs={rightShoulder,leftShoulder,rightElbow,leftElbow};
+     if(!isFallback){
+       const bones=[];model.traverse(o=>{if(o.isBone)bones.push(o.name)});
+       console.info('Wish Garden Maya bone roster:',JSON.stringify(bones));
+     }
      scene.add(model);
      mixer=new THREE.AnimationMixer(model);
      for(const clip of gltf.animations){clips.set(clip.name.toLowerCase(),clip); }
