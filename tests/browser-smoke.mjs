@@ -99,5 +99,22 @@ try{
   assert.deepEqual(errors,[],'no page errors');
   console.log('Browser smoke PASS viewport '+viewport.width+'x'+viewport.height);
   await context.close();
+  // Repeat the key pose transition without reduced motion so animation
+  // interpolation is exercised, not merely its final static IK position.
+  const motionContext=await browser.newContext({viewport,reducedMotion:'no-preference'});
+  const motionPage=await motionContext.newPage();
+  const motionErrors=[];
+  motionPage.on('pageerror',e=>motionErrors.push(e.message));
+  await motionPage.goto('http://127.0.0.1:'+port+'/');
+  await motionPage.waitForFunction(()=>document.querySelector('.garden')?.classList.contains('rig-ready'));
+  await motionPage.locator('#enter').click();
+  await motionPage.locator('#wish').waitFor({state:'visible'});
+  await motionPage.waitForFunction(()=>document.querySelector('#visitorRig')?.dataset.posePhase==='pray',{timeout:7000});
+  const motionDistance=await motionPage.evaluate(()=>window.WishAvatar3D.getPrayerDistance());
+  assert.ok(motionDistance<.20,'animated prayer ends with both hands together');
+  await motionPage.locator('#backToSanctuary').click();
+  assert.equal(await motionPage.evaluate(()=>window.WishAvatar3D.getPose()),'idle');
+  assert.deepEqual(motionErrors,[],'animation path should not throw errors');
+  await motionContext.close();
  }
 }finally{if(browser)await browser.close();await new Promise(resolve=>server.close(resolve));}
