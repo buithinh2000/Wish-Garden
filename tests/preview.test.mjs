@@ -22,7 +22,7 @@ test('bilingual and reduced motion features remain present', () => {
   for (const token of ['document.documentElement.lang', 'prefers-reduced-motion', 'id="motion"', 'id="lang"', 'role="status"']) assert.ok(html.includes(token), token);
 });
 test('preview has no misleading community count or external service integration', () => {
-  assert.match(html, /<script src="assets\/visitor-rig\.bundle\.js" defer><\/script>/);
+  assert.ok(html.includes('<script src="assets/visitor-rig.bundle.js" defer></script>'));
   assert.doesNotMatch(html, /<script[^>]+src="https?:/i);
   assert.doesNotMatch(html, /fetch\s*\(|XMLHttpRequest|WebSocket|sendBeacon/);
   assert.doesNotMatch(html, /google-analytics|gtag\(|firebase|supabase/i);
@@ -88,7 +88,7 @@ test('native WebGL 3D avatar has real mesh and action transitions', () => {
 test('3D avatar keeps fallback, privacy, and motion protections', () => {
   assert.match(html, /<svg class="avatar"/);
   assert.ok(html.includes("WishAvatar3D?.setReduced(quiet)"));
-  assert.match(html, /<script src="assets\\/visitor-rig\\.bundle\\.js" defer><\\/script>/);
+  assert.ok(html.includes('<script src="assets/visitor-rig.bundle.js" defer></script>'));
   assert.doesNotMatch(html, /<script[^>]+src="https?:/i);
 });
 
