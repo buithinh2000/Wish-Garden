@@ -20,8 +20,8 @@ if(garden&&oldCanvas){
    renderer.outputColorSpace=THREE.SRGBColorSpace;
    const scene=new THREE.Scene();
    const camera=new THREE.OrthographicCamera(-1.2,1.2,1.95,-1.95,.1,100);
-   camera.position.set(0,1.65,6);
-   camera.lookAt(0,1.35,0);
+   camera.position.set(0,1.5,6);
+   camera.lookAt(0,1.5,0);
    scene.add(new THREE.HemisphereLight(0xb2d9ff,0x695037,2.3));
    const lamp=new THREE.DirectionalLight(0xffc27b,2.5);
    lamp.position.set(-3,6,5);scene.add(lamp);
@@ -47,8 +47,8 @@ if(garden&&oldCanvas){
      const w=Math.max(1,canvas.clientWidth),h=Math.max(1,canvas.clientHeight);
      if(w!==canvas.width||h!==canvas.height){
        renderer.setSize(w,h,false);
-       camera.left=-1.3*w/h;camera.right=1.3*w/h;
-       camera.top=1.3;camera.bottom=-1.3;
+       camera.left=-1.75*w/h;camera.right=1.75*w/h;
+       camera.top=1.75;camera.bottom=-1.75;
        camera.updateProjectionMatrix();
      }
    }
@@ -63,10 +63,20 @@ if(garden&&oldCanvas){
       if(limbs){
         const walking=current==='walk'&&!userReduced?Math.sin(performance.now()*.008)*.18:0;
         const praying=current==='pray';
-        limbs.rightShoulder.rotation.z=praying?-.38:-1.18+walking;
-        limbs.leftShoulder.rotation.z=praying?.38:1.18-walking;
-        limbs.rightElbow.rotation.z=praying?2.45:.16;
-        limbs.leftElbow.rotation.z=praying?-2.45:-.16;
+        if(limbs.rightShoulder.name==='upperarm_r'){
+          // MakeHuman arm bones extend along local +Y: neutral shoulders hang down.
+          limbs.rightShoulder.rotation.z=praying?-.48:1.04+walking;
+          limbs.leftShoulder.rotation.z=praying?.48:-1.04-walking;
+          limbs.rightElbow.rotation.x=praying?-1.65:.03;
+          limbs.leftElbow.rotation.x=praying?-1.65:.03;
+          limbs.rightElbow.rotation.z=praying?-.30:0;
+          limbs.leftElbow.rotation.z=praying?.30:0;
+        }else{
+          limbs.rightShoulder.rotation.z=praying?-.38:-1.18+walking;
+          limbs.leftShoulder.rotation.z=praying?.38:1.18-walking;
+          limbs.rightElbow.rotation.z=praying?2.45:.16;
+          limbs.leftElbow.rotation.z=praying?-2.45:-.16;
+        }
       }
       if(model)model.rotation.x=current==='pray'?.09:0;
       renderer.render(scene,camera);
@@ -87,15 +97,14 @@ if(garden&&oldCanvas){
      const bounds=new THREE.Box3().setFromObject(model);
      const box=new THREE.Vector3();bounds.getSize(box);
      const center=new THREE.Vector3();bounds.getCenter(center);
-     model.position.sub(center);
      const scale=2.9/Math.max(box.y,.001);
      model.scale.setScalar(scale);
-     model.position.y+=box.y*scale/2-1.35;
+     model.position.set(-center.x*scale,-bounds.min.y*scale+0.06,-center.z*scale);
      model.rotation.y=Math.PI;
-     const rightShoulder=model.getObjectByName('wx9ery');
-     const leftShoulder=model.getObjectByName('tuy4up');
-     const rightElbow=model.getObjectByName('vsfhv4');
-     const leftElbow=model.getObjectByName('deh583');
+     const rightShoulder=model.getObjectByName('upperarm_r')||model.getObjectByName('wx9ery');
+     const leftShoulder=model.getObjectByName('upperarm_l')||model.getObjectByName('tuy4up');
+     const rightElbow=model.getObjectByName('lowerarm_r')||model.getObjectByName('vsfhv4');
+     const leftElbow=model.getObjectByName('lowerarm_l')||model.getObjectByName('deh583');
      if(rightShoulder&&leftShoulder&&rightElbow&&leftElbow)limbs={rightShoulder,leftShoulder,rightElbow,leftElbow};
      scene.add(model);
      mixer=new THREE.AnimationMixer(model);
