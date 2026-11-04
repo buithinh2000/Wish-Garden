@@ -51,6 +51,13 @@ try{
 
   assert.equal(await page.locator('#prayerPanel').isVisible(),false,'initial form hidden');
   assert.equal(await page.locator('#ceremony').isVisible(),true,'planning countdown is visible before entering the ritual');
+
+  assert.equal(await page.locator('#hopeParticipation').isVisible(),true,'optional global participation section shown');
+  assert.equal(await page.locator('#hopeParticipation input[type=checkbox]').isChecked(),false,'participation has no implied consent');
+  assert.equal(await page.locator('#hopeParticipation button').first().isDisabled(),true,'no submissions when service is not configured');
+  assert.match(await page.locator('#hopeParticipation [role=status]').textContent(),/not active yet/,'unconfigured global registration is explicitly disabled');
+  assert.equal(await page.evaluate(()=>localStorage.getItem('wg-private-receipt-v05')),null,'no receipt or secret stored by default');
+
   await page.locator('#hopePacketPreview').waitFor({state:'visible'});
   assert.match(await page.locator('#hopePacketPreview').textContent(),/NOT SUBMITTED/,'draft preview must not claim on-air');
   const draftInfo=await page.evaluate(()=>window.WishPacketPreview?.getDraft());
