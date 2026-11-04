@@ -90,7 +90,7 @@ jobs:
           printf 'Not Found\n' >dist/404.html
       - name: Upload only site assets to dedicated private S3 bucket
         run: |
-          BUCKET="$(aws cloudformation describe-stacks --stack-name wish-garden-staging-site --query 'Stacks[0].Outputs[?OutputKey==\x60SiteBucketName\x60].OutputValue' --output text)"
+          BUCKET="wish-garden-staging-site-916004827349-sg1"
           test -n "$BUCKET"
           case "$BUCKET" in wish-garden-staging-site-916004827349-sg1) ;; *) echo "Unexpected destination"; exit 1;; esac
           aws s3 sync dist/ "s3://$BUCKET/" --delete --only-show-errors
