@@ -103,3 +103,12 @@ test('rigged character is first-party and keeps safe fallback', () => {
   assert.ok(html.includes('garden.rig-ready #visitorRig{display:block}'));
   assert.ok(html.includes("garden.classList.contains('rig-ready')"));
 });
+
+test('the private sky uses a local first-party script and no fabricated community wishes',()=>{
+ const skyJS=readFileSync(new URL('../src/sky-of-wishes.js',import.meta.url),'utf8');
+ assert.ok(html.includes('src/sky-of-wishes.js'));
+ for(const token of ['id="starField"','id="skyFlare"','id="starMemory"','id="mySky"','window.WishSky?.release(memory)','function openMySky()'])assert.ok(html.includes(token),token);
+ for(const token of ['localStorage.getItem(storageKey)','textContent=w.text','function position(w,i)','window.WishSky={release:start','session.push(w)','field.replaceChildren()'])assert.ok(skyJS.includes(token),token);
+ assert.doesNotMatch(skyJS,/fetch\s*\(|XMLHttpRequest|WebSocket|sendBeacon|innerHTML\s*=/);
+ assert.doesNotThrow(()=>new Script(skyJS));
+});
