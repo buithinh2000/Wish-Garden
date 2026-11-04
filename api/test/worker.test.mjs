@@ -10,7 +10,7 @@ async function tokenFor(sub='user-a'){
  const now=Math.floor(Date.now()/1000);
  const raw=b64({alg:'RS256',kid:jwk.kid})+'.'+b64({sub,iss:cfg.AUTH_ISSUER,aud:cfg.AUTH_AUDIENCE,iat:now,exp:now+300});
  const signed=Buffer.from(await crypto.subtle.sign('RSASSA-PKCS1-v1_5',keys.privateKey,new TextEncoder().encode(raw))).toString('base64url');
- return {token:raw+'.'+signed,jwk};
+ return {token:raw+'.'+signed,jwk,privateKey:keys.privateKey};
 }
 class MockDB {
  constructor(){this.rows=[];this.quotas=new Map()}
@@ -38,16 +38,24 @@ test('rejects invalid JWT signature and respects issuer audience',async()=>{
  try{assert.equal(await verifyToken('Bearer '+token,cfg),'user-a');await assert.rejects(()=>verifyToken('Bearer '+token.slice(0,-12)+'ABCD'+token.slice(-8),cfg));await assert.rejects(()=>verifyToken('Bearer '+token,{...cfg,AUTH_AUDIENCE:'wrong'}))}finally{globalThis.fetch=old}
 });
 test('enforces owner isolation, explicit aggregate consent, and deletion',async()=>{
- const {token,jwk}=await tokenFor('a'),other=await tokenFor('b');const db=new MockDB();
+ const {token,jwk,privateKey}=await tokenFor('a');const db=new MockDB();
+ const now=Math.floor(Date.now()/1000);
+ const bRaw=b64({alg:'RS256',kid:jwk.kid})+'.'+b64({sub:'b',iss:cfg.AUTH_ISSUER,aud:cfg.AUTH_AUDIENCE,iat:now,exp:now+300});
+ const bSig=Buffer.from(await crypto.subtle.sign('RSASSA-PKCS1-v1_5',privateKey,new TextEncoder().encode(bRaw))).toString('base64url');
+ const otherToken=bRaw+'.'+bSig;
  const old=globalThis.fetch;
- globalThis.fetch=async()=>({ok:true,json:async()=>({keys:[jwk,other.jwk]})});
- // Both keys share test kid; use individual fetcher based on token for simulated multi-user validation.
- // In this test use one issuer RSA key with sub changed only for handler-level ownership:
+ globalThis.fetch=async()=>({ok:true,json:async()=>({keys:[jwk]})});
  try{
  const env={...cfg,DB:db};
  const created=await handler(req('/v1/wishes',token,'POST',{topic:'family',body:'May my family be well'}),env);
  assert.equal(created.status,201);const item=await created.json();assert.equal(item.aggregate_opt_in,false);
  const list=await(await handler(req('/v1/wishes',token),env)).json();assert.equal(list.wishes.length,1);
+ const otherList=await(await handler(req('/v1/wishes',otherToken),env)).json();
+ assert.equal(otherList.wishes.length,0);
+ const otherEdit=await handler(req('/v1/wishes/'+item.id,otherToken,'PATCH',{state:'released',aggregate_opt_in:true}),env);
+ assert.equal(otherEdit.status,404);
+ const otherDelete=await(await handler(req('/v1/wishes/'+item.id,otherToken,'DELETE'),env)).json();
+ assert.equal(otherDelete.deleted,false);
  const patch=await handler(req('/v1/wishes/'+item.id,token,'PATCH',{state:'fulfilled',aggregate_opt_in:true}),env);assert.equal(patch.status,200);
  const removed=await handler(req('/v1/wishes/'+item.id,token,'DELETE'),env);assert.deepEqual(await removed.json(),{deleted:true});
  const remaining=await(await handler(req('/v1/wishes',token),env)).json();assert.equal(remaining.wishes.length,0);
