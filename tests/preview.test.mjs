@@ -120,6 +120,13 @@ test('sky light and stars share a responsive coordinate field',()=>{
  assert.doesNotMatch(skyJS,/fetch\s*\(|innerHTML\s*=/);
 });
 
+test('ceremony quarterly schedule is 30 March, June, September, December UTC',()=>{
+ const ceremony=readFileSync(new URL('../src/ceremony.js',import.meta.url),'utf8');
+ for(const date of ["month:2,day:30,name:'March'","month:5,day:30,name:'June'","month:8,day:30,name:'September'","month:11,day:30,name:'December'"]) assert.ok(ceremony.includes(date),date);
+ assert.ok(ceremony.includes('Four proposed quarterly milestones each year'));
+ assert.ok(ceremony.includes('Date.UTC(y,d.month,d.day,12,0,0)'));
+ assert.ok(ceremony.includes('NO TRANSMISSION CONFIRMED'));
+});
 test('ceremony uses local-only opt-in, honest scheduling and proof-first archive',()=>{
  const ceremony=readFileSync(new URL('../src/ceremony.js',import.meta.url),'utf8');
  for(const needle of ['id="ceremony"','id="ceremonyCountdown"','id="ceremonyStatus"','id="ceremonyJoin"','id="ceremonyClear"','id="ceremonyArchive"','src/ceremony.js'])assert.ok(html.includes(needle),needle);
