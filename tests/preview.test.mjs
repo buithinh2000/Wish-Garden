@@ -62,3 +62,7 @@ test('full-screen release has accessible way back and visitor appearance selecti
  for(const needle of ['id="closeSky"','id="returnGarden"','function leaveSky()','role="dialog"','aria-modal="true"','data-look="warm"','data-look="light"','document.body.style.overflow='])assert.ok(html.includes(needle),needle);
  assert.ok(html.includes(".sky{position:fixed"));
 });
+
+test('cinematic environment uses locally deployed forest and cosmos assets',()=>{
+ for(const token of ['assets/forest.jpg','assets/cosmos.jpg','class="avatar"','class="hero-content"']) assert.ok(html.includes(token),token);
+});
