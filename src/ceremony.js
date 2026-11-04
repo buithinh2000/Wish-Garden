@@ -139,14 +139,14 @@ $hc('hcSaveReceipt').addEventListener('click',()=>{
 });
 $hc('hcSaveCalendar').addEventListener('click',()=>{
  const event=upcoming();
- const timestamp=event.date.toISOString().replace(/[-:]/g,'').replace(/\\.\\d{3}/,'');
+ const timestamp=event.date.toISOString().replace(/[-:]/g,'').replace(/\.\d{3}/,'');
  const uid='wish-garden-planning-'+event.id+'@local.invalid';
  const lines=['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//Wish Garden//Hope Capsule Planning//EN',
   'BEGIN:VEVENT','UID:'+uid,'DTSTAMP:'+timestamp,'DTSTART:'+timestamp,
   'SUMMARY:Wish Garden - proposed ceremony milestone',
   'DESCRIPTION:Planning reminder only. No station booking or real transmission confirmed.',
   'END:VEVENT','END:VCALENDAR'];
- downloadText('wish-garden-plan-'+event.id+'.ics',lines.join('\\r\\n')+'\\r\\n','text/calendar');
+ downloadText('wish-garden-plan-'+event.id+'.ics',lines.join('\r\n')+'\r\n','text/calendar');
 });
 $hc('hcPublic').addEventListener('click',()=>{capsuleView='public';renderJourney();});
 $hc('hcMine').addEventListener('click',()=>{capsuleView='mine';renderJourney();});
