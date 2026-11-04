@@ -86,6 +86,7 @@ if(garden&&oldCanvas){
    const controller={
       setPose(p){if(p==='walk')walkUntil=performance.now()+1450;setPose(p);},
       getPose(){return current;},
+      getBoneNames(){const arr=[];model?.traverse(o=>{if(o.isBone)arr.push(o.name)});return arr;},
       setLook(v){theme=v;if(model)model.traverse(o=>{if(o.isMesh&&o.material?.color&&o.userData.originalColor){o.material.color.copy(o.userData.originalColor).multiplyScalar(v==='light'?1.25:v==='warm'?.92:1);}});renderOnce();},
       getLook(){return theme;},
       setReduced(value){userReduced=Boolean(value);renderOnce();}
@@ -106,10 +107,7 @@ if(garden&&oldCanvas){
      const rightElbow=model.getObjectByName('lowerarm_r')||model.getObjectByName('vsfhv4');
      const leftElbow=model.getObjectByName('lowerarm_l')||model.getObjectByName('deh583');
      if(rightShoulder&&leftShoulder&&rightElbow&&leftElbow)limbs={rightShoulder,leftShoulder,rightElbow,leftElbow};
-     if(!isFallback){
-       const bones=[];model.traverse(o=>{if(o.isBone)bones.push(o.name)});
-       console.info('Wish Garden Maya bone roster:',JSON.stringify(bones));
-     }
+
      scene.add(model);
      mixer=new THREE.AnimationMixer(model);
      for(const clip of gltf.animations){clips.set(clip.name.toLowerCase(),clip); }
