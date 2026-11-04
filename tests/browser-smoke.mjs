@@ -3,6 +3,7 @@ import { createServer } from 'node:http';
 import { readFile } from 'node:fs/promises';
 import { join, normalize } from 'node:path';
 import assert from 'node:assert/strict';
+import { mkdir } from 'node:fs/promises';
 
 const root=process.cwd();
 const server=createServer(async(req,res)=>{
@@ -16,6 +17,7 @@ const server=createServer(async(req,res)=>{
 });
 await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
 const port=server.address().port;
+await mkdir('qa-screenshots',{recursive:true});
 let browser;
 try{
  browser=await chromium.launch({headless:true,args:['--use-gl=angle','--use-angle=swiftshader']});
@@ -27,13 +29,21 @@ try{
   await page.goto('http://127.0.0.1:'+port+'/');
   await page.locator('#hero').waitFor();
   assert.equal(await page.locator('#prayerPanel').isVisible(),false,'initial form hidden');
+  await page.screenshot({path:'qa-screenshots/'+viewport.width+'-sanctuary.png',fullPage:false});
+  const hasWebGL=await page.evaluate(()=>!!window.WishAvatar3D);
+  console.log('WebGL avatar present: '+hasWebGL+' ('+viewport.width+'px)');
+  if(hasWebGL)assert.equal(await page.evaluate(()=>window.WishAvatar3D.getPose()),'idle');
+
   assert.equal(await page.locator('input[name=keep]:checked').getAttribute('value'),'no','default no saving');
   await page.locator('#enter').click();
   await page.locator('#wish').waitFor({state:'visible'});
+  if(hasWebGL)assert.equal(await page.evaluate(()=>window.WishAvatar3D.getPose()),'pray');
+  await page.screenshot({path:'qa-screenshots/'+viewport.width+'-prayer.png',fullPage:false});
   await page.locator('#wish').fill('A private sample wish');
   await page.locator('#send').click();
   assert.equal(await page.locator('#sky').isVisible(),true);
   await page.locator('#finishNote').waitFor({state:'visible'});
+  await page.screenshot({path:'qa-screenshots/'+viewport.width+'-constellation.png',fullPage:false});
   await page.locator('#returnGarden').click();
   assert.equal(await page.locator('#sky').isVisible(),false);
   const localCount=await page.evaluate(()=>localStorage.length);
