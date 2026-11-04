@@ -20,7 +20,7 @@ if(root){
  section.append(heading,explain,topic,checkLabel,widget,join,withdraw,feedback,receipt);root.append(section);
  const key='wg-private-receipt-v05';
  const topicLabels={en:['Peace','Family','Health','Future','Remembrance','Gratitude'],vi:['Bình an','Gia đình','Sức khỏe','Tương lai','Tưởng nhớ','Biết ơn']};
- let challengeId=null,challengeReady=false;
+ let challengeId=null,challengeReady=false,challengeScriptRequested=false;
  function activeBatch(){return window.WishCeremony?.getPlan()?.event?.id||null}
  function oldReceipt(){try{return JSON.parse(localStorage.getItem(key)||'null')}catch{return null}}
  function currentReceipt(){const r=oldReceipt();return r&&r.batchId===activeBatch()?r:null}
@@ -31,7 +31,7 @@ if(root){
   heading.textContent=vi?'Đăng ký đóng góp chủ đề':'Contribute a theme';
   explain.textContent=vi?'Lời nguyện của bạn không được gửi đi. Sau khi dịch vụ được kích hoạt, chỉ chủ đề đã chọn được ghi nhận bằng một mã riêng.':'Your private wish is never uploaded. Once the verified service is enabled, only your chosen theme can be registered under a private code.';
   checkLabel.lastChild?.nodeType===3&&(checkLabel.lastChild.textContent='');
-  checkLabel.append(document.createTextNode(vi?' Tôi đồng ý gửi chủ đề đã chọn, không gửi lời nguyện riêng.':' I agree to register only my chosen theme, not my private wish.'));
+  checkLabel.append(document.createTextNode(vi?' Tôi chọn xác minh với Cloudflare để đăng ký hoặc rút lại một chủ đề; không gửi lời nguyện riêng.':' I choose Cloudflare verification to register or withdraw a theme; never my private wish.'));
   for(const [i,o] of [...topic.options].entries())o.textContent=topicLabels[vi?'vi':'en'][i];
   join.textContent=vi?'Ghi nhận vào gói chung':'Register theme';withdraw.textContent=vi?'Rút lại':'Withdraw';
   join.disabled=!configured()||!challengeReady||!checkbox.checked;
@@ -56,15 +56,18 @@ if(root){
   feedback.textContent=method==='POST'?'Registered in the pending batch. No radio transmission has occurred.':'Withdrawal processed.';
   window.turnstile?.reset(challengeId);challengeReady=false;paint();
  }
- checkbox.addEventListener('change',paint);
+ checkbox.addEventListener('change',()=>{if(checkbox.checked)loadChallengeOnConsent();paint()});
  join.addEventListener('click',()=>submit('POST').catch(()=>{feedback.textContent='Network unavailable; nothing confirmed.'}));
  withdraw.addEventListener('click',()=>submit('DELETE').catch(()=>{feedback.textContent='Network unavailable; withdrawal not confirmed.'}));
  document.getElementById('lang')?.addEventListener('click',()=>queueMicrotask(paint));
  // Do not request third-party CAPTCHA until configuration is real.
- if(configured()){
+ function loadChallengeOnConsent(){
+  if(!configured()||!checkbox.checked||challengeScriptRequested)return;
+  challengeScriptRequested=true;
   const script=document.createElement('script');
   script.src='https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit';
   script.onload=()=>{challengeId=window.turnstile.render(widget,{sitekey:cfg.sitekey,callback:()=>{challengeReady=true;paint()},'expired-callback':()=>{challengeReady=false;paint()}})};
+  script.onerror=()=>{challengeScriptRequested=false;feedback.textContent='Verification could not load';paint()};
   document.head.append(script);
  }
  paint();
