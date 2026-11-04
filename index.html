@@ -180,21 +180,35 @@ $('lang').onclick=()=>{vi=!vi;document.documentElement.lang=vi?'vi':'en';paint()
       }
     }
     // The avatar is actual 3D mesh geometry with animated articulated limbs.
-    ell(0,-.17,0,.48,.83,.29,robe);
-    ell(0,.68,0,.37,.23,.28,robe);
-    ell(0,1.13,.03,.31,.39,.29,skin);
-    ell(0,1.44,.01,.35,.23,.32,hair);
-    ell(-.12,1.14,.293,.045,.025,.025,hair);ell(.12,1.14,.293,.045,.025,.025,hair);
-    ell(-.24,-1.05,.02,.20,.48,.21,robe,move);
-    ell(.24,-1.05,.02,.20,.48,.21,robe,-move);
-    ell(-.24,-1.49,.13,.23,.11,.32,hair);ell(.24,-1.49,.13,.23,.11,.32,hair);
+    // Viewer is behind the visitor, looking with them toward the lit shrine.
+    // Layered hood, robe folds and integrated sleeves avoid a mannequin outline.
+    const clothShadow=tone(look==='warm'?'#38271f':look==='light'?'#4a6470':'#131c2f');
+    const clothLight=tone(look==='warm'?'#8a6542':look==='light'?'#a1adad':'#40536b');
+    ell(0,-.28,.01,.42,.94,.32,robe);
+    ell(-.22,-.28,-.06,.23,.85,.23,clothShadow,.05);
+    ell(.21,-.25,.04,.22,.88,.26,clothLight,-.06);
+    ell(0,-1.03,.04,.52,.32,.34,robe);
+    ell(-.13,-1.39,.04,.20,.30,.22,robe,move*.17);
+    ell(.13,-1.39,.04,.20,.30,.22,robe,-move*.17);
+    ell(-.19,-1.62,.17,.22,.095,.31,hair);
+    ell(.19,-1.62,.17,.22,.095,.31,hair);
+    ell(0,.65,-.08,.39,.31,.32,robe);
+    ell(0,1.06,-.05,.34,.41,.31,clothShadow); // hood seen from behind
+    ell(0,1.11,.21,.26,.31,.14,hair); // back of hair inside the hood
+    ell(0,1.43,.02,.29,.12,.26,hair);
+    ell(0,.48,.24,.18,.07,.12,trim);
     const praying=pose==='pray';
-    ell(-.55,.23,.13,.17,.51,.19,robe,praying?-.72:.25+move*.3);
-    ell(.55,.23,.13,.17,.51,.19,robe,praying?.72:-.25-move*.3);
-    if(praying){ell(-.11,.52,.42,.10,.22,.065,skin,-.24);ell(.11,.52,.42,.10,.22,.065,skin,.24);}
-    else {ell(-.58,-.22,.17,.12,.14,.12,skin);ell(.58,-.22,.17,.12,.14,.12,skin);}
-    ell(0,-.67,.31,.17,.045,.04,trim);
-    if(praying)ell(0,.52,.55,.075,.1,.04,gold);
+    ell(-.40,.20,.05,.18,.52,.21,clothShadow,praying?-.55:.09+move*.16);
+    ell(.40,.20,.05,.18,.52,.21,robe,praying?.55:-.09-move*.16);
+    if(praying){
+      ell(-.095,.56,.43,.11,.22,.08,skin,-.2);
+      ell(.095,.56,.43,.11,.22,.08,skin,.2);
+      ell(0,.56,.52,.085,.12,.045,gold);
+    }else{
+      ell(-.42,-.22,.14,.09,.13,.10,skin);
+      ell(.42,-.22,.14,.09,.13,.10,skin);
+    }
+    ell(0,-.55,.30,.12,.055,.04,trim);
     const data=new Float32Array(vertices);
     gl.bindBuffer(gl.ARRAY_BUFFER,buffer);gl.bufferData(gl.ARRAY_BUFFER,data,gl.DYNAMIC_DRAW);
     gl.enableVertexAttribArray(pos);gl.vertexAttribPointer(pos,3,gl.FLOAT,false,24,0);
