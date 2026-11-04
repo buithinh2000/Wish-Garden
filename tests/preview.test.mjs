@@ -112,3 +112,10 @@ test('the private sky uses a local first-party script and no fabricated communit
  assert.doesNotMatch(skyJS,/fetch\s*\(|XMLHttpRequest|WebSocket|sendBeacon|innerHTML\s*=/);
  assert.doesNotThrow(()=>new Script(skyJS));
 });
+
+test('sky light and stars share a responsive coordinate field',()=>{
+ const skyJS=readFileSync(new URL('../src/sky-of-wishes.js',import.meta.url),'utf8');
+ for(const t of ['field.append(flare)','flare.style.left=w.x','flare.style.top=w.y','resetFlare();current=null;draw();'])assert.ok(skyJS.includes(t),t);
+ for(const t of ['.sky .memory-star{width:44px;height:44px','.sky .sky-flare.launch::before','@keyframes starTrail','@keyframes skyAscend','@keyframes skyBreathing'])assert.ok(html.includes(t),t);
+ assert.doesNotMatch(skyJS,/fetch\s*\(|innerHTML\s*=/);
+});
