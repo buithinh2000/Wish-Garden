@@ -69,8 +69,8 @@ if(garden&&oldCanvas){
           limbs.leftShoulder.rotation.z=praying?-.98:-1.04-walking;
           limbs.rightElbow.rotation.x=praying?-1.3:.03;
           limbs.leftElbow.rotation.x=praying?-1.3:.03;
-          limbs.rightElbow.rotation.z=praying?-.75:0;
-          limbs.leftElbow.rotation.z=praying?.75:0;
+          limbs.rightElbow.rotation.z=praying?1.05:0;
+          limbs.leftElbow.rotation.z=praying?-1.05:0;
         }else{
           limbs.rightShoulder.rotation.z=praying?-.38:-1.18+walking;
           limbs.leftShoulder.rotation.z=praying?.38:1.18-walking;
