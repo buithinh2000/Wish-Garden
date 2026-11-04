@@ -27,12 +27,12 @@ test('SHA-256 covers the exact public phrase and does not invent RF evidence',as
 });
 test('long and multiline project phrases are rejected',()=>{
  assert.throws(()=>draftPacket(new Date('2026-11-05T00:00:00Z'),'x'.repeat(141)));
- assert.throws(()=>draftPacket(new Date('2026-11-05T00:00:00Z'),'a\\nb'));
+ assert.throws(()=>draftPacket(new Date('2026-11-05T00:00:00Z'),'a\nb'));
 });
 test('browser-only preview never reads wishes or contacts providers',()=>{
  const source=readFileSync(new URL('../src/hope-packet.mjs',import.meta.url),'utf8');
  assert.doesNotMatch(source,/localStorage|fetch\\s*\\(|XMLHttpRequest|sendBeacon|WebSocket|innerHTML\\s*=/);
  assert.match(source,/DRAFT_NOT_SUBMITTED/);
  const html=readFileSync(new URL('../index.html',import.meta.url),'utf8');
- assert.match(html,/<script type="module" src="src\\/hope-packet\\.mjs"><\\/script>/);
+ assert.match(html,/<script type="module" src="src\/hope-packet\.mjs"><\/script>/);
 });
