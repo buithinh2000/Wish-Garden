@@ -26,7 +26,7 @@ try{
   const page=await context.newPage();
   const errors=[];
   page.on('pageerror',e=>{errors.push(e.message);console.error('PAGE JS ERROR:',e.stack||e.message);});
-  page.on('console',m=>{if(m.type()==='error'||m.type()==='warning')console.log('BROWSER CONSOLE:',m.type(),m.text());});
+  page.on('console',m=>{if(m.type()==='error'||m.type()==='warning'||m.text().startsWith('Wish Garden rig inventory'))console.log('BROWSER CONSOLE:',m.type(),m.text());});
   await page.goto('http://127.0.0.1:'+port+'/');
   await page.locator('#hero').waitFor();
   await page.waitForFunction(()=>document.querySelector('.garden')?.classList.contains('rig-ready'),{timeout:15000});
