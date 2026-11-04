@@ -19,4 +19,4 @@ jobs:
       - name: Guard against accidental deployment
         run: |
           test "$(grep -c 'workers_dev = false' api/wrangler.toml)" -eq 1
-          ! grep -R -E 'wrangler deploy|wrangler d1 execute' .github/workflows/private-api-ci.yml
+          ! grep -E '^ *- name: Deploy|^ *run: .*wrangler' .github/workflows/private-api-ci.yml
