@@ -31,6 +31,7 @@ try{
   await page.locator('#hero').waitFor();
   await page.waitForFunction(()=>document.querySelector('.garden')?.classList.contains('rig-ready'),{timeout:15000});
   assert.equal(await page.locator('#visitorRig').isVisible(),true,'rigged 3D model replaces procedural visitor');
+  assert.equal(await page.locator('#visitorRig').getAttribute('data-avatar-source'),'civilian-maya','realistic civilian rig must load; do not silently promote fallback');
 
   assert.equal(await page.locator('.garden').getAttribute('aria-hidden'),null,'sanctuary controls cannot be hidden from accessibility tree');
   const sceneVisual=await page.locator('.garden').evaluate(el=>{const s=getComputedStyle(el);const svg=el.querySelector('.garden-art');return {image:s.backgroundImage,svg:getComputedStyle(svg).display}});
