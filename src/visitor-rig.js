@@ -27,11 +27,17 @@ if(garden&&oldCanvas){
    lamp.position.set(-3,6,5);scene.add(lamp);
    const rim=new THREE.DirectionalLight(0x8fd6fa,1.25);
    rim.position.set(3,4,-5);scene.add(rim);
-   let mixer=null,model=null,current='idle',active=null,raf=0,last=performance.now(),walkUntil=0,theme='night',limbs=null,hands=null,prayerSolved=false,prayerDistance=null,prayerBlend=null;
+   let mixer=null,model=null,current='idle',active=null,raf=0,last=performance.now(),walkUntil=0,theme='night',limbs=null,hands=null,prayerSolved=false,prayerDistance=null,prayerBlend=null,returnBlend=null;
    const clips=new Map();
    const clock=new THREE.Clock();
    const setPose=(pose)=>{
+     const wasPraying=current==='pray';
+     // Capture final IK joints before idle animation samples over them.
+     const returnJoints=limbs?[limbs.leftShoulder,limbs.leftElbow,limbs.rightShoulder,limbs.rightElbow]:null;
+     const returnFrom=wasPraying&&pose==='idle'&&returnJoints&&!userReduced
+       ?returnJoints.map(j=>j.quaternion.clone()):null;
      current=pose;prayerSolved=false;prayerBlend=null;
+     returnBlend=returnFrom?{joints:returnJoints,from:returnFrom,start:performance.now(),duration:750}:null;
      if(!mixer)return;
      const desired=pose==='walk'?([...clips].find(([name])=>name.includes('walk'))?.[1]||clips.get('idle')):([...clips].find(([name])=>name.includes('idle'))?.[1]||clips.get('idle')||[...clips.values()][0]);
      if(desired&&active?.getClip()!==desired){
@@ -79,7 +85,7 @@ if(garden&&oldCanvas){
           limbs.leftElbow.rotation.z=praying?-2.45:-.16;
         }
       }
-      if(model&&current!=='pray')model.rotation.x=0;
+      if(model&&current!=='pray'&&!returnBlend)model.rotation.x=0;
       if(current==='pray'&&!prayerSolved){
         prayerSolved=true;
         if(limbs&&hands){
@@ -127,6 +133,17 @@ if(garden&&oldCanvas){
           model.rotation.x=userReduced?.09:0;
         }
       }
+      if(returnBlend){
+        const progress=Math.min(1,(performance.now()-returnBlend.start)/returnBlend.duration);
+        const eased=progress*progress*(3-2*progress);
+        // Interpolate toward the current idle pose, without fighting the mixer.
+        returnBlend.joints.forEach((joint,i)=>{
+          const target=joint.quaternion.clone();
+          joint.quaternion.copy(returnBlend.from[i]).slerp(target,eased);
+        });
+        model.rotation.x=.09*(1-eased);
+        if(progress>=1)returnBlend=null;
+      }
       if(prayerBlend){
         const progress=Math.min(1,(performance.now()-prayerBlend.start)/prayerBlend.duration);
         const eased=progress*progress*(3-2*progress);
@@ -134,9 +151,9 @@ if(garden&&oldCanvas){
         model.rotation.x=.09*eased;
         if(progress>=1)prayerBlend=null;
       }
-      canvas.dataset.posePhase=prayerBlend?'transition':current;
+      canvas.dataset.posePhase=prayerBlend?'transition':returnBlend?'returning':current;
       renderer.render(scene,camera);
-      if(!userReduced||prayerBlend)raf=requestAnimationFrame(frame);
+      if(!userReduced||prayerBlend||returnBlend)raf=requestAnimationFrame(frame);
    }
    function renderOnce(){if(model&&!raf&&!document.hidden)raf=requestAnimationFrame(frame);}
    const controller={
@@ -146,7 +163,7 @@ if(garden&&oldCanvas){
       getPrayerDistance(){return prayerDistance;},
       setLook(v){theme=v;if(model)model.traverse(o=>{if(o.isMesh&&o.material?.color&&o.userData.originalColor){o.material.color.copy(o.userData.originalColor).multiplyScalar(v==='light'?1.25:v==='warm'?.92:1);}});renderOnce();},
       getLook(){return theme;},
-      setReduced(value){userReduced=Boolean(value);renderOnce();}
+      setReduced(value){userReduced=Boolean(value);if(userReduced){prayerBlend=null;returnBlend=null;}renderOnce();}
    };
    const loader=new GLTFLoader();
    function loadVisitor(url,isFallback=false){loader.load(url,gltf=>{
