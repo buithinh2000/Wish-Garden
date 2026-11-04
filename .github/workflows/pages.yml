@@ -46,7 +46,9 @@ jobs:
           curl --fail --location --retry 2 --connect-timeout 15 --max-time 120 'https://files.innerscene.com/library/locomotion-collection-maya-3d-person-animated-1499b2fd/565cfb8a45b8a67a79c4/locomotion-collection-maya-3d-person-animated.glb' --output assets/visitor-human.glb
           test "$(wc -c < assets/visitor-human.glb)" -gt 1000000
           # Reduce large PNG textures for smartphone-sized visitor canvas.
-          npx gltf-transform webp assets/visitor-human.glb assets/visitor-human-small.glb --resize 1024
+          npx gltf-transform resize assets/visitor-human.glb assets/visitor-human-resized.glb --width 1024 --height 1024
+          npx gltf-transform webp assets/visitor-human-resized.glb assets/visitor-human-small.glb
+          rm assets/visitor-human-resized.glb
           mv assets/visitor-human-small.glb assets/visitor-human.glb
           test "$(wc -c < assets/visitor-human.glb)" -lt 12000000
           npx esbuild src/visitor-rig.js --bundle --format=iife --target=es2020 --minify --outfile=assets/visitor-rig.bundle.js
