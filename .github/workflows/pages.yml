@@ -41,6 +41,7 @@ jobs:
           mkdir -p assets
           curl --fail --location --retry 3 --connect-timeout 15 --max-time 90 'https://gobkit.com/freebies/human003/Priestess.glb' --output assets/visitor-rig.glb
           test "$(wc -c < assets/visitor-rig.glb)" -gt 10000
+          python3 scripts/clean_visitor_glb.py assets/visitor-rig.glb
           npx esbuild src/visitor-rig.js --bundle --format=iife --target=es2020 --minify --outfile=assets/visitor-rig.bundle.js
           test -s assets/visitor-rig.bundle.js
       - name: Run desktop and mobile Chromium smoke
