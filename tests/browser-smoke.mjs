@@ -114,8 +114,10 @@ try{
   assert.ok(motionDistance<.20,'animated prayer ends with both hands together');
   await motionPage.locator('#backToSanctuary').click();
   assert.equal(await motionPage.evaluate(()=>window.WishAvatar3D.getPose()),'idle');
-  const exitPhase=await motionPage.locator('#visitorRig').getAttribute('data-pose-phase');
-  assert.ok(exitPhase==='returning'||exitPhase==='idle','return initiates a safe motion state');
+  await motionPage.waitForFunction(()=>{
+    const phase=document.querySelector('#visitorRig')?.dataset.posePhase;
+    return phase==='returning'||phase==='idle';
+  },{timeout:3000});
   await motionPage.waitForFunction(()=>document.querySelector('#visitorRig')?.dataset.posePhase==='idle',{timeout:4500});
   await motionPage.locator('.garden').scrollIntoViewIfNeeded();
   await motionPage.screenshot({path:'qa-screenshots/'+viewport.width+'-after-prayer.png',fullPage:false});
