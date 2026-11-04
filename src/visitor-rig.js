@@ -34,7 +34,7 @@ if(garden&&oldCanvas){
      current=pose;
      if(!mixer)return;
      const desired=clips.get(pose==='walk'?'walk':'idle')||clips.get('idle')||[...clips.values()][0];
-     if(desired&&active!==desired){
+     if(desired&&active?.getClip()!==desired){
        const next=mixer.clipAction(desired);
        if(active)active.fadeOut(.25);
        next.reset().fadeIn(.25).play();active=next;
@@ -70,7 +70,7 @@ if(garden&&oldCanvas){
       }
       if(model)model.rotation.x=current==='pray'?.09:0;
       renderer.render(scene,camera);
-      if(!userReduced||current==='walk'||performance.now()<walkUntil)raf=requestAnimationFrame(frame);
+      if(!userReduced)raf=requestAnimationFrame(frame);
    }
    function renderOnce(){if(model&&!raf&&!document.hidden)raf=requestAnimationFrame(frame);}
    const controller={
