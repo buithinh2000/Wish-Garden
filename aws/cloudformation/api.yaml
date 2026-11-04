@@ -63,7 +63,7 @@ Resources:
       Architectures: [arm64]
       Timeout: 5
       MemorySize: 128
-      Handler: handler.handler
+      Handler: index.handler
       Role: !GetAtt LambdaRole.Arn
       Environment:
         Variables:
