@@ -33,7 +33,7 @@ if(garden&&oldCanvas){
    const setPose=(pose)=>{
      current=pose;
      if(!mixer)return;
-     const desired=clips.get(pose==='walk'?'walk':'idle')||clips.get('idle')||[...clips.values()][0];
+     const desired=pose==='walk'?([...clips].find(([name])=>name.includes('walk'))?.[1]||clips.get('idle')):([...clips].find(([name])=>name.includes('idle'))?.[1]||clips.get('idle')||[...clips.values()][0]);
      if(desired&&active?.getClip()!==desired){
        const next=mixer.clipAction(desired);
        if(active)active.fadeOut(.25);
@@ -81,7 +81,7 @@ if(garden&&oldCanvas){
       setReduced(value){userReduced=Boolean(value);renderOnce();}
    };
    const loader=new GLTFLoader();
-   loader.load('assets/visitor-rig.glb',gltf=>{
+   function loadVisitor(url,isFallback=false){loader.load(url,gltf=>{
      model=gltf.scene;
      model.traverse(o=>{if(o.isMesh){o.frustumCulled=false;if(o.material?.color){o.material=o.material.clone();o.userData.originalColor=o.material.color.clone();}}});
      const bounds=new THREE.Box3().setFromObject(model);
@@ -100,12 +100,13 @@ if(garden&&oldCanvas){
      scene.add(model);
      mixer=new THREE.AnimationMixer(model);
      for(const clip of gltf.animations){clips.set(clip.name.toLowerCase(),clip); }
-     if(!clips.has('idle')||!clips.has('walk')){console.warn('Wish Garden rig lacks idle/walk clips; fallback active');canvas.remove();renderer.dispose();return;}
+     if(![...clips.keys()].some(n=>n.includes('idle'))||![...clips.keys()].some(n=>n.includes('walk'))){console.warn('Wish Garden rig lacks suitable idle/walk clips');if(!isFallback){scene.remove(model);mixer=null;clips.clear();loadVisitor('assets/visitor-rig.glb',true);return;}canvas.remove();renderer.dispose();return;}
      window.WishAvatar3D=controller;
      garden.classList.add('rig-ready');
      setPose(garden.classList.contains('arrived')?'pray':garden.classList.contains('walking')?'walk':'idle');
      renderOnce();
-   },undefined,err=>{console.warn('Wish Garden rig fallback',err);canvas.remove();renderer.dispose();});
+   },undefined,err=>{console.warn('Wish Garden rig source unavailable',url,err);if(!isFallback)loadVisitor('assets/visitor-rig.glb',true);else{canvas.remove();renderer.dispose();}});}
+   loadVisitor('assets/visitor-human.glb');
    document.addEventListener('visibilitychange',()=>{if(!document.hidden){clock.getDelta();renderOnce();}});
    reduced.addEventListener?.('change',()=>{userReduced=reduced.matches;renderOnce();});
    canvas.addEventListener('webglcontextlost',e=>{e.preventDefault();garden.classList.remove('rig-ready');cancelAnimationFrame(raf);raf=0;});
