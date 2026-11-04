@@ -83,7 +83,6 @@ if(garden&&oldCanvas){
    const loader=new GLTFLoader();
    loader.load('assets/visitor-rig.glb',gltf=>{
      model=gltf.scene;
-     console.log('Wish Garden rig inventory',JSON.stringify({parts:(()=>{let parts=[];model.traverse(o=>{if(o.isMesh){const box=new THREE.Box3().setFromObject(o),size=new THREE.Vector3(),center=new THREE.Vector3();box.getSize(size);box.getCenter(center);parts.push({name:o.name,parent:o.parent?.name,material:o.material?.name,dim:size.toArray().map(n=>+n.toFixed(2)),center:center.toArray().map(n=>+n.toFixed(2))});}});return parts;})()}));
      model.traverse(o=>{if(o.isMesh){o.frustumCulled=false;if(o.material?.color){o.material=o.material.clone();o.userData.originalColor=o.material.color.clone();}}});
      const bounds=new THREE.Box3().setFromObject(model);
      const box=new THREE.Vector3();bounds.getSize(box);
