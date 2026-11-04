@@ -88,7 +88,8 @@ test('native WebGL 3D avatar has real mesh and action transitions', () => {
 test('3D avatar keeps fallback, privacy, and motion protections', () => {
   assert.match(html, /<svg class="avatar"/);
   assert.ok(html.includes("WishAvatar3D?.setReduced(quiet)"));
-  assert.doesNotMatch(html, /<script[^>]+src=/i);
+  assert.match(html, /<script src="assets\\/visitor-rig\\.bundle\\.js" defer><\\/script>/);
+  assert.doesNotMatch(html, /<script[^>]+src="https?:/i);
 });
 
 test('visual scene includes depth layers, realistic framing and accessible controls',()=>{
