@@ -18,3 +18,42 @@ jobs:
           node --check tests/browser-smoke.mjs
       - name: Run privacy and ceremony invariants
         run: node --test tests/*.test.mjs
+  browser-smoke:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@v4
+      - name: Fetch licensed atmosphere artwork
+        run: |
+          mkdir -p assets
+          curl --fail --location --retry 3 --connect-timeout 15 --max-time 90 'https://images.unsplash.com/photo-1726954531046-d033ef59ff0f?auto=format&fit=crop&w=1600&q=76' --output assets/forest.jpg
+          curl --fail --location --retry 3 --connect-timeout 15 --max-time 90 'https://images.unsplash.com/photo-1661777032455-5582bf3eba07?auto=format&fit=crop&w=1600&q=76' --output assets/cosmos.jpg
+          test "$(wc -c < assets/forest.jpg)" -gt 15000
+          test "$(wc -c < assets/cosmos.jpg)" -gt 15000
+      - name: Install pinned preview builder and browser
+        run: |
+          npm install --no-save playwright@1.56.1 three@0.180.0 esbuild@0.25.12 @gltf-transform/cli@4.5.1
+          npx playwright install chromium
+      - name: Build 3D visitor with existing preview pipeline
+        run: |
+          curl --fail --location --retry 3 --connect-timeout 15 --max-time 90 'https://gobkit.com/freebies/human003/Priestess.glb' --output assets/visitor-rig.glb
+          test "$(wc -c < assets/visitor-rig.glb)" -gt 10000
+          python3 scripts/clean_visitor_glb.py assets/visitor-rig.glb
+          curl --fail --location --retry 2 --connect-timeout 15 --max-time 120 'https://files.innerscene.com/library/locomotion-collection-maya-3d-person-animated-1499b2fd/565cfb8a45b8a67a79c4/locomotion-collection-maya-3d-person-animated.glb' --output assets/visitor-human.glb
+          test "$(wc -c < assets/visitor-human.glb)" -gt 1000000
+          npx gltf-transform resize assets/visitor-human.glb assets/visitor-human-resized.glb --width 1024 --height 1024
+          npx gltf-transform webp assets/visitor-human-resized.glb assets/visitor-human-small.glb
+          rm assets/visitor-human-resized.glb
+          mv assets/visitor-human-small.glb assets/visitor-human.glb
+          test "$(wc -c < assets/visitor-human.glb)" -lt 12000000
+          npx esbuild src/visitor-rig.js --bundle --format=iife --target=es2020 --minify --outfile=assets/visitor-rig.bundle.js
+      - name: Desktop and mobile Chromium journeys
+        run: node tests/browser-smoke.mjs
+      - name: Save QA screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: wish-garden-pr-visual-qa
+          path: qa-screenshots/
+          if-no-files-found: ignore
+          retention-days: 14
