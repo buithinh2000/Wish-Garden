@@ -4,6 +4,9 @@
 'use strict';
 const root=document.getElementById('ceremony');
 if(!root)return;
+// The planning countdown must be discoverable before opening the prayer panel.
+const panel=document.getElementById('prayerPanel');
+if(panel?.parentElement)panel.parentElement.insertBefore(root,panel);
 const $=id=>document.getElementById(id);
 const key='wg-ceremony-interest-01';
 const releaseDates=[{month:5,day:30,name:'Mid-Year'},{month:11,day:30,name:'Year-End'}];
