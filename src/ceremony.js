@@ -9,7 +9,7 @@ const panel=document.getElementById('prayerPanel');
 if(panel?.parentElement)panel.parentElement.insertBefore(root,panel);
 const $=id=>document.getElementById(id);
 const key='wg-ceremony-interest-01';
-const releaseDates=[{month:5,day:30,name:'Mid-Year'},{month:11,day:30,name:'Year-End'}];
+const releaseDates=[{month:2,day:30,name:'March'},{month:5,day:30,name:'June'},{month:8,day:30,name:'September'},{month:11,day:30,name:'December'}];
 const categories={
  en:['Peace','Family','Health','Future','Remembrance','Gratitude'],
  vi:['Bình an','Gia đình','Sức khỏe','Tương lai','Tưởng nhớ','Biết ơn']
@@ -27,7 +27,7 @@ function upcoming(now=new Date()){
 }
 function records(){try{const value=JSON.parse(localStorage.getItem(key)||'[]');return Array.isArray(value)?value.filter(x=>x&&typeof x.id==='string'&&typeof x.batch==='string'&&Number.isInteger(x.topic)&&x.topic>=0&&x.topic<6):[]}catch{return []}}
 function save(data){try{localStorage.setItem(key,JSON.stringify(data));return true}catch{return false}}
-function label(name){return language()==='vi'?(name==='Mid-Year'?'Giữa năm':'Cuối năm'):name;}
+function label(name){const vi={March:'Tháng Ba',June:'Tháng Sáu',September:'Tháng Chín',December:'Tháng Mười Hai'};return language()==='vi'?vi[name]:name;}
 function counter(now=new Date()){
  const event=upcoming(now);
  const delta=Math.max(0,event.date-now),days=Math.floor(delta/86400000),hours=Math.floor(delta/3600000)%24,mins=Math.floor(delta/60000)%60;
@@ -36,7 +36,7 @@ function counter(now=new Date()){
 function render(){
  const vi=language()==='vi',c=counter(),event=c.event;
  $('ceremonyHeading').textContent=vi?'Nghi thức gửi hy vọng':'A ceremony for our hopes';
- $('ceremonyIntro').textContent=vi?'Hai cột mốc dự kiến mỗi năm. Chỉ khi có trạm phát xác nhận và bằng chứng, một đợt mới được gọi là đã gửi thật.':'Two proposed milestones each year. A transmission is only real after an authorised station confirms it with evidence.';
+ $('ceremonyIntro').textContent=vi?'Bốn mốc dự kiến mỗi năm (mỗi ba tháng). Một đợt chỉ được gọi là phát sóng thật khi có xác nhận và bằng chứng từ trạm phát.':'Four proposed quarterly milestones each year. A transmission is only real after an authorised station confirms it with evidence.';
  $('ceremonyEvent').textContent=label(event.name)+' · '+event.date.toLocaleDateString(vi?'vi-VN':'en-AU',{timeZone:'UTC',day:'numeric',month:'long',year:'numeric'});
  $('ceremonyCountdown').textContent=String(c.days).padStart(2,'0')+' : '+String(c.hours).padStart(2,'0')+' : '+String(c.mins).padStart(2,'0');
  $('ceremonyUnits').textContent=vi?'ngày · giờ · phút':'days · hours · minutes';
