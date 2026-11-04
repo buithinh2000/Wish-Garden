@@ -107,6 +107,11 @@ try{
   await page.reload();
   await page.locator('#mySky').click();
   assert.equal(await page.locator('.memory-star').count(),1,'only chosen saved wish persists after reload');
+  console.log('Sky reload diagnostic:',await page.evaluate(()=>{
+    const field=document.querySelector('#starField'),star=document.querySelector('.memory-star'),sky=document.querySelector('#sky');
+    const rect=star?.getBoundingClientRect(),parent=field?.getBoundingClientRect();
+    return {skyHidden:sky.hidden,skyDisplay:getComputedStyle(sky).display,starDisplay:getComputedStyle(star).display,starVisibility:getComputedStyle(star).visibility,starOpacity:getComputedStyle(star).opacity,starRect:rect?.toJSON(),fieldRect:parent?.toJSON(),classes:sky.className};
+  }));
   await page.locator('.memory-star').first().click();
   assert.equal(await page.locator('#starMemoryText').textContent(),'Lời nguyện kiểm thử');
   await page.locator('#starMemoryClose').click();
