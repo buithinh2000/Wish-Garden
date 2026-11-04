@@ -1,6 +1,7 @@
 /* V0.5: consented theme registration. Disabled until a real, audited API and
    Cloudflare Turnstile site key are explicitly configured by the operator. */
-const cfg={api:'',sitekey:''};
+const publicConfig=window.WG_PUBLIC_CONFIG||{};
+const cfg={api:String(publicConfig.api||'').replace(/\/$/,''),sitekey:String(publicConfig.sitekey||'')};
 const root=document.getElementById('ceremony');
 if(root){
  const section=document.createElement('section');section.id='hopeParticipation';
