@@ -32,6 +32,12 @@ jobs:
           curl --fail --location --retry 3 --connect-timeout 15 --max-time 90 'https://images.unsplash.com/photo-1661777032455-5582bf3eba07?auto=format&fit=crop&w=1600&q=76' --output assets/cosmos.jpg
           test "$(wc -c < assets/forest.jpg)" -gt 15000
           test "$(wc -c < assets/cosmos.jpg)" -gt 15000
+      - name: Install browser test runner
+        run: |
+          npm install --no-save playwright@1.56.1
+          npx playwright install --with-deps chromium
+      - name: Run desktop and mobile Chromium smoke
+        run: node tests/browser-smoke.mjs
       - name: Configure GitHub Pages
         uses: actions/configure-pages@v5
       - name: Upload static site
