@@ -1,0 +1,29 @@
+name: Wish Garden AWS migration checks
+on:
+  pull_request:
+    paths:
+      - 'aws/**'
+      - '.github/workflows/aws-*.yml'
+      - 'src/participation-v05.js'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  validate-aws:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check Python API safety and tests
+        run: |
+          python -m py_compile aws/lambda/handler.py
+          python -m unittest discover -s aws/tests -v
+      - name: Validate both CloudFormation templates
+        run: |
+          python -m pip install --disable-pip-version-check cfn-lint
+          cfn-lint aws/cloudformation/site.yaml aws/cloudformation/api.yaml
+      - name: Static privacy and integration boundaries
+        run: |
+          ! grep -Eiq 'turnstile|cloudflare' aws/lambda/handler.py
+          ! grep -Eiq 'turnstile|cloudflare' src/participation-v05.js
+          grep -q 'REGISTRATION_NOT_ENABLED' aws/lambda/handler.py
