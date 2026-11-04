@@ -100,7 +100,7 @@ export async function handler(request,env,ctx={}) {
     if(method==='GET'&&path==='/v1/collective-hope'){
       // Never return individual wish text; strict opt-in and k-anonymity threshold.
       if(env.FEATURE_COLLECTIVE_HOPE!=='true')return reply({error:'not_enabled'},404);
-      const result=await env.DB.prepare("SELECT topic,COUNT(DISTINCT owner_sub) AS people FROM wishes WHERE aggregate_opt_in=1 AND created_at >= datetime('now','-30 days') GROUP BY topic HAVING COUNT(DISTINCT owner_sub) >= 20").all();
+      const result=await env.DB.prepare("SELECT topic,COUNT(DISTINCT owner_sub) AS people FROM wishes WHERE aggregate_opt_in=1 AND created_at >= strftime('%Y-%m-%dT%H:%M:%fZ','now','-30 days') GROUP BY topic HAVING COUNT(DISTINCT owner_sub) >= 20").all();
       return reply({window:'past_30_days',topics:(result.results||[]).map(x=>({topic:x.topic,people:x.people})),method:'opt_in_unique_accounts_min_20'});
     }
     return reply({error:'not_found'},404);
