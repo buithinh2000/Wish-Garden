@@ -50,6 +50,20 @@ try{
   assert.ok(layers>=5,'atmospheric scene layers present');
 
   assert.equal(await page.locator('#prayerPanel').isVisible(),false,'initial form hidden');
+  assert.equal(await page.locator('#ceremony').isVisible(),true,'planning countdown is visible before entering the ritual');
+  assert.equal(await page.locator('#ceremony').evaluate(el=>el.parentElement===document.querySelector('main')),true,'ceremony is not hidden inside the prayer form');
+  assert.match(await page.locator('#ceremonyStatus').textContent(),/NO TRANSMISSION CONFIRMED/,'never mislabel planning as completed transmission');
+  assert.match(await page.locator('#ceremonyCountdown').textContent(),/^\\d{2,} : \\d{2} : \\d{2}$/,'countdown days hours minutes');
+  assert.equal(await page.evaluate(()=>localStorage.length),0,'no consent or transmission record stored by default');
+  await page.locator('#ceremonyTopic').selectOption('2');
+  await page.locator('#ceremonyJoin').click();
+  assert.equal(await page.evaluate(()=>JSON.parse(localStorage.getItem('wg-ceremony-interest-01')||'[]').length),1,'explicit opt-in records local topic only');
+  assert.deepEqual(await page.evaluate(()=>Object.keys(JSON.parse(localStorage.getItem('wg-ceremony-interest-01'))[0]).sort()),['at','batch','id','topic'],'no original words or identity persisted');
+  await page.locator('#ceremonyJoin').click();
+  assert.equal(await page.evaluate(()=>JSON.parse(localStorage.getItem('wg-ceremony-interest-01')).length),1,'duplicate topic not counted twice');
+  await page.locator('#ceremonyClear').click();
+  assert.equal(await page.evaluate(()=>localStorage.getItem('wg-ceremony-interest-01')),null,'delete local participation interest');
+  await page.locator('.garden').scrollIntoViewIfNeeded();
   await page.screenshot({path:'qa-screenshots/'+viewport.width+'-sanctuary.png',fullPage:false});
   const hasWebGL=await page.evaluate(()=>!!window.WishAvatar3D);
   console.log('WebGL avatar present: '+hasWebGL+' ('+viewport.width+'px)');
