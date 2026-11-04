@@ -65,12 +65,12 @@ if(garden&&oldCanvas){
         const praying=current==='pray';
         if(limbs.rightShoulder.name==='upperarm_r'){
           // MakeHuman arm bones extend along local +Y: neutral shoulders hang down.
-          limbs.rightShoulder.rotation.z=praying?-.48:1.04+walking;
-          limbs.leftShoulder.rotation.z=praying?.48:-1.04-walking;
-          limbs.rightElbow.rotation.x=praying?-1.65:.03;
-          limbs.leftElbow.rotation.x=praying?-1.65:.03;
-          limbs.rightElbow.rotation.z=praying?-.30:0;
-          limbs.leftElbow.rotation.z=praying?.30:0;
+          limbs.rightShoulder.rotation.z=praying?.98:1.04+walking;
+          limbs.leftShoulder.rotation.z=praying?-.98:-1.04-walking;
+          limbs.rightElbow.rotation.x=praying?-1.3:.03;
+          limbs.leftElbow.rotation.x=praying?-1.3:.03;
+          limbs.rightElbow.rotation.z=praying?-.75:0;
+          limbs.leftElbow.rotation.z=praying?.75:0;
         }else{
           limbs.rightShoulder.rotation.z=praying?-.38:-1.18+walking;
           limbs.leftShoulder.rotation.z=praying?.38:1.18-walking;
