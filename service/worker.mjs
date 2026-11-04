@@ -23,13 +23,15 @@ async function receiptHash(batchId,secret){
  const bytes=new Uint8Array(await crypto.subtle.digest('SHA-256',encoded));
  return [...bytes].map(x=>x.toString(16).padStart(2,'0')).join('');
 }
-async function turnstile(token,secret,ip){
+async function turnstile(token,secret){
  if(!secret)return false; // fail closed before production
  const body=new URLSearchParams({secret,response:token});
- const result=await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify',
-  {method:'POST',body,signal:AbortSignal.timeout(5000)});
- if(!result.ok)return false;
- return (await result.json()).success===true;
+ try{
+  const result=await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify',
+   {method:'POST',body,signal:AbortSignal.timeout(5000)});
+  if(!result.ok)return false;
+  return (await result.json()).success===true;
+ }catch{return false}
 }
 function validOrigin(request,env){
  const origin=request.headers.get('origin');
