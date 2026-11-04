@@ -10,6 +10,7 @@ if(garden&&oldCanvas){
  canvas.setAttribute('aria-hidden','true');
  oldCanvas.insertAdjacentElement('afterend',canvas);
  const reduced=matchMedia('(prefers-reduced-motion: reduce)');
+ let userReduced=reduced.matches;
  let renderer;
  try { renderer=new THREE.WebGLRenderer({canvas,alpha:true,antialias:true,powerPreference:'low-power'}); }
  catch {canvas.remove();}
@@ -59,7 +60,7 @@ if(garden&&oldCanvas){
       if(mixer)mixer.update(dt);
       if(current==='pray'&&model){model.rotation.x=-.04;}
       renderer.render(scene,camera);
-      if(!reduced.matches||current==='walk'||performance.now()<walkUntil)raf=requestAnimationFrame(frame);
+      if(!userReduced||current==='walk'||performance.now()<walkUntil)raf=requestAnimationFrame(frame);
    }
    function renderOnce(){if(model&&!raf&&!document.hidden)raf=requestAnimationFrame(frame);}
    const controller={
@@ -67,7 +68,7 @@ if(garden&&oldCanvas){
       getPose(){return current;},
       setLook(v){theme=v;if(model)model.traverse(o=>{if(o.isMesh&&o.material?.color&&o.userData.originalColor){o.material.color.copy(o.userData.originalColor).multiplyScalar(v==='light'?1.25:v==='warm'?.92:1);}});renderOnce();},
       getLook(){return theme;},
-      setReduced(){renderOnce();}
+      setReduced(value){userReduced=Boolean(value);renderOnce();}
    };
    const loader=new GLTFLoader();
    loader.load('assets/visitor-rig.glb',gltf=>{
@@ -91,7 +92,7 @@ if(garden&&oldCanvas){
      renderOnce();
    },undefined,err=>{console.warn('Wish Garden rig fallback',err);canvas.remove();renderer.dispose();});
    document.addEventListener('visibilitychange',()=>{if(!document.hidden){clock.getDelta();renderOnce();}});
-   reduced.addEventListener?.('change',renderOnce);
+   reduced.addEventListener?.('change',()=>{userReduced=reduced.matches;renderOnce();});
    canvas.addEventListener('webglcontextlost',e=>{e.preventDefault();garden.classList.remove('rig-ready');cancelAnimationFrame(raf);raf=0;});
  }
 }
