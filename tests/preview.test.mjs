@@ -66,3 +66,12 @@ test('full-screen release has accessible way back and visitor appearance selecti
 test('cinematic environment uses locally deployed forest and cosmos assets',()=>{
  for(const token of ['assets/forest.jpg','assets/cosmos.jpg','class="avatar"','class="hero-content"']) assert.ok(html.includes(token),token);
 });
+
+test('visitor enters ritual by approaching the tree', () => {
+  for (const needle of ['id="prayerStop"', 'function approachTree()', "garden.classList.add('walking')", "garden.classList.add('arrived')", "prayerPanel').classList.add('open')", "wish').focus({preventScroll:true})"]) assert.ok(html.includes(needle), needle);
+});
+test('walking respects reduced motion and has no networking', () => {
+  assert.ok(html.includes("const delay=quiet?0:1250"));
+  assert.ok(html.includes('body.no-motion .garden .avatar'));
+  assert.doesNotMatch(html, /fetch\s*\(|XMLHttpRequest|WebSocket|sendBeacon/);
+});
