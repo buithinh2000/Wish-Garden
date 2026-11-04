@@ -40,6 +40,12 @@ try{
   if(hasWebGL)assert.equal(await page.evaluate(()=>window.WishAvatar3D.getPose()),'pray');
   await page.screenshot({path:'qa-screenshots/'+viewport.width+'-prayer.png',fullPage:false});
   await page.locator('#wish').fill('A private sample wish');
+  await page.locator('#backToSanctuary').click();
+  assert.equal(await page.locator('#prayerPanel').isVisible(),false,'return to garden');
+  if(hasWebGL)assert.equal(await page.evaluate(()=>window.WishAvatar3D.getPose()),'idle');
+  await page.locator('#enter').click();
+  await page.locator('#wish').waitFor({state:'visible'});
+  assert.equal(await page.locator('#wish').inputValue(),'A private sample wish','unsent draft preserved');
   await page.locator('#send').click();
   assert.equal(await page.locator('#sky').isVisible(),true);
   await page.locator('#finishNote').waitFor({state:'visible'});
