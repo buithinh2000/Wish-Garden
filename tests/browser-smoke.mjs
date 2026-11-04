@@ -73,7 +73,7 @@ try{
   const localDownload=page.waitForEvent('download');
   await page.locator('#hcSaveReceipt').click();
   const localFile=await localDownload;
-  assert.match(localFile.suggestedFilename(),/wish-garden-local-.*\\.json/);
+  assert.match(localFile.suggestedFilename(),/wish-garden-local-.*\.json/);
   const localReceipt=JSON.parse(await readFile(await localFile.path(),'utf8'));
   assert.equal(localReceipt.broadcastVerified,false,'local export never fakes operator verification');
   assert.equal(localReceipt.submittedToServer,false,'local interest has not been submitted');
@@ -82,9 +82,9 @@ try{
   const calendarDownload=page.waitForEvent('download');
   await page.locator('#hcSaveCalendar').click();
   const calendarFile=await calendarDownload;
-  assert.match(calendarFile.suggestedFilename(),/wish-garden-plan-.*\\.ics/);
+  assert.match(calendarFile.suggestedFilename(),/wish-garden-plan-.*\.ics/);
   const calendarText=await readFile(await calendarFile.path(),'utf8');
-  assert.match(calendarText,/DTSTART:\\d{8}T120000Z/,'planning reminder has UTC event time');
+  assert.match(calendarText,/DTSTART:\d{8}T120000Z/,'planning reminder has UTC event time');
   assert.match(calendarText,/No station booking or real transmission confirmed/);
 
 
