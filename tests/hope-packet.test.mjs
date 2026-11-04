@@ -31,7 +31,7 @@ test('long and multiline project phrases are rejected',()=>{
 });
 test('browser-only preview never reads wishes or contacts providers',()=>{
  const source=readFileSync(new URL('../src/hope-packet.mjs',import.meta.url),'utf8');
- assert.doesNotMatch(source,/localStorage|fetch\\s*\\(|XMLHttpRequest|sendBeacon|WebSocket|innerHTML\\s*=/);
+ assert.doesNotMatch(source,/localStorage|fetch\s*\(|XMLHttpRequest|sendBeacon|WebSocket|innerHTML\s*=/);
  assert.match(source,/DRAFT_NOT_SUBMITTED/);
  const html=readFileSync(new URL('../index.html',import.meta.url),'utf8');
  assert.match(html,/<script type="module" src="src\/hope-packet\.mjs"><\/script>/);
