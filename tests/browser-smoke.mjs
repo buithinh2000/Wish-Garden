@@ -104,6 +104,15 @@ try{
   assert.equal(await page.locator('#starMemoryText').textContent(),'Lời nguyện kiểm thử');
   await page.locator('#starMemoryClose').click();
   await page.locator('#closeSky').click();
+  await page.reload();
+  await page.locator('#mySky').click();
+  assert.equal(await page.locator('.memory-star').count(),1,'only chosen saved wish persists after reload');
+  await page.locator('.memory-star').first().click();
+  assert.equal(await page.locator('#starMemoryText').textContent(),'Lời nguyện kiểm thử');
+  await page.locator('#starMemoryClose').click();
+  await page.locator('#closeSky').click();
+  await page.locator('#enter').click();
+  await page.locator('#wish').waitFor({state:'visible'});
   page.once('dialog',d=>d.accept());
   await page.locator('#delete').click();
   assert.equal(await page.evaluate(()=>JSON.parse(localStorage.getItem('wg-preview-local-01')||'[]').length),0);
