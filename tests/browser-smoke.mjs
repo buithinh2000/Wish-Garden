@@ -82,6 +82,14 @@ try{
   await page.locator('#finishNote').waitFor({state:'visible'});
   await page.locator('.memory-star').first().waitFor({state:'visible'});
   assert.equal(await page.locator('.memory-star').count(),1,'unsaved wish becomes a session-only star');
+  const starGeometry=await page.evaluate(()=>{
+    const star=document.querySelector('.memory-star'),field=document.querySelector('#starField');
+    const style=getComputedStyle(star),rect=star.getBoundingClientRect(),area=field.getBoundingClientRect();
+    return {width:rect.width,height:rect.height,areaWidth:area.width,areaHeight:area.height,parent:star.parentElement===field};
+  });
+  assert.ok(starGeometry.parent&&starGeometry.width>=40&&starGeometry.height>=40,
+    'stars have full accessible tap target in the sky field');
+  assert.ok(starGeometry.areaWidth>200&&starGeometry.areaHeight>200,'sky field is a usable region');
   await page.locator('.memory-star').first().click();
   assert.equal(await page.locator('#starMemoryText').textContent(),'A private sample wish');
   await page.locator('#starMemoryClose').click();
