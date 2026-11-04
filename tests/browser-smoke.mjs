@@ -53,7 +53,7 @@ try{
   assert.equal(await page.locator('#ceremony').isVisible(),true,'planning countdown is visible before entering the ritual');
   assert.equal(await page.locator('#ceremony').evaluate(el=>el.parentElement===document.querySelector('main')),true,'ceremony is not hidden inside the prayer form');
   assert.match(await page.locator('#ceremonyStatus').textContent(),/NO TRANSMISSION CONFIRMED/,'never mislabel planning as completed transmission');
-  assert.match(await page.locator('#ceremonyCountdown').textContent(),/^\\d{2,} : \\d{2} : \\d{2}$/,'countdown days hours minutes');
+  assert.match(await page.locator('#ceremonyCountdown').textContent(),/^\d{2,} : \d{2} : \d{2}$/,'countdown days hours minutes');
   assert.equal(await page.evaluate(()=>localStorage.length),0,'no consent or transmission record stored by default');
   await page.locator('#ceremonyTopic').selectOption('2');
   await page.locator('#ceremonyJoin').click();
