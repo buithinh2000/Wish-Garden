@@ -27,11 +27,11 @@ if(garden&&oldCanvas){
    lamp.position.set(-3,6,5);scene.add(lamp);
    const rim=new THREE.DirectionalLight(0x8fd6fa,1.25);
    rim.position.set(3,4,-5);scene.add(rim);
-   let mixer=null,model=null,current='idle',active=null,raf=0,last=performance.now(),walkUntil=0,theme='night',limbs=null;
+   let mixer=null,model=null,current='idle',active=null,raf=0,last=performance.now(),walkUntil=0,theme='night',limbs=null,hands=null,prayerSolved=false,prayerDistance=null;
    const clips=new Map();
    const clock=new THREE.Clock();
    const setPose=(pose)=>{
-     current=pose;
+     current=pose;prayerSolved=false;
      if(!mixer)return;
      const desired=pose==='walk'?([...clips].find(([name])=>name.includes('walk'))?.[1]||clips.get('idle')):([...clips].find(([name])=>name.includes('idle'))?.[1]||clips.get('idle')||[...clips.values()][0]);
      if(desired&&active?.getClip()!==desired){
@@ -39,7 +39,7 @@ if(garden&&oldCanvas){
        if(active)active.fadeOut(.25);
        next.reset().fadeIn(.25).play();active=next;
      }
-     if(pose==='pray'&&model){model.rotation.y=Math.PI;model.rotation.z=-.035;}
+     if(pose==='pray'&&model){model.rotation.y=Math.PI-.26;model.rotation.z=-.035;}
      else if(model){model.rotation.y=Math.PI;model.rotation.z=0;}
      renderOnce();
    };
@@ -57,7 +57,8 @@ if(garden&&oldCanvas){
       if(document.hidden||!model)return;
       size();
       const dt=Math.min(.07,clock.getDelta());
-      if(mixer)mixer.update(dt);
+      if(mixer&&current!=='pray')mixer.update(dt);
+      else if(mixer&&!prayerSolved)mixer.update(0);
       // The original idle pose is a wide-arm game stance. Correct shoulders and
       // elbows AFTER animation sampling so the visitor rests arms at their side.
       if(limbs){
@@ -79,6 +80,45 @@ if(garden&&oldCanvas){
         }
       }
       if(model)model.rotation.x=current==='pray'?.09:0;
+      if(current==='pray'&&!prayerSolved){
+        prayerSolved=true;
+        if(limbs&&hands){
+          // Two-arm inverse kinematics: measure the actual hand bones, not guessed
+          // shoulder angles. A shared point just in front of the chest receives
+          // both palms. This happens once on entering prayer, so mobile browsers
+          // do not solve a skeleton on every animation frame.
+          model.updateMatrixWorld(true);
+          const l=limbs.leftShoulder.getWorldPosition(new THREE.Vector3());
+          const r=limbs.rightShoulder.getWorldPosition(new THREE.Vector3());
+          const chest=l.clone().add(r).multiplyScalar(.5);
+          const forward=new THREE.Vector3(0,0,1).applyQuaternion(model.getWorldQuaternion(new THREE.Quaternion()));
+          chest.y-=.25;
+          chest.addScaledVector(forward,.26);
+          function turn(joint,hand,target){
+            model.updateMatrixWorld(true);
+            const pivot=joint.getWorldPosition(new THREE.Vector3());
+            const tip=hand.getWorldPosition(new THREE.Vector3()).sub(pivot);
+            const goal=target.clone().sub(pivot);
+            if(tip.lengthSq()<1e-8||goal.lengthSq()<1e-8)return;
+            const delta=new THREE.Quaternion().setFromUnitVectors(tip.normalize(),goal.normalize());
+            const parent=joint.parent.getWorldQuaternion(new THREE.Quaternion());
+            const local=parent.clone().invert().multiply(delta).multiply(parent);
+            joint.quaternion.premultiply(local).normalize();
+          }
+          // CCD reaches the same chest-height target with both hands.
+          const leftTarget=chest.clone().add(new THREE.Vector3(-.025,0,0));
+          const rightTarget=chest.clone().add(new THREE.Vector3(.025,0,0));
+          for(let i=0;i<12;i++){
+            turn(limbs.leftElbow,hands.left,leftTarget);
+            turn(limbs.leftShoulder,hands.left,leftTarget);
+            turn(limbs.rightElbow,hands.right,rightTarget);
+            turn(limbs.rightShoulder,hands.right,rightTarget);
+          }
+          model.updateMatrixWorld(true);
+          prayerDistance=hands.left.getWorldPosition(new THREE.Vector3()).distanceTo(hands.right.getWorldPosition(new THREE.Vector3()));
+          canvas.dataset.handsDistance=prayerDistance.toFixed(4);
+        }
+      }
       renderer.render(scene,camera);
       if(!userReduced)raf=requestAnimationFrame(frame);
    }
@@ -87,6 +127,7 @@ if(garden&&oldCanvas){
       setPose(p){if(p==='walk')walkUntil=performance.now()+1450;setPose(p);},
       getPose(){return current;},
       getBoneNames(){const arr=[];model?.traverse(o=>{if(o.isBone)arr.push(o.name)});return arr;},
+      getPrayerDistance(){return prayerDistance;},
       setLook(v){theme=v;if(model)model.traverse(o=>{if(o.isMesh&&o.material?.color&&o.userData.originalColor){o.material.color.copy(o.userData.originalColor).multiplyScalar(v==='light'?1.25:v==='warm'?.92:1);}});renderOnce();},
       getLook(){return theme;},
       setReduced(value){userReduced=Boolean(value);renderOnce();}
@@ -107,6 +148,9 @@ if(garden&&oldCanvas){
      const rightElbow=model.getObjectByName('lowerarm_r')||model.getObjectByName('vsfhv4');
      const leftElbow=model.getObjectByName('lowerarm_l')||model.getObjectByName('deh583');
      if(rightShoulder&&leftShoulder&&rightElbow&&leftElbow)limbs={rightShoulder,leftShoulder,rightElbow,leftElbow};
+     const leftHand=model.getObjectByName('hand_l');
+     const rightHand=model.getObjectByName('hand_r');
+     if(leftHand&&rightHand)hands={left:leftHand,right:rightHand};
 
      scene.add(model);
      mixer=new THREE.AnimationMixer(model);
