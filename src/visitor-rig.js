@@ -27,11 +27,11 @@ if(garden&&oldCanvas){
    lamp.position.set(-3,6,5);scene.add(lamp);
    const rim=new THREE.DirectionalLight(0x8fd6fa,1.25);
    rim.position.set(3,4,-5);scene.add(rim);
-   let mixer=null,model=null,current='idle',active=null,raf=0,last=performance.now(),walkUntil=0,theme='night',limbs=null,hands=null,prayerSolved=false,prayerDistance=null;
+   let mixer=null,model=null,current='idle',active=null,raf=0,last=performance.now(),walkUntil=0,theme='night',limbs=null,hands=null,prayerSolved=false,prayerDistance=null,prayerBlend=null;
    const clips=new Map();
    const clock=new THREE.Clock();
    const setPose=(pose)=>{
-     current=pose;prayerSolved=false;
+     current=pose;prayerSolved=false;prayerBlend=null;
      if(!mixer)return;
      const desired=pose==='walk'?([...clips].find(([name])=>name.includes('walk'))?.[1]||clips.get('idle')):([...clips].find(([name])=>name.includes('idle'))?.[1]||clips.get('idle')||[...clips.values()][0]);
      if(desired&&active?.getClip()!==desired){
@@ -79,7 +79,7 @@ if(garden&&oldCanvas){
           limbs.leftElbow.rotation.z=praying?-2.45:-.16;
         }
       }
-      if(model)model.rotation.x=current==='pray'?.09:0;
+      if(model&&current!=='pray')model.rotation.x=0;
       if(current==='pray'&&!prayerSolved){
         prayerSolved=true;
         if(limbs&&hands){
@@ -108,6 +108,8 @@ if(garden&&oldCanvas){
           // CCD reaches the same chest-height target with both hands.
           const leftTarget=chest.clone().add(new THREE.Vector3(-.025,0,0));
           const rightTarget=chest.clone().add(new THREE.Vector3(.025,0,0));
+          const joints=[limbs.leftShoulder,limbs.leftElbow,limbs.rightShoulder,limbs.rightElbow];
+          const from=joints.map(j=>j.quaternion.clone());
           for(let i=0;i<12;i++){
             turn(limbs.leftElbow,hands.left,leftTarget);
             turn(limbs.leftShoulder,hands.left,leftTarget);
@@ -117,10 +119,24 @@ if(garden&&oldCanvas){
           model.updateMatrixWorld(true);
           prayerDistance=hands.left.getWorldPosition(new THREE.Vector3()).distanceTo(hands.right.getWorldPosition(new THREE.Vector3()));
           canvas.dataset.handsDistance=prayerDistance.toFixed(4);
+          const to=joints.map(j=>j.quaternion.clone());
+          if(!userReduced){
+            joints.forEach((j,i)=>j.quaternion.copy(from[i]));
+            prayerBlend={joints,from,to,start:performance.now(),duration:900};
+          }
+          model.rotation.x=userReduced?.09:0;
         }
       }
+      if(prayerBlend){
+        const progress=Math.min(1,(performance.now()-prayerBlend.start)/prayerBlend.duration);
+        const eased=progress*progress*(3-2*progress);
+        prayerBlend.joints.forEach((j,i)=>j.quaternion.copy(prayerBlend.from[i]).slerp(prayerBlend.to[i],eased));
+        model.rotation.x=.09*eased;
+        if(progress>=1)prayerBlend=null;
+      }
+      canvas.dataset.posePhase=prayerBlend?'transition':current;
       renderer.render(scene,camera);
-      if(!userReduced)raf=requestAnimationFrame(frame);
+      if(!userReduced||prayerBlend)raf=requestAnimationFrame(frame);
    }
    function renderOnce(){if(model&&!raf&&!document.hidden)raf=requestAnimationFrame(frame);}
    const controller={
