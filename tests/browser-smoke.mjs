@@ -59,7 +59,7 @@ try{
   const draftDownload=page.waitForEvent('download');
   await page.locator('#hopePacketPreview button').click();
   const draftFile=await draftDownload;
-  assert.match(draftFile.suggestedFilename(),/wish-garden-draft-.*\\.json/);
+  assert.match(draftFile.suggestedFilename(),/wish-garden-draft-.*\.json/);
   const draftJson=JSON.parse(await readFile(await draftFile.path(),'utf8'));
   assert.equal(draftJson.operatorEvidenceUrl,null,'operator proof must not be fabricated');
 
