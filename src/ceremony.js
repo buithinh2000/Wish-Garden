@@ -39,7 +39,7 @@ function counter(now=new Date()){
 const journey=document.createElement('section');
 journey.id='hopeCapsuleJourney';
 journey.setAttribute('aria-label','Hope Capsule journey');
-journey.innerHTML=`
+journey.insertAdjacentHTML('beforeend',`
  <div class="hc-tabs" role="group" aria-label="Choose capsule view">
    <button type="button" id="hcPublic" aria-pressed="true"></button>
    <button type="button" id="hcMine" aria-pressed="false"></button>
@@ -50,7 +50,7 @@ journey.innerHTML=`
   <p id="hcMessage"></p>
   <ol class="hc-timeline" id="hcTimeline"></ol>
   <p class="hc-foot" id="hcFoot"></p>
- </div>`;
+ </div>`);
 root.append(journey);
 const style=document.createElement('style');
 style.textContent=`
