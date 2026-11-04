@@ -33,6 +33,85 @@ function counter(now=new Date()){
  const delta=Math.max(0,event.date-now),days=Math.floor(delta/86400000),hours=Math.floor(delta/3600000)%24,mins=Math.floor(delta/60000)%60;
  return {event,days,hours,mins};
 }
+
+/* Hope Capsule v0.3: truthful, static-site-only public/private journey.
+   Never infer provider transmission from a countdown or local preference. */
+const journey=document.createElement('section');
+journey.id='hopeCapsuleJourney';
+journey.setAttribute('aria-label','Hope Capsule journey');
+journey.innerHTML=`
+ <div class="hc-tabs" role="group" aria-label="Choose capsule view">
+   <button type="button" id="hcPublic" aria-pressed="true"></button>
+   <button type="button" id="hcMine" aria-pressed="false"></button>
+ </div>
+ <div class="hc-body">
+  <div class="hc-tag" id="hcTag"></div>
+  <h3 id="hcTitle"></h3>
+  <p id="hcMessage"></p>
+  <ol class="hc-timeline" id="hcTimeline"></ol>
+  <p class="hc-foot" id="hcFoot"></p>
+ </div>`;
+root.append(journey);
+const style=document.createElement('style');
+style.textContent=`
+ #hopeCapsuleJourney{margin-top:25px;border:1px solid #d9c49b66;border-radius:22px;overflow:hidden;background:linear-gradient(140deg,#182b44,#192139)}
+ #hopeCapsuleJourney .hc-tabs{display:flex;padding:8px;gap:8px;border-bottom:1px solid #ffffff1c}
+ #hopeCapsuleJourney .hc-tabs button{flex:1;border-radius:12px;padding:11px 8px;background:#ffffff12;color:#e8e5e4;border:1px solid #ffffff2b;font:inherit;font-size:14px}
+ #hopeCapsuleJourney .hc-tabs button[aria-pressed=true]{background:#f0dfbc;color:#242738;border-color:#f0dfbc;font-weight:650}
+ #hopeCapsuleJourney .hc-tabs button:focus-visible{outline:3px solid #fff;outline-offset:2px}
+ #hopeCapsuleJourney .hc-body{padding:21px 22px}
+ #hopeCapsuleJourney .hc-tag{letter-spacing:.15em;font-size:11px;color:#e5ca94;text-transform:uppercase}
+ #hopeCapsuleJourney h3{margin:9px 0 8px;font:normal 26px Georgia,serif;color:#f6e9ce}
+ #hopeCapsuleJourney p{font-size:14px;line-height:1.6;color:#dbd9e4}
+ #hopeCapsuleJourney .hc-timeline{list-style:none;padding:3px 0 0;margin:12px 0}
+ #hopeCapsuleJourney .hc-timeline li{position:relative;padding:0 0 19px 32px;border-left:1px solid #9e99b46b;margin-left:8px;font-size:14px;color:#dbd9e4}
+ #hopeCapsuleJourney .hc-timeline li:last-child{border-left-color:transparent;padding-bottom:0}
+ #hopeCapsuleJourney .hc-timeline li:before{content:'';position:absolute;left:-7px;top:3px;width:12px;height:12px;border-radius:50%;background:#67748d;border:1px solid #fff5d490}
+ #hopeCapsuleJourney .hc-timeline li.hc-local:before{background:#dec389}
+ #hopeCapsuleJourney .hc-timeline strong{display:block;color:#fff2db;font-weight:600}
+ #hopeCapsuleJourney .hc-timeline span{display:block;color:#bdc3d6;font-size:12px}
+ #hopeCapsuleJourney .hc-foot{padding-top:12px;border-top:1px solid #ffffff24;font-size:12px;color:#b7bbc9}
+ @media(max-width:430px){#hopeCapsuleJourney .hc-body{padding:17px 15px}#hopeCapsuleJourney h3{font-size:22px}}
+`;
+document.head.append(style);
+let capsuleView='public';
+const $hc=id=>document.getElementById(id);
+function renderJourney(){
+ const vi=language()==='vi',mine=capsuleView==='mine',event=upcoming();
+ const local=records().filter(x=>x.batch===event.id);
+ const categoriesHere=categories[language()];
+ $hc('hcPublic').textContent=vi?'Gói chung':'Public capsule';
+ $hc('hcMine').textContent=vi?'Hành trình của tôi':'My journey';
+ $hc('hcPublic').setAttribute('aria-pressed',String(!mine));
+ $hc('hcMine').setAttribute('aria-pressed',String(mine));
+ $hc('hcTag').textContent=vi?'HY VỌNG · CHƯA PHÁT SÓNG':'HOPE CAPSULE · NOT TRANSMITTED';
+ $hc('hcTitle').textContent=mine?(vi?'Ngôi sao của tôi':'My hope journey'):(vi?'Gói hy vọng của Trái Đất':'Earth Hope Capsule');
+ $hc('hcMessage').textContent=mine
+  ?(local.length?(vi?'Trên thiết bị này, bạn đã chọn: ':'On this device, you marked: ')+local.map(x=>categoriesHere[x.topic]).join(', ')+'.':(vi?'Chưa có lựa chọn nào được lưu cho đợt này trên thiết bị.':'No topic marked on this device for this ceremony.'))
+  :(vi?'Thông điệp chung dự kiến sẽ được đóng gói sau khi có hệ thống đồng ý tham gia và xác nhận số liệu thật. Chưa có số người tham gia đã xác minh.':'The public message will be packaged only after real opt-ins and verified totals exist. There is no verified community participation count.');
+ const items=mine?[
+  [vi?'Lựa chọn trên thiết bị':'Local interest',local.length?(vi?'Đã lưu cục bộ · chưa gửi':'Stored locally · not submitted'):(vi?'Chưa chọn':'Not selected'),local.length],
+  [vi?'Đăng ký tham gia gói chung':'Global batch opt-in',vi?'Chưa mở · cần đồng ý riêng':'Not available · requires fresh consent',false],
+  [vi?'Chốt gói và biên nhận':'Batch lock & inclusion receipt',vi?'Chưa thực hiện':'Not performed',false],
+  [vi?'Trạm phát và bằng chứng':'Station issuance & proof',vi?'Chưa xác minh':'Not verified',false]
+ ]:[
+  [vi?'Mốc nghi thức':'Ceremony target',event.date.toLocaleString(vi?'vi-VN':'en-AU',{timeZone:'UTC',day:'numeric',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'})+' UTC · '+(vi?'dự kiến':'proposed'),true],
+  [vi?'Đóng gói thông điệp':'Message packaging',vi?'Chưa khóa nội dung':'No packet locked',false],
+  [vi?'Gửi đến nhà vận hành':'Operator submission',vi?'Chưa gửi yêu cầu':'No request submitted',false],
+  [vi?'Trạm phát xác nhận':'Station evidence',vi?'Chưa có hồ sơ phát':'No issuance record',false]
+ ];
+ $hc('hcTimeline').replaceChildren(...items.map(([title,desc,isLocal])=>{
+  const li=document.createElement('li');if(isLocal)li.className='hc-local';
+  const strong=document.createElement('strong'),span=document.createElement('span');
+  strong.textContent=title;span.textContent=desc;li.append(strong,span);return li;
+ }));
+ $hc('hcFoot').textContent=mine
+  ?(vi?'Lời nguyện riêng không nằm trong gói tín hiệu. Lựa chọn trên thiết bị chưa phải đăng ký phát sóng.':'Your private wish is never included in a radio packet. Local interest is not broadcast registration.')
+  :(vi?'Mốc ngày không bảo đảm giờ phát. Không có hoạt cảnh hay đồng hồ nào chứng minh đã phát sóng.':'The proposed date is not an RF timeslot. No animation or countdown is evidence of a real transmission.');
+}
+$hc('hcPublic').addEventListener('click',()=>{capsuleView='public';renderJourney();});
+$hc('hcMine').addEventListener('click',()=>{capsuleView='mine';renderJourney();});
+
 function render(){
  const vi=language()==='vi',c=counter(),event=c.event;
  $('ceremonyHeading').textContent=vi?'Nghi thức gửi hy vọng':'A ceremony for our hopes';
@@ -48,6 +127,7 @@ function render(){
  $('ceremonyArchiveTitle').textContent=vi?'Hồ sơ truyền tín hiệu':'Transmission record';
  $('ceremonyArchive').textContent=vi?'Chưa có đợt phát sóng được xác minh. Khi có: phải công bố nhà vận hành, giờ UTC và bằng chứng phát thực tế.':'No transmissions verified yet. Any future record must identify the operator, UTC time and actual transmission evidence.';
  $('ceremonyContribution').textContent=vi?'Trên thiết bị này: '+records().filter(x=>x.batch===event.id).length+' chủ đề đã ghi nhận. Không phải số liệu cộng đồng.':'On this device: '+records().filter(x=>x.batch===event.id).length+' topic(s) marked. Not a community total.';
+ renderJourney();
  const select=$('ceremonyTopic'),v=select.value;
  [...select.options].forEach((o,i)=>o.textContent=categories[language()][i]);select.value=v;
 }
