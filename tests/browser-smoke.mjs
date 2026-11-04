@@ -70,6 +70,23 @@ try{
   await page.locator('#hcMine').click();
   assert.match(await page.locator('#hcMessage').textContent(),/Health/,'local theme visible in private journey');
   assert.match(await page.locator('#hcTimeline').textContent(),/requires fresh consent/,'local interest not global opt-in');
+  const localDownload=page.waitForEvent('download');
+  await page.locator('#hcSaveReceipt').click();
+  const localFile=await localDownload;
+  assert.match(localFile.suggestedFilename(),/wish-garden-local-.*\\.json/);
+  const localReceipt=JSON.parse(await readFile(await localFile.path(),'utf8'));
+  assert.equal(localReceipt.broadcastVerified,false,'local export never fakes operator verification');
+  assert.equal(localReceipt.submittedToServer,false,'local interest has not been submitted');
+  assert.equal(localReceipt.topics[0].topic,'Health','local export contains the selected theme');
+  assert.equal(Object.hasOwn(localReceipt,'wishText'),false,'never exports a personal wish in the capsule record');
+  const calendarDownload=page.waitForEvent('download');
+  await page.locator('#hcSaveCalendar').click();
+  const calendarFile=await calendarDownload;
+  assert.match(calendarFile.suggestedFilename(),/wish-garden-plan-.*\\.ics/);
+  const calendarText=await readFile(await calendarFile.path(),'utf8');
+  assert.match(calendarText,/DTSTART:\\d{8}T120000Z/,'planning reminder has UTC event time');
+  assert.match(calendarText,/No station booking or real transmission confirmed/);
+
 
   assert.deepEqual(await page.evaluate(()=>Object.keys(JSON.parse(localStorage.getItem('wg-ceremony-interest-01'))[0]).sort()),['at','batch','id','topic'],'no original words or identity persisted');
   await page.locator('#ceremonyJoin').click();
