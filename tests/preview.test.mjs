@@ -51,3 +51,9 @@ test('inline JavaScript compiles', () => {
   assert.ok(match,'one inline script is present');
   assert.doesNotThrow(()=>new Script(match[1]));
 });
+
+test('immersive visitor view opens a separate prayer ritual', () => {
+  for(const item of ['class="avatar"', 'id="enter"', 'id="prayerPanel"', "prayerPanel').classList.add('open')", 'A moment for yourself · No account needed']) assert.ok(html.includes(item),item);
+  assert.ok(html.includes('.panel{position:relative'));
+  assert.ok(html.includes('.panel.open{display:block'));
+});
