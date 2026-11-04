@@ -37,7 +37,7 @@ test('rejects invalid JWT signature and respects issuer audience',async()=>{
  const {token,jwk}=await tokenFor();
  const old=globalThis.fetch;
  globalThis.fetch=async()=>({ok:true,json:async()=>({keys:[jwk]})});
- try{assert.equal(await verifyToken('Bearer '+token,cfg),'user-a');await assert.rejects(()=>verifyToken('Bearer '+token.slice(0,-1)+'A',cfg));await assert.rejects(()=>verifyToken('Bearer '+token,{...cfg,AUTH_AUDIENCE:'wrong'}))}finally{globalThis.fetch=old}
+ try{assert.equal(await verifyToken('Bearer '+token,cfg),'user-a');await assert.rejects(()=>verifyToken('Bearer '+token.slice(0,-12)+'ABCD'+token.slice(-8),cfg));await assert.rejects(()=>verifyToken('Bearer '+token,{...cfg,AUTH_AUDIENCE:'wrong'}))}finally{globalThis.fetch=old}
 });
 test('enforces owner isolation, explicit aggregate consent, and deletion',async()=>{
  const {token,jwk}=await tokenFor('a'),other=await tokenFor('b');const db=new MockDB();
