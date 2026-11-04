@@ -1,0 +1,22 @@
+name: Wish Garden Private API CI
+on:
+  pull_request:
+    paths:
+      - "api/**"
+      - ".github/workflows/private-api-ci.yml"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Test API syntax and behavior
+        run: |
+          node --check api/src/worker.mjs
+          node --test api/test/*.test.mjs
+      - name: Guard against accidental deployment
+        run: |
+          test "$(grep -c 'workers_dev = false' api/wrangler.toml)" -eq 1
+          ! grep -R -E 'wrangler deploy|wrangler d1 execute' .github/workflows/private-api-ci.yml
