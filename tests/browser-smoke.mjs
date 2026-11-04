@@ -56,6 +56,9 @@ try{
 
   await page.locator('#wish').waitFor({state:'visible'});
   if(hasWebGL)assert.equal(await page.evaluate(()=>window.WishAvatar3D.getPose()),'pray');
+  await page.locator('.garden').scrollIntoViewIfNeeded();
+  await page.screenshot({path:'qa-screenshots/'+viewport.width+'-visitor-prayer.png',fullPage:false});
+  await page.locator('#wish').scrollIntoViewIfNeeded();
   await page.screenshot({path:'qa-screenshots/'+viewport.width+'-prayer.png',fullPage:false});
   await page.locator('#wish').fill('A private sample wish');
   await page.locator('#backToSanctuary').click();
