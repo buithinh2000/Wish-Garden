@@ -3,7 +3,7 @@ Date: 2026-11-05
 Status: public static preview feature, NOT a verified RF service.
 
 ## Owner choice
-Two proposed transmissions per year (30 June and 30 December, 12:00 UTC). The level-2 concept eventually transmits **one aggregate statement** derived from genuine, explicitly opted-in batch topics/counts — never individual wish texts. Target dates are for **planning**, not operator bookings or guarantees.
+Four proposed planning milestones per year (30 March, 30 June, 30 September and 30 December, 12:00 UTC). The level-2 concept could eventually transmit **one aggregate statement** derived from genuine, explicitly opted-in batch topics/counts — never individual wish texts. Target dates are for **planning only**, not operator bookings or guarantees.
 
 ## Shipped without any paid service
 - Bilingual planning card and countdown visible before opening the prayer panel.
