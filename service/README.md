@@ -1,3 +1,14 @@
+## Actual staging checkpoint — 2026-11-05 (Australia/Melbourne)
+- Cloudflare account: `0bebcbf4d6313d266e19b176211b49b2`.
+- Created **exactly one** D1 database: `wish-garden-staging-participation`, ID `b3a9f9b6-49fc-4102-9ddb-f613b4e8935c`, primary location OC (Oceania).
+- Applied `service/schema.sql` and verified `participation` table/index and **0 participation rows**.
+- Created **exactly one** isolated Worker: `wish-garden-staging-api`, using the code from `service/worker.mjs` at the time of deployment and compatibility date 2026-10-19.
+- Worker settings verified: D1 binding `DB`; `ALLOWED_ORIGIN=https://buithinh2000.github.io`; `TURNSTILE_HOSTNAME=buithinh2000.github.io`.
+- **TURNSTILE_SECRET is deliberately absent**. API's participation writes fail closed. No public frontend API URL/sitekey configured, no users registered, no site-wide production launch, no provider radio transmission.
+- Existing `cabinetos-preview` Worker is untouched.
+- This is a staging checkpoint, **not** evidence of production readiness, public opt-in, or signal issuance.
+- Before future deployments, verify the deployed Worker source SHA and ensure source changes are intentionally promoted; no automatic deployment is set up.
+
 # Wish Garden V0.5 — Minimal opt-in API release checklist
 
 **Status:** Source only. No Cloudflare Worker/D1 created, no live user collection, no SpaceSIO submission, no paid service.
