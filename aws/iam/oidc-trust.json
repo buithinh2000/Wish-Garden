@@ -1,0 +1,22 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "WishGardenOnlyProtectedStagingEnvironment",
+      "Effect": "Allow",
+      "Principal": {
+        "Federated": "arn:aws:iam::916004827349:oidc-provider/token.actions.githubusercontent.com"
+      },
+      "Action": "sts:AssumeRoleWithWebIdentity",
+      "Condition": {
+        "StringEquals": {
+          "token.actions.githubusercontent.com:aud": "sts.amazonaws.com",
+          "token.actions.githubusercontent.com:sub": [
+            "repo:buithinh2000/Wish-Garden:environment:wish-garden-aws-staging",
+            "repo:buithinh2000@59677589/Wish-Garden@1444894477:environment:wish-garden-aws-staging"
+          ]
+        }
+      }
+    }
+  ]
+}
