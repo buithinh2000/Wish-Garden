@@ -198,9 +198,8 @@ try{
   assert.equal(await page.locator('#wishRestore').isVisible(),true,'JSON restore action is available');
   const restored=[{id:'backup-test-'+viewport.width,text:'Private restored hope',topic:1,date:'2026-11-05T02:00:00.000Z'}];
   const backup={name:'wish-garden-export.json',mimeType:'application/json',buffer:Buffer.from(JSON.stringify(restored))};
-  await page.locator('#wishBackupFile').setInputFiles(backup);
   page.once('dialog',d=>d.dismiss());
-  await page.locator('#wishBackupFile').dispatchEvent('change');
+  await page.locator('#wishBackupFile').setInputFiles(backup);
   assert.equal(await page.evaluate(()=>localStorage.getItem('wg-preview-local-01')),null,'cancelled import must not write');
   await page.locator('#wishBackupFile').setInputFiles({name:'invalid.json',mimeType:'application/json',buffer:Buffer.from('{bad')});
   assert.match(await page.locator('#wishRestoreNote').textContent(),/Import rejected/,'invalid backup is refused');
