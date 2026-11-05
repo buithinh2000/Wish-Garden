@@ -1,0 +1,118 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "WishGardenSiteCloudFormationOnly",
+      "Effect": "Allow",
+      "Action": [
+        "cloudformation:CreateChangeSet",
+        "cloudformation:DescribeStacks",
+        "cloudformation:DescribeStackEvents",
+        "cloudformation:ListStackResources",
+        "cloudformation:GetTemplate",
+        "cloudformation:UpdateStack",
+        "cloudformation:DescribeStackResources"
+      ],
+      "Resource": "arn:aws:cloudformation:ap-southeast-1:916004827349:stack/wish-garden-staging-site/*"
+    },
+    {
+      "Sid": "WishGardenSiteChangeSets",
+      "Effect": "Allow",
+      "Action": [
+        "cloudformation:DescribeChangeSet",
+        "cloudformation:ExecuteChangeSet",
+        "cloudformation:DeleteChangeSet"
+      ],
+      "Resource": "arn:aws:cloudformation:ap-southeast-1:916004827349:changeSet/*/*"
+    },
+    {
+      "Sid": "WishGardenSiteTemplateValidation",
+      "Effect": "Allow",
+      "Action": [
+        "cloudformation:ValidateTemplate"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Sid": "WishGardenSiteBucketOnly",
+      "Effect": "Allow",
+      "Action": [
+        "s3:CreateBucket",
+        "s3:GetBucketLocation",
+        "s3:ListBucket",
+        "s3:GetBucketPolicy",
+        "s3:PutBucketPolicy",
+        "s3:GetBucketVersioning",
+        "s3:PutBucketVersioning",
+        "s3:GetEncryptionConfiguration",
+        "s3:PutEncryptionConfiguration",
+        "s3:GetBucketPublicAccessBlock",
+        "s3:PutBucketPublicAccessBlock",
+        "s3:GetBucketOwnershipControls",
+        "s3:PutBucketOwnershipControls",
+        "s3:GetBucketTagging",
+        "s3:PutBucketTagging"
+      ],
+      "Resource": "arn:aws:s3:::wish-garden-staging-site-916004827349-sg1"
+    },
+    {
+      "Sid": "WishGardenSiteObjectsOnly",
+      "Effect": "Allow",
+      "Action": [
+        "s3:PutObject",
+        "s3:GetObject",
+        "s3:DeleteObject"
+      ],
+      "Resource": "arn:aws:s3:::wish-garden-staging-site-916004827349-sg1/*"
+    },
+    {
+      "Sid": "CreateWishGardenTaggedCloudFrontDistribution",
+      "Effect": "Allow",
+      "Action": [
+        "cloudfront:CreateDistribution"
+      ],
+      "Resource": "*",
+      "Condition": {
+        "StringEquals": {
+          "aws:RequestTag/Project": "Wish-Garden"
+        }
+      }
+    },
+    {
+      "Sid": "CreateWishGardenCloudFrontOAC",
+      "Effect": "Allow",
+      "Action": [
+        "cloudfront:CreateOriginAccessControl"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Sid": "ReadCloudFrontForStackReconciliation",
+      "Effect": "Allow",
+      "Action": [
+        "cloudfront:GetDistribution",
+        "cloudfront:GetDistributionConfig",
+        "cloudfront:GetOriginAccessControl",
+        "cloudfront:GetOriginAccessControlConfig",
+        "cloudfront:ListTagsForResource"
+      ],
+      "Resource": [
+        "arn:aws:cloudfront::916004827349:distribution/*",
+        "arn:aws:cloudfront::916004827349:origin-access-control/*"
+      ]
+    },
+    {
+      "Sid": "TagOnlyWishGardenCloudFrontResources",
+      "Effect": "Allow",
+      "Action": [
+        "cloudfront:TagResource"
+      ],
+      "Resource": "arn:aws:cloudfront::916004827349:distribution/*",
+      "Condition": {
+        "StringEquals": {
+          "aws:RequestTag/Project": "Wish-Garden"
+        }
+      }
+    }
+  ]
+}
