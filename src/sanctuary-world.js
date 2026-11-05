@@ -13,8 +13,21 @@ if(garden){
  canvas.style.touchAction='pan-y';
  garden.prepend(canvas);
  let renderer;
- try{renderer=new THREE.WebGLRenderer({canvas,alpha:false,antialias:true,powerPreference:'high-performance'});}
- catch{canvas.remove();}
+ // A high-performance GPU preference can reject otherwise viable Mac/Chrome contexts.
+ // Try a reduced-cost context before using the independent Canvas2D fallback.
+ const attempts=[
+   {antialias:true,powerPreference:'default'},
+   {antialias:false,powerPreference:'low-power',precision:'mediump'}
+ ];
+ for(const config of attempts){
+   try{
+     renderer=new THREE.WebGLRenderer({canvas,alpha:false,...config,failIfMajorPerformanceCaveat:false});
+     break;
+   }catch(error){
+     window.WishWorldWebGLError=String(error?.message||'WebGL context unavailable').slice(0,180);
+   }
+ }
+ if(!renderer){canvas.remove();}
  if(renderer){
   renderer.setPixelRatio(Math.min(devicePixelRatio||1,1.5));
   renderer.outputColorSpace=THREE.SRGBColorSpace;
@@ -211,7 +224,9 @@ if(garden){
     garden.classList.add('world-ready');
     canvas.dataset.rendered='true';
   }catch(error){
-    ready=false;ro.disconnect();renderer.dispose();canvas.remove();controls.remove();
+    ready=false;
+    window.WishWorldWebGLError=String(error?.message||'WebGL scene initialization failed').slice(0,180);
+    ro.disconnect();renderer.dispose();canvas.remove();controls.remove();
   }
   window.WishWorld3D={getState(){return {ready,azimuth,radius,elevation,walkMode,walkT,meshes:scene.children.filter(x=>x.isMesh).length};},orbit,zoom};
  }
