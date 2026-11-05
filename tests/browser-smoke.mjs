@@ -312,7 +312,16 @@ try{
   // The entire prayer ritual stays inside the same sanctuary and 3D canvas.
   const wishEntry=worldPage.getByRole('link',{name:'Make a private wish in Wish Garden'});
   assert.equal(await wishEntry.isVisible(),true,'prayer entry is visible on desktop and mobile');
+  // A visitor may be looking away from the temple; the ritual reorients
+  // them to the shrine and returns them to their exact earlier view.
+  await worldPage.locator('#worldOptions').click();
+  await worldPage.locator('#worldRight').click();
+  const beforeRitual=await worldPage.evaluate(()=>window.WishWorld3D.getState());
   await wishEntry.click();
+  const focusedRitual=await worldPage.evaluate(()=>window.WishWorld3D.getState());
+  assert.equal(focusedRitual.ritualFocus,true,'prayer moves attention to the sanctuary altar');
+  assert.notEqual(focusedRitual.azimuth,beforeRitual.azimuth,'prayer camera reorients to altar');
+  assert.equal(await worldPage.locator('#worldControls').isVisible(),false,'exploration controls disappear during prayer');
   assert.equal(new URL(worldPage.url()).pathname.endsWith('/world.html'),true,'prayer does not exit 3D world');
   assert.equal(await worldPage.locator('#sanctuary3d').isVisible(),true,'3D sanctuary remains behind ritual');
   assert.equal(await worldPage.locator('#ritualPanel').isVisible(),true,'in-scene prayer form opens');
@@ -335,6 +344,11 @@ try{
   assert.equal((await worldPage.evaluate(()=>window.WishInWorldRitual.getState())).stored,0,'unsaved prayers are not persisted by default');
   assert.equal(await worldPage.locator('#sanctuary3d').isVisible(),true,'renderer stays visible after release');
   await worldPage.locator('#ritualReturn').click();
+  const afterRitual=await worldPage.evaluate(()=>window.WishWorld3D.getState());
+  assert.equal(afterRitual.ritualFocus,false,'ritual focus is released');
+  assert.equal(afterRitual.azimuth,beforeRitual.azimuth,'visitor previous camera angle restored on return');
+  assert.equal(afterRitual.radius,beforeRitual.radius,'visitor previous distance restored on return');
+  assert.equal(await worldPage.locator('#worldControls').isVisible(),true,'optional controls restore after ritual');
   assert.equal(await worldPage.locator('#ritualPanel').isVisible(),false,'ritual closes back to same sanctuary');
   assert.equal(new URL(worldPage.url()).pathname.endsWith('/world.html'),true,'no navigation throughout wish');
   await worldPage.close();
@@ -351,6 +365,7 @@ try{
   const memoryEntry=memoryPage.getByRole('link',{name:'View my saved wishes on this device'});
   assert.equal(await memoryEntry.isVisible(),true,'memories entry visible');
   await memoryEntry.click();
+  assert.equal((await memoryPage.evaluate(()=>window.WishWorld3D.getState())).ritualFocus,true,'saved wishes also open around the shrine');
   assert.equal(new URL(memoryPage.url()).pathname.endsWith('/world.html'),true,'My wishes stays in sanctuary');
   assert.equal(await memoryPage.locator('#ritualMemories').isVisible(),true,'saved wishes open in-scene');
   assert.match(await memoryPage.locator('#ritualMemoryList').textContent(),/My saved private hope/,'local wish visible');
