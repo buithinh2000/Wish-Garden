@@ -295,6 +295,22 @@ if(garden){
   );
   wishLight.visible=false;scene.add(wishLight);
   let wishLightUntil=0,wishLightStart=0,wishReleaseCount=0;
+  // Preserve the user's exploration point, but place the altar in view
+  // during prayer. No teleport/game flow, GPS, tracking or scene reload.
+  let ritualCamera=null;
+  function focusShrine(){
+    if(ritualCamera)return;
+    ritualCamera={azimuth,radius,elevation,targetZ,walkMode,walkT,walkDistance,walkLateral};
+    azimuth=-.16;radius=21;elevation=.14;targetZ=-18;
+    walkMode=false;walkT=0;transitionStart=0;
+    setHint();schedule();
+  }
+  function restoreView(){
+    if(!ritualCamera)return;
+    ({azimuth,radius,elevation,targetZ,walkMode,walkT,walkDistance,walkLateral}=ritualCamera);
+    ritualCamera=null;transitionStart=0;
+    setHint();schedule();
+  }
   function bless(){
     wishReleaseCount++;
     wishLightStart=performance.now();
@@ -380,6 +396,6 @@ if(garden){
     window.WishWorldWebGLError=String(error?.message||'WebGL scene initialization failed').slice(0,180);
     ro.disconnect();renderer.dispose();canvas.remove();controls.remove();
   }
-  window.WishWorld3D={getState(){return {ready,azimuth,radius,elevation,walkMode,walkT,walkDistance,walkLateral,visitorSource,visitorVisible:!!visitorModel,visitorAnimated:!!visitorMixer,visitorAnimationTime,daylight:window.WishDaylight?.getState().phase||'night',natureSource,natureTreeCount,sanctuarySource,sanctuaryVisible,wishLightVisible:wishLight.visible,wishReleaseCount,meshes:scene.children.filter(x=>x.isMesh).length};},orbit,zoom,bless};
+  window.WishWorld3D={getState(){return {ready,azimuth,radius,elevation,walkMode,walkT,walkDistance,walkLateral,visitorSource,visitorVisible:!!visitorModel,visitorAnimated:!!visitorMixer,visitorAnimationTime,daylight:window.WishDaylight?.getState().phase||'night',natureSource,natureTreeCount,sanctuarySource,sanctuaryVisible,wishLightVisible:wishLight.visible,wishReleaseCount,ritualFocus:!!ritualCamera,meshes:scene.children.filter(x=>x.isMesh).length};},orbit,zoom,bless,focusShrine,restoreView};
  }
 }
