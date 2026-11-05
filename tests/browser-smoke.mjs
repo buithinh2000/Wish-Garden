@@ -68,6 +68,10 @@ try{
   const explored=await page.evaluate(()=>window.WishWorld3D.getState());
   assert.equal(explored.walkMode,true,'Explore enters an actual eye-level 3D view');
   assert.equal(await page.locator('#worldForward').isVisible(),true,'walk controls appear inside Explore');
+  if(viewport.width<650){
+    const buttons=await page.locator('#worldControls button:visible').evaluateAll(nodes=>nodes.map(el=>{const r=el.getBoundingClientRect();return {left:r.left,right:r.right,top:r.top,bottom:r.bottom}}));
+    assert.ok(buttons.every(r=>r.left>=0&&r.right<=viewport.width&&r.top>=0&&r.bottom<=viewport.height),'WebGL walking buttons fit mobile viewport');
+  }
   const firstStep=explored.walkDistance;
   await page.locator('#worldForward').click();
   const stepped=await page.evaluate(()=>window.WishWorld3D.getState());
@@ -295,6 +299,10 @@ try{
   await fallbackPage.locator('#softwareExplore').click();
   assert.equal((await fallbackPage.evaluate(()=>window.WishSoftware3D.getState())).walk,true,'software Explore enters near-eye view');
   assert.equal(await fallbackPage.locator('#softwareForward').isVisible(),true,'Software Mode exposes walk button in Explore');
+  if(viewport.width<650){
+    const buttonRects=await fallbackPage.locator('#softwareControls button:visible').evaluateAll(nodes=>nodes.map(el=>{const r=el.getBoundingClientRect();return {left:r.left,right:r.right,top:r.top,bottom:r.bottom}}));
+    assert.ok(buttonRects.every(r=>r.left>=0&&r.right<=viewport.width&&r.top>=0&&r.bottom<=viewport.height),'software controls stay onscreen for mobile walking');
+  }
   const softwareFirst=await fallbackPage.evaluate(()=>window.WishSoftware3D.getState().walkDistance);
   await fallbackPage.locator('#softwareForward').click();
   assert.ok((await fallbackPage.evaluate(()=>window.WishSoftware3D.getState().walkDistance))>softwareFirst,'software camera advances on the real path');
