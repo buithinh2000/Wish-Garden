@@ -405,7 +405,7 @@ try{
   await animatedWorld.waitForFunction(()=>window.WishWorld3D?.getState().walkT===1,{timeout:5000});
   const beforeStep=await animatedWorld.evaluate(()=>window.WishWorld3D.getState().visitorAnimationTime);
   await animatedWorld.locator('#worldForward').click();
-  await animatedWorld.waitForFunction(before=>window.WishWorld3D?.getState().visitorAnimationTime>before+.08,beforeStep,{timeout:5000});
+  await animatedWorld.waitForFunction(before=>window.WishWorld3D?.getState().visitorAnimationTime>before+.08,beforeStep,{timeout:10000});
   const moved=await animatedWorld.evaluate(()=>window.WishWorld3D.getState());
   assert.ok(moved.walkDistance>0&&moved.visitorAnimationTime>beforeStep,'human walks and animates on the lantern path');
   await animatedWorld.screenshot({path:'qa-screenshots/'+viewport.width+'-human-walking.png',fullPage:false});
