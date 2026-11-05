@@ -33,4 +33,4 @@
 @media(prefers-reduced-motion:reduce){#ritualLight.rise{animation:none;display:none}}
 @media(max-width:650px){#ritualPanel{top:52%;padding:21px 19px;max-height:calc(100dvh - 30px)}#ritualPanel .ritual-lamp{font-size:25px;margin:2px 0 6px}#ritualPanel h2{font-size:26px}#ritualPanel textarea{min-height:82px}#ritualPanel .ritual-privacy{margin:8px 0}}
 
-@media(max-width:650px){#ritualPanel{top:15px;transform:translateX(-50%);height:calc(100dvh - 30px);max-height:none;overflow-y:auto;overscroll-behavior:contain}#ritualPanel #ritualRelease{margin-bottom:15px}}
+@media(max-width:650px){#ritualPanel{top:auto;bottom:10px;transform:translateX(-50%);height:auto;max-height:min(68dvh,600px);overflow-y:auto;overscroll-behavior:contain}#ritualPanel #ritualRelease{margin-bottom:12px}#ritualPanel .ritual-lamp{margin:0 0 4px}#ritualPanel .ritual-note{margin-bottom:8px}}
