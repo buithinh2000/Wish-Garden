@@ -90,7 +90,7 @@ body.world-ready #showRenderDetails{display:none}
 (()=>{
 'use strict';
 const garden=document.querySelector('.garden'),status=document.querySelector('#worldStatus');
-let active=false,canvas=null,ctx=null,controls=null,yaw=0.3,zoom=1,walk=false,walkDistance=0,drag=false,lastX=0;
+let active=false,canvas=null,ctx=null,controls=null,yaw=0.3,zoom=1,walk=false,walkDistance=0,walkPhase=0,visitorDrawn=false,drag=false,lastX=0;
 const clamp=(n,a,b)=>Math.min(b,Math.max(a,n));
 const faces=[];
 const v=(x,y,z)=>[x,y,z];
@@ -219,6 +219,29 @@ function paint(){
  const project=p=>{const q=p.map((x,i)=>x-camera[i]);const dot=a=>a.reduce((sum,n,i)=>sum+n*q[i],0);const z=dot(forward);if(z<.2)return null;return [w/2+dot(right)*focal/z,h*.57-dot(up)*focal/z,z]};
  const drawn=faces.map(face=>{const pts=face.points.map(project);return pts.every(Boolean)?{...face,pts,depth:pts.reduce((a,p)=>a+p[2],0)/pts.length}:null}).filter(Boolean).sort((a,b)=>b.depth-a.depth);
  for(const face of drawn){ctx.beginPath();face.pts.forEach((p,i)=>i?ctx.lineTo(p[0],p[1]):ctx.moveTo(p[0],p[1]));ctx.closePath();ctx.fillStyle=face.color;ctx.fill();ctx.lineWidth=.5;ctx.strokeStyle=face.edge;ctx.stroke();}
+ // A clear visitor silhouette in CPU perspective mode too: without this,
+ // browsers that block WebGL show an empty sanctuary despite camera controls.
+ // Project every joint through the same 3D camera as pavilion and lanterns.
+ const avatarZ=walk?8-walkDistance:-9;
+ const foot=project(v(0,0,avatarZ));
+ const crown=project(v(0,2.9,avatarZ));
+ visitorDrawn=!!(foot&&crown);
+ if(visitorDrawn){
+   const px=Math.max(9,Math.abs(foot[1]-crown[1])/2.9);
+   const p=(x,y)=>project(v(x,y,avatarZ));
+   const stroke=(a,b,width,color)=>{const a1=p(...a),b1=p(...b);if(!a1||!b1)return;ctx.beginPath();ctx.moveTo(a1[0],a1[1]);ctx.lineTo(b1[0],b1[1]);ctx.lineCap='round';ctx.lineWidth=Math.max(2,width*px);ctx.strokeStyle=color;ctx.stroke();};
+   const gait=walk?Math.sin(walkPhase)*.19:0;
+   // Legs, coat, sleeves, neck, face and hair give an unmistakable human form.
+   stroke([-.26,1.17],[-.29+gait,.12],.27,'#302d3b');
+   stroke([.26,1.17],[.29-gait,.12],.27,'#302d3b');
+   stroke([0,1.72],[0,1.08],.91,'#76617b');
+   stroke([-.33,1.94],[-.61,1.10],.23,'#76617b');
+   stroke([.33,1.94],[.61,1.10],.23,'#76617b');
+   stroke([-.61,1.10],[-.61,.92],.16,'#c99676');
+   stroke([.61,1.10],[.61,.92],.16,'#c99676');
+   stroke([0,2.13],[0,2.30],.24,'#c99676');
+   const head=p(0,2.56);if(head){ctx.beginPath();ctx.ellipse(head[0],head[1],px*.37,px*.47,0,0,Math.PI*2);ctx.fillStyle='#c99676';ctx.fill();ctx.beginPath();ctx.ellipse(head[0],head[1]-px*.28,px*.37,px*.23,0,Math.PI*2);ctx.fillStyle='#332c32';ctx.fill();}
+ }
  // Bloom around the actual three-dimensional positions of path lanterns.
  for(const side of [-1,1])for(let j=0;j<8;j++){
    const p=project(v(side*3.9,2.85,16-j*4.3));if(!p)continue;
@@ -241,7 +264,7 @@ function start(){
  controls=document.createElement('div');controls.id='softwareControls';
  controls.innerHTML='<button type="button" id="softwareExplore" aria-pressed="false">Explore</button><button type="button" aria-label="Rotate left">↶ Turn left</button><button type="button" aria-label="Move closer">＋ Closer</button><button type="button" aria-label="Move further">－ Back</button><button type="button" aria-label="Rotate right">Turn right ↷</button><button type="button" id="softwareForward" aria-label="Walk forward along the lantern path" hidden>↑ Walk</button><button type="button" id="softwareBack" aria-label="Walk backward along the lantern path" hidden>↓ Back</button>';
  const buttons=[...controls.querySelectorAll('button')];
- function walkStep(delta){if(!walk)return;walkDistance=clamp(walkDistance+delta,0,23);paint();}
+ function walkStep(delta){if(!walk)return;walkDistance=clamp(walkDistance+delta,0,23);walkPhase+=.95;paint();}
  function toggleWalk(){walk=!walk;buttons[0].textContent=walk?'Overview':'Explore';buttons[0].setAttribute('aria-pressed',String(walk));buttons[5].hidden=!walk;buttons[6].hidden=!walk;paint();}
  buttons[0].onclick=toggleWalk;
  buttons[5].onclick=()=>walkStep(1.8);buttons[6].onclick=()=>walkStep(-1.8);
@@ -289,7 +312,7 @@ function start(){
  document.getElementById('closeRenderDetails').addEventListener('click',()=>{panel.hidden=true;details.setAttribute('aria-expanded','false');});
  window.WishRenderDiagnostic={getState:()=>({gl2,gl1,reason,assetStatus,mode:'software'})};
 
- window.WishSoftware3D={getState:()=>({active,yaw,zoom,walk,walkDistance,faces:faces.length})};
+ window.WishSoftware3D={getState:()=>({active,yaw,zoom,walk,walkDistance,visitorDrawn,faces:faces.length})};
  paint();
 }
 function check(){
