@@ -52,7 +52,9 @@ jobs:
           mv assets/visitor-human-small.glb assets/visitor-human.glb
           test "$(wc -c < assets/visitor-human.glb)" -lt 12000000
           npx esbuild src/visitor-rig.js --bundle --format=iife --target=es2020 --minify --outfile=assets/visitor-rig.bundle.js
+          npx esbuild src/sanctuary-world.js --bundle --format=iife --target=es2020 --minify --outfile=assets/sanctuary-world.bundle.js
           test -s assets/visitor-rig.bundle.js
+          test -s assets/sanctuary-world.bundle.js
       - name: Run desktop and mobile Chromium smoke
         run: node tests/browser-smoke.mjs
       - name: Archive desktop and mobile screenshots
