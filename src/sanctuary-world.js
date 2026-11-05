@@ -106,7 +106,36 @@ if(garden){
     }
   }
   const trees=[[-13,-9,1.3],[15,-9,1.2],[-20,-22,1.55],[22,-30,1.5],[-11,16,1.1],[12,19,1.4],[-24,6,1.5],[27,10,1.4],[-31,-31,1.7],[32,-43,1.8],[-24,32,1.4],[24,35,1.4]];
-  trees.forEach(([x,z,s],i)=>tree(x,z,s,i*.93));
+  const proceduralTrees=[];
+  function addFallbackTree(x,z,scale,seed){
+    const before=scene.children.length;
+    tree(x,z,scale,seed);
+    proceduralTrees.push(scene.children[before]);
+  }
+  trees.forEach(([x,z,scale],i)=>addFallbackTree(x,z,scale,i*.93));
+  // Kenney Nature Kit 2.1, CC0: load real authored GLB trees rather than
+  // generating canopy meshes. Keep the local procedural trees only on errors.
+  let natureSource='fallback',natureTreeCount=0;
+  const natureLoader=new GLTFLoader();
+  Promise.all(['tree_default','tree_oak'].map(name=>new Promise((resolve,reject)=>{
+    natureLoader.load('assets/nature/'+name+'.glb',gltf=>resolve(gltf.scene),undefined,reject);
+  }))).then(models=>{
+    const replacements=[];
+    for(let i=0;i<trees.length;i++){
+      const [x,z,scale]=trees[i],asset=models[i%models.length].clone(true);
+      const box=new THREE.Box3().setFromObject(asset),height=box.max.y-box.min.y;
+      if(!Number.isFinite(height)||height<=0)throw Error('Invalid nature GLB bounds');
+      const finalScale=(7.5*scale)/height;
+      asset.scale.multiplyScalar(finalScale);
+      asset.position.set(x-(box.min.x+box.max.x)*.5*finalScale,-box.min.y*finalScale,z-(box.min.z+box.max.z)*.5*finalScale);
+      asset.rotation.y=i*.43;replacements.push(asset);
+    }
+    for(const old of proceduralTrees)scene.remove(old);
+    for(const replacement of replacements)scene.add(replacement);
+    natureSource='kenney-cc0-glb';natureTreeCount=replacements.length;
+    schedule();
+  }).catch(()=>{natureSource='fallback';schedule();});
+  
   // Stars provide parallax and clearly move with the camera, unlike CSS imagery.
   const stars=[];
   for(let i=0;i<100;i++){
@@ -291,6 +320,6 @@ if(garden){
     window.WishWorldWebGLError=String(error?.message||'WebGL scene initialization failed').slice(0,180);
     ro.disconnect();renderer.dispose();canvas.remove();controls.remove();
   }
-  window.WishWorld3D={getState(){return {ready,azimuth,radius,elevation,walkMode,walkT,walkDistance,walkLateral,visitorSource,visitorVisible:!!visitorModel,visitorAnimated:!!visitorMixer,visitorAnimationTime,daylight:window.WishDaylight?.getState().phase||'night',meshes:scene.children.filter(x=>x.isMesh).length};},orbit,zoom};
+  window.WishWorld3D={getState(){return {ready,azimuth,radius,elevation,walkMode,walkT,walkDistance,walkLateral,visitorSource,visitorVisible:!!visitorModel,visitorAnimated:!!visitorMixer,visitorAnimationTime,daylight:window.WishDaylight?.getState().phase||'night',natureSource,natureTreeCount,meshes:scene.children.filter(x=>x.isMesh).length};},orbit,zoom};
  }
 }
