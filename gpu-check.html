@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Wish Garden · Graphics Check</title>
+<style>
+*{box-sizing:border-box}body{margin:0;min-height:100vh;background:#071b24;color:#f5e8d2;font:16px/1.6 system-ui,sans-serif;padding:clamp(18px,5vw,55px)}main{max-width:800px;margin:auto}h1{font:normal clamp(32px,6vw,55px)/1.1 Georgia,serif}p{max-width:65ch}a{color:#e7c68f}canvas{display:block;width:100%;max-height:340px;aspect-ratio:16/7;background:#112c35;border:1px solid #698388;border-radius:16px}section{margin:18px 0;padding:18px;background:#0e2a35;border:1px solid #3b5860;border-radius:16px}button{padding:12px 16px;border:1px solid #ddc08a;border-radius:11px;background:#dec08c;color:#102530;font-weight:700;cursor:pointer}button:focus-visible,a:focus-visible{outline:3px solid #fff}#result{white-space:pre-wrap;overflow-wrap:anywhere;font:14px/1.7 ui-monospace,monospace}strong{color:#a3e0d4}
+</style></head><body><main>
+<a href="./world.html">← Back to Wish Garden</a>
+<h1>Can this browser render 3D?</h1>
+<p>This isolated check tests WebGL directly, without the Wish Garden 3D engine or its models. A rotating colored triangle means WebGL is actually drawing on your device. All tests stay in your browser.</p>
+<canvas id="gpuCanvas" width="900" height="394" aria-label="WebGL rendering check"></canvas>
+<section><h2>Graphics result</h2><div id="result" role="status">Checking graphics…</div><p><button id="retry" type="button">Run check again</button> <button id="copy" type="button">Copy result</button></p></section>
+<p>WebGL may be disabled by Chrome settings, graphics drivers, or an extension. This check cannot prove which setting caused it, but separates a GPU problem from a Wish Garden engine problem.</p>
+</main>
+<script>
+(function(){
+ const canvas=document.getElementById('gpuCanvas'),out=document.getElementById('result');
+ const safe=x=>String(x??'').slice(0,240);
+ let frame=0,gl=null,detail='',status='not-run';
+ function report(text){detail=text;out.textContent=text;}
+ function shader(type,source){
+   const sh=gl.createShader(type);gl.shaderSource(sh,source);gl.compileShader(sh);
+   if(!gl.getShaderParameter(sh,gl.COMPILE_STATUS))throw Error('Shader compile: '+safe(gl.getShaderInfoLog(sh)));
+   return sh;
+ }
+ function run(){
+   cancelAnimationFrame(frame);gl=null;status='checking';
+   const attrs={alpha:false,antialias:false,failIfMajorPerformanceCaveat:false,powerPreference:'default'};
+   let kind='none';
+   try{gl=canvas.getContext('webgl2',attrs);if(gl)kind='WebGL 2';else{gl=canvas.getContext('webgl',attrs);if(gl)kind='WebGL 1';}}
+   catch(err){report('WebGL context error: '+safe(err.message));status='blocked';return;}
+   if(!gl){status='blocked';report('WebGL context: UNAVAILABLE\nThe browser cannot create WebGL 1 or 2. Wish Garden will need Software Mode.');return;}
+   try{
+     const vs=shader(gl.VERTEX_SHADER,'attribute vec2 position; uniform float rotation; void main(){float c=cos(rotation),s=sin(rotation);vec2 p=vec2(c*position.x-s*position.y,s*position.x+c*position.y);gl_Position=vec4(p,0.,1.);}');
+     const fs=shader(gl.FRAGMENT_SHADER,'precision mediump float;void main(){gl_FragColor=vec4(.98,.72,.42,1.);}');
+     const program=gl.createProgram();gl.attachShader(program,vs);gl.attachShader(program,fs);gl.linkProgram(program);
+     if(!gl.getProgramParameter(program,gl.LINK_STATUS))throw Error('Shader link: '+safe(gl.getProgramInfoLog(program)));
+     const data=new Float32Array([0,.55,-.5,-.45,.5,-.45]),buf=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,buf);gl.bufferData(gl.ARRAY_BUFFER,data,gl.STATIC_DRAW);
+     const a=gl.getAttribLocation(program,'position'),u=gl.getUniformLocation(program,'rotation');
+     if(a<0||u===null)throw Error('Missing shader variables');
+     gl.useProgram(program);gl.enableVertexAttribArray(a);gl.vertexAttribPointer(a,2,gl.FLOAT,false,0,0);
+     const vendor=safe(gl.getParameter(gl.VENDOR)),version=safe(gl.getParameter(gl.VERSION));
+     status='rendering';report('GPU DRAW: PASS\nContext: '+kind+'\nVendor: '+vendor+'\nVersion: '+version+'\nIf Wish Garden still uses Software Mode, the fault is likely in its 3D engine or asset loading.');
+     function draw(ms){if(status!=='rendering')return;gl.viewport(0,0,canvas.width,canvas.height);gl.clearColor(.05,.14,.2,1);gl.clear(gl.COLOR_BUFFER_BIT);gl.uniform1f(u,ms*.0006);gl.drawArrays(gl.TRIANGLES,0,3);frame=requestAnimationFrame(draw);}
+     frame=requestAnimationFrame(draw);
+   }catch(err){status='error';report(kind+' exists, but DRAW FAILED: '+safe(err.message));}
+ }
+ document.getElementById('retry').addEventListener('click',run);
+ document.getElementById('copy').addEventListener('click',()=>navigator.clipboard?.writeText(detail));
+ window.WishGpuProbe={getState:()=>({status,detail}),rerun:run};
+ run();
+})();
+</script></body></html>
