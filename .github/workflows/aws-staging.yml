@@ -49,11 +49,28 @@ jobs:
       - name: Verify AWS account without long-lived keys
         run: |
           test "$(aws sts get-caller-identity --query Account --output text)" = "916004827349"
-      - name: Deploy isolated site stack
+      - name: Deploy isolated site stack with failure diagnostics
         run: |
-          aws cloudformation deploy --stack-name wish-garden-staging-site \
+          if aws cloudformation deploy --stack-name wish-garden-staging-site \
             --template-file aws/cloudformation/site.yaml --no-fail-on-empty-changeset \
-            --tags Project=Wish-Garden Environment=staging
+            --tags Project=Wish-Garden Environment=staging; then
+            echo "Wish Garden site stack deployment command completed"
+          else
+            echo "::error::Site stack deploy failed. Inspect CloudFormation errors below before changing IAM."
+            echo "::group::Stack status (read-only)"
+            aws cloudformation describe-stacks --stack-name wish-garden-staging-site \
+              --query 'Stacks[].{Status:StackStatus,Reason:StackStatusReason,Id:StackId}' --output json || true
+            echo "::endgroup::"
+            echo "::group::Change sets and exact failure reasons (read-only)"
+            aws cloudformation list-change-sets --stack-name wish-garden-staging-site \
+              --query 'Summaries[].{Name:ChangeSetName,Status:Status,Reason:StatusReason}' --output json || true
+            echo "::endgroup::"
+            echo "::group::Recent stack events (read-only)"
+            aws cloudformation describe-stack-events --stack-name wish-garden-staging-site \
+              --query 'StackEvents[0:12].{Resource:LogicalResourceId,Status:ResourceStatus,Reason:ResourceStatusReason}' --output table || true
+            echo "::endgroup::"
+            exit 1
+          fi
       - name: Deploy isolated read-only API stack
         if: github.event.inputs.mode == 'deploy'
         run: |
