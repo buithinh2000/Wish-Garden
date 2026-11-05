@@ -316,11 +316,16 @@ try{
   assert.equal(new URL(worldPage.url()).pathname.endsWith('/world.html'),true,'prayer does not exit 3D world');
   assert.equal(await worldPage.locator('#sanctuary3d').isVisible(),true,'3D sanctuary remains behind ritual');
   assert.equal(await worldPage.locator('#ritualPanel').isVisible(),true,'in-scene prayer form opens');
+  const ritualStyle=await worldPage.locator('#ritualPanel').evaluate(el=>({position:getComputedStyle(el).position,z:Number(getComputedStyle(el).zIndex)}));
+  assert.equal(ritualStyle.position,'fixed','ritual stylesheet loads as CSS and stays over the scene');
+  assert.ok(ritualStyle.z>=40,'ritual content must sit over WebGL canvas');
+  await worldPage.screenshot({path:'qa-screenshots/'+viewport.width+'-in-world-prayer.png',fullPage:false});
   assert.equal(await worldPage.locator('#ritualWords').inputValue(),'','private words start blank');
   assert.equal(await worldPage.locator('#ritualRelease').isDisabled(),true,'cannot release empty words');
   await worldPage.locator('#ritualWords').fill('A quiet light from this garden');
   await worldPage.locator('#ritualRelease').click();
   assert.equal(await worldPage.locator('#ritualComplete').isVisible(),true,'release ends with a ritual closure');
+  await worldPage.screenshot({path:'qa-screenshots/'+viewport.width+'-in-world-release.png',fullPage:false});
   assert.equal(await worldPage.locator('#ritualLight').isVisible(),true,'symbolic light rises within same sanctuary');
   assert.equal((await worldPage.evaluate(()=>window.WishInWorldRitual.getState())).stored,0,'unsaved prayers are not persisted by default');
   assert.equal(await worldPage.locator('#sanctuary3d').isVisible(),true,'renderer stays visible after release');
