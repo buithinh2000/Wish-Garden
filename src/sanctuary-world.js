@@ -143,7 +143,7 @@ if(garden){
   // The standalone world previously had no human at all. Reuse the first-party
   // bundled civilian visitor, with a lightweight mannequin only if asset fails.
   const visitorGroup=new THREE.Group();scene.add(visitorGroup);
-  let visitorSource='loading',visitorModel=null,visitorMixer=null;
+  let visitorSource='loading',visitorModel=null,visitorMixer=null,visitorAnimationTime=0,walkAnimateUntil=0,lastRenderTime=0;
   function createVisitorFallback(){
     const clothing=mat(0x745a75),skin=mat(0xc79978),boots=mat(0x3b343e);
     const body=new THREE.Group();
@@ -166,7 +166,7 @@ if(garden){
     human.position.set(-center.x*scale,-bounds.min.y*scale,-center.z*scale);
     human.rotation.y=Math.PI;
     visitorGroup.add(human);visitorModel=human;visitorSource='civilian-glb';
-    if(gltf.animations.length){visitorMixer=new THREE.AnimationMixer(human);const clip=gltf.animations.find(a=>/walk/i.test(a.name))||gltf.animations[0];visitorMixer.clipAction(clip).play();}
+    if(gltf.animations.length){visitorMixer=new THREE.AnimationMixer(human);const clip=gltf.animations.find(a=>/walk/i.test(a.name))||gltf.animations[0];visitorMixer.clipAction(clip).play();visitorMixer.update(0);}
     schedule();
   },undefined,()=>{createVisitorFallback();schedule();});
   // Camera orbit plus a walkable, bounded path toward the pavilion.
@@ -221,19 +221,23 @@ if(garden){
     else transitionStart=0;
   }
   setHint();document.getElementById('lang')?.addEventListener('click',()=>queueMicrotask(setHint));
-  function render(){
+  function render(now=performance.now()){
     raf=0;if(!ready||document.hidden)return;
+    const moving=walkMode&&now<walkAnimateUntil&&!motion.matches;
+    if(visitorMixer&&moving){const elapsed=lastRenderTime?Math.min(.06,Math.max(0,(now-lastRenderTime)/1000)):0;visitorMixer.update(elapsed);visitorAnimationTime+=elapsed;}
+    lastRenderTime=now;
     const width=Math.max(1,garden.clientWidth),height=Math.max(1,garden.clientHeight);
     if(canvas.width!==Math.round(width*renderer.getPixelRatio())||canvas.height!==Math.round(height*renderer.getPixelRatio())){
       renderer.setSize(width,height,false);
       camera.aspect=width/height;camera.updateProjectionMatrix();
     }
     positionCamera();renderer.render(scene,camera);
+    if(moving) schedule();
   }
   function schedule(){if(!raf&&ready&&!document.hidden)raf=requestAnimationFrame(render);}
   function orbit(delta){azimuth=clamp(azimuth+delta,-1.32,1.32);schedule();}
   function zoom(delta){if(walkMode){walkTo(false);}radius=clamp(radius+delta,17,47);schedule();}
-  function moveOnPath(delta){if(!walkMode)return;walkDistance=clamp(walkDistance+delta,0,23);schedule();}
+  function moveOnPath(delta){if(!walkMode)return;const next=clamp(walkDistance+delta,0,23);if(next!==walkDistance){walkDistance=next;walkAnimateUntil=performance.now()+720;lastRenderTime=0;}schedule();}
   function strafe(delta){if(!walkMode)return;walkLateral=clamp(walkLateral+delta,-1.15,1.15);schedule();}
   canvas.addEventListener('pointerdown',e=>{dragging=true;lastX=e.clientX;canvas.setPointerCapture(e.pointerId);});
   canvas.addEventListener('pointermove',e=>{if(!dragging)return;const dx=e.clientX-lastX;lastX=e.clientX;orbit(dx*.006);});
@@ -277,6 +281,6 @@ if(garden){
     window.WishWorldWebGLError=String(error?.message||'WebGL scene initialization failed').slice(0,180);
     ro.disconnect();renderer.dispose();canvas.remove();controls.remove();
   }
-  window.WishWorld3D={getState(){return {ready,azimuth,radius,elevation,walkMode,walkT,walkDistance,walkLateral,visitorSource,visitorVisible:!!visitorModel,meshes:scene.children.filter(x=>x.isMesh).length};},orbit,zoom};
+  window.WishWorld3D={getState(){return {ready,azimuth,radius,elevation,walkMode,walkT,walkDistance,walkLateral,visitorSource,visitorVisible:!!visitorModel,visitorAnimated:!!visitorMixer,visitorAnimationTime,meshes:scene.children.filter(x=>x.isMesh).length};},orbit,zoom};
  }
 }
