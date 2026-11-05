@@ -8,6 +8,13 @@
 - This change alone **does not deploy any AWS resource**. No AWS direct service connector or Wish Garden-specific GitHub IAM role has been verified.
 - Application's prior Cloudflare Turnstile client is replaced with an **AWS-only disabled-by-default participation panel**. No Cloudflare script/token runs.
 
+## Current verified staging checkpoint (2026-11-05)
+- The **website-only** CloudFormation stack `wish-garden-staging-site` reached `CREATE_COMPLETE` in account `916004827349` (Singapore); frontend upload-only workflow succeeded for commit `0620ecc`. AWS preview: https://d3vvpfv5t9ws76.cloudfront.net/.
+- The API stack `wish-garden-staging-api` is **not deployed**. Never claim remote registration, revocation or RF transmission is live.
+- The backend template now explicitly allows **only** the exact CloudFront origin above, not the prior GitHub Pages origin. Even if `REGISTRATION_ENABLED=true` is set manually, this Python handler refuses all POST/PUT/PATCH/DELETE writes.
+- Site-only IAM role `WishGardenGitHubStagingDeployRole` does **not** have API-stack provisioning permissions. Do not add broad permissions or run `mode=deploy` without a separate review of its named Lambda IAM role, HTTP API, DynamoDB, costs and a fail-closed read-only smoke test.
+- The next production gate is **read-only API** only, with `GET /api/v1/summary` showing `PLANNING_NOT_TRANSMITTED`, no real participation counts, and all registration methods returning 503. Consent collection and operator broadcasts remain separate future gates.
+
 ## Expected AWS components
 - CloudFormation stack `wish-garden-staging-site`: private, encrypted, versioned S3 bucket `wish-garden-staging-site-916004827349-sg1`; CloudFront with signed origin access (OAC), HTTPS preview and conservative price class.
 - Stack `wish-garden-staging-api`: API Gateway HTTP endpoint + small Python 3.12 Lambda + isolated DynamoDB pay-per-request table `wish-garden-staging-participation-916004827349`, with no registrations enabled.
