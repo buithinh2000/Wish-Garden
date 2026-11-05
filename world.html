@@ -170,6 +170,7 @@ function start(){
  canvas.addEventListener('pointerup',()=>drag=false);canvas.addEventListener('pointercancel',()=>drag=false);
  window.addEventListener('resize',paint);
  status.textContent='INTERACTIVE 3D PERSPECTIVE · SOFTWARE MODE (WEBGL NOT AVAILABLE)';
+ window.WishSoftware3D={getState:()=>({active,yaw,zoom,faces:faces.length})};
  paint();
 }
 function check(){
