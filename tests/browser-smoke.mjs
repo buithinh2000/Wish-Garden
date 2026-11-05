@@ -28,6 +28,17 @@ try{
   page.on('pageerror',e=>{errors.push(e.message);console.error('PAGE JS ERROR:',e.stack||e.message);});
   page.on('console',m=>{if(m.type()==='error'||m.type()==='warning'||m.text().startsWith('Wish Garden Maya bone roster:'))console.log('BROWSER CONSOLE:',m.type(),m.text());});
   await page.goto('http://127.0.0.1:'+port+'/');
+  // Follow the same homepage-to-3D path a real visitor uses on both screen sizes.
+  const worldEntry=page.getByRole('link',{name:'Open the separate interactive 3D garden'});
+  assert.equal(await worldEntry.isVisible(),true,'3D entry must be discoverable on the homepage');
+  assert.equal(await worldEntry.getAttribute('href'),'./world.html','3D entry must route to the independent world');
+  await worldEntry.click();
+  await page.waitForURL('**/world.html');
+  await page.locator('#worldStatus').waitFor();
+  await page.waitForFunction(()=>document.body.classList.contains('world-ready') || document.body.classList.contains('software-ready'),{timeout:15000});
+  assert.equal(await page.locator('.site-head').isVisible(),true,'independent world has its own navigation');
+  await page.getByRole('link',{name:'Private wishes'}).click();
+  await page.waitForURL(url=>url.pathname.endsWith('/index.html'));
   await page.locator('#hero').waitFor();
   await page.waitForFunction(()=>document.querySelector('.garden')?.classList.contains('rig-ready'),{timeout:15000});
   assert.equal(await page.locator('#visitorRig').isVisible(),true,'rigged 3D model replaces procedural visitor');
