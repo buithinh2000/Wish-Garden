@@ -235,13 +235,26 @@ if(garden){
   }
   const controls=document.createElement('div');controls.id='worldControls';
   controls.innerHTML='<span id="worldHint"></span><button type="button" id="worldForward" aria-label="Walk forward toward the pavilion" hidden>↑</button><button type="button" id="worldBack" aria-label="Walk backward along the lantern path" hidden>↓</button><button type="button" id="worldWalk" aria-label="Walk through the 3D garden">Explore</button><button type="button" id="worldLeft" aria-label="Rotate 3D view left">↶</button><button type="button" id="worldNear" aria-label="Move closer in 3D scene">＋</button><button type="button" id="worldFar" aria-label="Move back in 3D scene">－</button><button type="button" id="worldRight" aria-label="Rotate 3D view right">↷</button>';
+  // The garden is a place for reflection, not a game dashboard.
+  // Keep walking optional; hide technical orbit controls until requested.
+  const viewBtn=document.createElement('button');
+  viewBtn.type='button';viewBtn.id='worldOptions';
+  viewBtn.textContent='View';viewBtn.setAttribute('aria-label','Show garden view controls');
+  viewBtn.setAttribute('aria-expanded','false');
+  controls.prepend(viewBtn);
+  const hideStyle=document.createElement('style');
+  hideStyle.textContent='#worldControls [hidden]{display:none!important}#worldOptions{font-size:12px!important;min-width:53px!important;letter-spacing:.01em}';
+  document.head.append(hideStyle);
   garden.append(controls);
   const hint=controls.querySelector('#worldHint');
-  let walkMode=false,walkT=0,transitionStart=0,transitionFrom=0,transitionTo=0;
+  let walkMode=false,walkT=0,transitionStart=0,transitionFrom=0,transitionTo=0,viewOptionsOpen=false;
   const walkBtn=controls.querySelector('#worldWalk');
   function setHint(){
     const vi=document.documentElement.lang==='vi';
     hint.textContent=walkMode?(vi?'↑ ↓ / W S ĐỂ ĐI':'↑ ↓ / W S TO WALK'):(vi?'KÉO ĐỂ XOAY CẢNH 3D':'DRAG TO ORBIT 3D');
+    hint.hidden=!viewOptionsOpen;
+    for(const id of ['worldLeft','worldRight','worldNear','worldFar'])
+      controls.querySelector('#'+id).hidden=!viewOptionsOpen;
     controls.querySelector('#worldForward').hidden=!walkMode;
     controls.querySelector('#worldBack').hidden=!walkMode;
     walkBtn.textContent=walkMode?(vi?'Toàn cảnh':'Overview'):(vi?'Khám phá':'Explore');
@@ -267,6 +280,12 @@ if(garden){
     if(t<1)requestAnimationFrame(animateWalk);
     else transitionStart=0;
   }
+  viewBtn.addEventListener('click',()=>{
+    viewOptionsOpen=!viewOptionsOpen;
+    viewBtn.setAttribute('aria-expanded',String(viewOptionsOpen));
+    viewBtn.textContent=viewOptionsOpen?'Hide':'View';
+    setHint();
+  });
   setHint();document.getElementById('lang')?.addEventListener('click',()=>queueMicrotask(setHint));
   function render(now=performance.now()){
     raf=0;if(!ready||document.hidden)return;
