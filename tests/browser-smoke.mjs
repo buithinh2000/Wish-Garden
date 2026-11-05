@@ -67,6 +67,17 @@ try{
   await page.waitForFunction(()=>window.WishWorld3D?.getState().walkT===1);
   const explored=await page.evaluate(()=>window.WishWorld3D.getState());
   assert.equal(explored.walkMode,true,'Explore enters an actual eye-level 3D view');
+  assert.equal(await page.locator('#worldForward').isVisible(),true,'walk controls appear inside Explore');
+  const firstStep=explored.walkDistance;
+  await page.locator('#worldForward').click();
+  const stepped=await page.evaluate(()=>window.WishWorld3D.getState());
+  assert.ok(stepped.walkDistance>firstStep,'visitor really advances on the world path');
+  await page.keyboard.press('w');
+  assert.ok((await page.evaluate(()=>window.WishWorld3D.getState())).walkDistance>stepped.walkDistance,'keyboard W advances through 3D world');
+  await page.locator('#worldBack').click();
+  await page.keyboard.press('a');
+  assert.ok((await page.evaluate(()=>window.WishWorld3D.getState())).walkLateral<0,'keyboard A moves viewpoint within bounded path');
+
   assert.equal(await page.locator('#worldWalk').getAttribute('aria-pressed'),'true');
   await page.locator('#worldWalk').click();
   await page.waitForFunction(()=>window.WishWorld3D?.getState().walkT===0);
