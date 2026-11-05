@@ -311,7 +311,7 @@ body.world-showcase .garden.world-ready:after{content:"DRAG / SWIPE TO LOOK AROU
   <h3 id="ceremonyArchiveTitle">Transmission record</h3>
   <p id="ceremonyArchive">No transmissions verified yet. Any future record must identify the operator, UTC time and actual transmission evidence.</p>
  </div>
-</section><div class="saved"><h2 id="savedTitle">Saved wishes</h2><p class="hint" id="savedHint">Only what you choose to save on this device.</p><ul id="list"></ul><div class="buttons"><button class="small" id="export">Export JSON</button><button class="small" id="delete">Delete saved wishes</button></div></div></section><div class="footer">Independent preview · Not a mental-health treatment · No supernatural claims</div></main><script>
+</section><div class="saved"><h2 id="savedTitle">Saved wishes</h2><p class="hint" id="savedHint">Only what you choose to save on this device.</p><p id="savedDeviceNotice" class="hint">Private to this browser. Not synced between devices or shared publicly. Export a backup before clearing browser data.</p><ul id="list"></ul><div class="buttons"><button class="small" id="export">Export JSON</button><button class="small" id="delete">Delete saved wishes</button></div></div></section><div class="footer">Independent preview · Not a mental-health treatment · No supernatural claims</div></main><script>
 (()=>{'use strict';let vi=false,quiet=matchMedia('(prefers-reduced-motion: reduce)').matches,ritualTimer=null,scene='twilight',approachTimer=null;const $=id=>document.getElementById(id),key='wg-preview-local-01',terms={en:['A quiet place for the things we carry.','Send your hope to the sky. Let it be a moment of peace.','What is on your heart today?','Your wish is yours. This ritual is symbolic and makes no supernatural promises.','Your intention','Your private words','After releasing','Release without saving','Save on this device','✧ Send to the universe','Reduce motion','Private prototype: no server, no community or real-time counters. Wishes are never transmitted. Optional local storage is not encrypted. Avoid sensitive content on shared devices.','Saved wishes','Only what you choose to save on this device.','Export JSON','Delete saved wishes','No saved wishes','Your hope has become a light. You may return whenever you wish.','Saved on this device.','Storage unavailable.','Tiếng Việt','I hope that...'],vi:['Một nơi bình yên cho những điều ta mang trong lòng.','Gửi hy vọng lên bầu trời. Dành một phút cho sự bình yên.','Hôm nay bạn đang mang điều gì trong lòng?','Lời nguyện thuộc về bạn. Nghi thức mang tính biểu tượng, không hứa hẹn phép màu.','Điều muốn gửi gắm','Lời nguyện riêng tư','Sau khi gửi','Gửi đi và không lưu','Lưu trên thiết bị này','✧ Gửi lên vũ trụ','Giảm chuyển động','Bản thử nghiệm riêng tư: không có máy chủ hoặc số liệu cộng đồng. Lời nguyện không truyền đi. Dữ liệu lưu trên trình duyệt không mã hóa. Tránh thông tin nhạy cảm trên thiết bị dùng chung.','Lời nguyện đã lưu','Chỉ những lời bạn chọn lưu trên thiết bị.','Xuất JSON','Xóa lời nguyện','Chưa có lời nguyện','Hy vọng của bạn đã hóa thành ánh sáng. Bạn có thể trở lại bất cứ khi nào.','Đã lưu trên thiết bị.','Không thể lưu dữ liệu.','English','Tôi mong rằng...']};let ids=['hero','lead','question','hint','topicLabel','wishLabel','saveLabel','discard','keep','send','motion','notice','savedTitle','savedHint','export','delete'];const topics={en:['Peace & calm','Family & loved ones','Health & strength','Hope for tomorrow','Remembrance','Gratitude'],vi:['Bình an','Gia đình và người thân','Sức khỏe','Hy vọng tương lai','Tưởng nhớ','Biết ơn']};
 // The sky must live outside the collapsible prayer panel so My Sky works on first load.
 document.body.append($('sky'),$('skyActions'));
@@ -328,11 +328,21 @@ function returnToSanctuary(){if(approachTimer!==null){clearTimeout(approachTimer
 $('backToSanctuary').onclick=returnToSanctuary;
 function approachTree(){window.WishAvatar3D?.setPose('walk');if(approachTimer!==null)return;const garden=document.querySelector('.garden');garden.classList.add('walking');$('enter').disabled=true;$('prayerStop').disabled=true;const delay=quiet?0:1250;approachTimer=setTimeout(()=>{approachTimer=null;garden.classList.remove('walking');garden.classList.add('arrived');window.WishAvatar3D?.setPose('pray');$('prayerPanel').classList.add('open');$('prayerPanel').scrollIntoView({behavior:quiet?'instant':'smooth',block:'start'});$('wish').focus({preventScroll:true});},delay)}
 $('enter').onclick=approachTree;$('prayerStop').onclick=approachTree;
-if(new URLSearchParams(window.location.search).get('ritual')==='1'){
-  // The 3D world can open this same private, local-first ceremony directly.
-  // No prayer text or personal details are carried in the URL.
+// Two intentionally separate first-party paths from the 3D sanctuary:
+ // ritual opens a private ceremony; mine opens only this browser's saved wishes.
+ // Neither URL contains a wish, name or personal information.
+const entryIntent=new URLSearchParams(window.location.search);
+if(entryIntent.get('mine')==='1'||entryIntent.get('ritual')==='1'){
+  const showMine=entryIntent.get('mine')==='1';
   window.history.replaceState(null,'',window.location.pathname+window.location.hash);
-  approachTree();
+  if(showMine){
+    $('prayerPanel').classList.add('open');
+    const saved=document.querySelector('.saved');
+    const heading=$('savedTitle');
+    heading.setAttribute('tabindex','-1');
+    // Opening a saved wish must not launch the ceremony or prayer animation.
+    requestAnimationFrame(()=>{saved.scrollIntoView({behavior:'instant',block:'start'});heading.focus({preventScroll:true});});
+  }else approachTree();
 }
 function finishRitual(){if(ritualTimer!==null){clearTimeout(ritualTimer);ritualTimer=null}window.WishSky?.finish();$('sky').classList.add('complete');$('skyActions').hidden=true;$('finishNote').textContent=vi?'Lời nguyện đã hòa vào những vì sao.':'Your wish has joined the stars.'}
 $('skipRitual').onclick=finishRitual;
