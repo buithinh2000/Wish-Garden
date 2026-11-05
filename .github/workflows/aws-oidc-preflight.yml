@@ -42,7 +42,6 @@ jobs:
       - uses: aws-actions/configure-aws-credentials@v4
         with:
           disable-retry: true
-        with:
           role-to-assume: ${{ vars.WISH_GARDEN_AWS_ROLE_ARN }}
           role-session-name: WishGardenOIDCPreflight
           aws-region: ap-southeast-1
