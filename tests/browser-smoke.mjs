@@ -291,6 +291,9 @@ try{
   const worldBounds=await worldPage.locator('#sanctuary3d').boundingBox();
   assert.ok(worldBounds?.height>viewport.height*.9,'world must cover entire screen');
   await worldPage.waitForFunction(()=>window.WishWorld3D?.getState().visitorSource==='civilian-glb',{timeout:15000});
+  await worldPage.waitForFunction(()=>window.WishWorld3D?.getState().natureSource==='kenney-cc0-glb',{timeout:15000});
+  const natureState=await worldPage.evaluate(()=>window.WishWorld3D.getState());
+  assert.equal(natureState.natureTreeCount,12,'authored CC0 nature models replace all 12 hand-made trees');
   const visitorState=await worldPage.evaluate(()=>window.WishWorld3D.getState());
   assert.equal(visitorState.visitorVisible,true,'standalone world must include a visible human visitor');
   assert.equal(visitorState.visitorSource,'civilian-glb','world must load the real civilian human asset, not just a primitive substitute');
