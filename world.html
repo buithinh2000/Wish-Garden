@@ -21,6 +21,9 @@ button:focus-visible,a:focus-visible{outline:3px solid #f2ce81;outline-offset:3p
 .heading small{letter-spacing:.19em;color:#e5ca95;text-transform:uppercase;font-size:12px}
 .heading h1{font:normal clamp(32px,5vw,68px)/1.05 Georgia,serif;margin:14px 0}
 .heading p{font-size:clamp(13px,1.3vw,16px);color:#e0e8e2;line-height:1.6;max-width:300px}
+.world-prayer-link{display:inline-flex;margin-top:16px;align-items:center;justify-content:center;min-height:47px;padding:12px 19px;border-radius:28px;background:#eed4a5;color:#172a31;text-decoration:none;font-weight:750;font-size:14px;pointer-events:auto;box-shadow:0 8px 30px #06101899}
+.world-prayer-link:hover{background:#fff0cf}
+
 #worldControls{position:fixed;z-index:30;right:clamp(15px,4vw,58px);bottom:clamp(20px,7vh,70px);display:flex;align-items:center;gap:7px;background:#0a202ce8;border:1px solid #c7c9b07b;border-radius:18px;padding:11px;box-shadow:0 12px 35px #000b}
 #worldControls #worldHint{font-size:10px;max-width:105px;color:#f1d6a5;line-height:1.5;letter-spacing:.06em}
 #worldControls button{min-width:42px;height:44px;border-radius:11px;border:1px solid #ffffff55;color:#f6e3bd;background:#ffffff18;font-size:21px;cursor:pointer}
@@ -59,6 +62,7 @@ body.world-ready #showRenderDetails{display:none}
  .heading{top:95px;max-width:75vw}
  .heading h1{font-size:34px}
  .heading p{font-size:12px;max-width:230px}
+ .world-prayer-link{font-size:12px;min-height:42px;padding:9px 14px;margin-top:9px}
  #worldControls{bottom:14px;left:8px;right:8px;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));padding:7px;gap:5px}
  #worldControls #worldHint{max-width:none;grid-column:span 2;font-size:9px;overflow-wrap:anywhere}
  #worldControls button{min-width:0;width:100%;height:42px}
@@ -72,7 +76,7 @@ body.world-ready #showRenderDetails{display:none}
 <div class="garden" role="region" aria-label="Interactive 3D environment of the Wish Garden"></div>
 <div class="fallback" id="fallback"><div><h2>Opening the 3D sanctuary…</h2><p>If your device blocks WebGL, try Chrome with graphics acceleration enabled. The private wishing ceremony remains available on the main site.</p></div></div>
 <header class="site-head"><a class="brand" href="./index.html">✦ WISH GARDEN</a><a class="back" href="./index.html">← Private wishes</a></header>
-<section class="heading" aria-label="3D exploration introduction"><small>Interactive world · 3D</small><h1>Walk into the garden.</h1><p>Explore the pavilion and lantern path. Drag or swipe to turn; select Explore to move inside.</p></section>
+<section class="heading" aria-label="3D exploration introduction"><small>Wish Garden · A quiet place</small><h1>Rest in the garden.</h1><p>Enjoy the garden, or take a quiet moment to share your private wish. No account needed.</p><a class="world-prayer-link" href="./index.html?ritual=1" aria-label="Make a private wish in Wish Garden">✦ Make a wish</a></section>
 <div class="status" id="worldStatus" role="status">Starting 3D renderer</div>
 <div id="daylightStatus" role="status" title="Automatically follows this device’s local clock; sunrise and sunset are approximate">LOCAL TIME · AUTO</div>
 <div id="worldBuild" aria-label="World release version" title="GitHub Pages release source commit">Build __WISH_BUILD_SHA__</div>
