@@ -39,7 +39,7 @@ jobs:
           ROLE_ARN: ${{ vars.WISH_GARDEN_AWS_ROLE_ARN }}
         run: |
           test -n "$ROLE_ARN"
-          case "$ROLE_ARN" in arn:aws:iam::916004827349:role/*) ;; *) echo "Unexpected AWS role account"; exit 1;; esac
+          test "$ROLE_ARN" = "arn:aws:iam::916004827349:role/WishGardenGitHubStagingDeployRole" || { echo "Expected dedicated Wish Garden role; refusing BuiTai Core role"; exit 1; }
       - name: AWS temporary GitHub OIDC credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
