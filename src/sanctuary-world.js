@@ -36,12 +36,59 @@ if(garden){
   function box(w,h,d,m,x,y,z,parent=scene){const obj=mesh(new THREE.BoxGeometry(w,h,d),m,parent);obj.position.set(x,y,z);return obj;}
   function cone(rad,height,segments,m,x,y,z,parent=scene){const obj=mesh(new THREE.ConeGeometry(rad,height,segments),m,parent);obj.position.set(x,y,z);return obj;}
   function cylinder(top,bottom,height,m,x,y,z,parent=scene){const obj=mesh(new THREE.CylinderGeometry(top,bottom,height,10),m,parent);obj.position.set(x,y,z);return obj;}
+  // Deterministic procedural materials: no stock images, external texture requests,
+  // or user data. The same scene remains lightweight and available offline.
+  function textured(base,variation,repeatX,repeatY,seed){
+    const surface=document.createElement('canvas');
+    surface.width=128;surface.height=128;
+    const ctx=surface.getContext('2d');
+    if(!ctx)return base;
+    ctx.fillStyle='#'+base.color.getHexString();
+    ctx.fillRect(0,0,128,128);
+    let value=seed>>>0;
+    function random(){value=(Math.imul(value,1664525)+1013904223)>>>0;return value/4294967296;}
+    for(let i=0;i<560;i++){
+      const v=Math.floor(variation*(random()-.5));
+      const channel=n=>Math.max(0,Math.min(255,n+v));
+      const color=base.color;
+      ctx.fillStyle='rgba('+channel(Math.round(color.r*255))+','+
+        channel(Math.round(color.g*255))+','+channel(Math.round(color.b*255))+','+
+        (.08+random()*.24).toFixed(2)+')';
+      ctx.fillRect(random()*128,random()*128,1+random()*12,1+random()*9);
+    }
+    const texture=new THREE.CanvasTexture(surface);
+    texture.wrapS=THREE.RepeatWrapping;texture.wrapT=THREE.RepeatWrapping;
+    texture.repeat.set(repeatX,repeatY);
+    texture.colorSpace=THREE.SRGBColorSpace;
+    texture.anisotropy=Math.min(4,renderer.capabilities.getMaxAnisotropy());
+    base.map=texture;base.needsUpdate=true;
+    return base;
+  }
+  textured(earth,95,30,30,144);
+  textured(path,65,3,13,802);
+  textured(bark,95,1,4,1009);
+  textured(stone,75,2,2,2081);
+  textured(darkWood,65,3,2,2083);
+  textured(roof,65,4,4,3083);
+  textured(leaf,85,2,2,4091);
   const ground=mesh(new THREE.PlaneGeometry(170,170),earth);ground.rotation.x=-Math.PI/2;ground.position.y=-.10;
   const walkway=mesh(new THREE.PlaneGeometry(3.3,33),path);walkway.rotation.x=-Math.PI/2;walkway.position.set(0,.018,3);
   for(let i=0;i<15;i++){box(3.4,.055,.105,stone,0,.048,17-i*1.75);}
   // A reflective, three-dimensional lake with individual bank stones and islands.
   const lake=mesh(new THREE.CircleGeometry(17,64),water);lake.rotation.x=-Math.PI/2;lake.scale.set(1.25,.65,1);lake.position.set(12,.005,-20);
   const island=cylinder(6.0,6.4,.35,earth,9,.10,-18);island.scale.z=.65;
+  // Three-dimensional water details make the lake legible from the walk-in camera.
+  const lilyMat=new THREE.MeshStandardMaterial({color:0x4c795e,side:THREE.DoubleSide,roughness:.7});
+  const glowMat=new THREE.MeshBasicMaterial({color:0x9fdad4,transparent:true,opacity:.2,depthWrite:false});
+  for(let i=0;i<16;i++){
+    const a=i*2.39996,r=4.3+(i%5)*1.95;
+    const x=12+Math.cos(a)*r,z=-20+Math.sin(a)*r*.62;
+    const pad=mesh(new THREE.CircleGeometry(.34+(i%4)*.12,16),lilyMat);
+    pad.rotation.x=-Math.PI/2;pad.position.set(x,.026,z);
+    const ripple=mesh(new THREE.RingGeometry(.55+(i%3)*.23,.58+(i%3)*.23,32),glowMat);
+    ripple.rotation.x=-Math.PI/2;ripple.position.set(x,.029,z);
+  }
+
   for(let i=0;i<30;i++){
     const a=i*Math.PI*2/30,r=11+(i%3)*1.2;
     const pebble=mesh(new THREE.DodecahedronGeometry(.45+(i%4)*.13,0),stone);
@@ -68,6 +115,19 @@ if(garden){
   const secondEdge=cone(6.0,.30,4,roofEdge,0,10.5,0,pavilion);secondEdge.rotation.y=Math.PI/4;secondEdge.scale.z=.84;
   for(const x of [-2.5,2.5])for(const z of [-2,2])cylinder(.17,.17,2.6,darkWood,x,9,z,pavilion);
   cylinder(.12,.12,1.2,gold,0,13.0,0,pavilion);
+  // Layered roof ribs read as real architectural depth under the lights.
+  const roofRib=mat(0x65767d,.72);
+  for(let level=0;level<2;level++){
+    const width=level===0?6.35:3.85;
+    const y=level===0?7.2:11.05;
+    for(const side of [-1,1]){
+      for(let i=-4;i<=4;i++){
+        const x=i*width/5.5;
+        const rib=box(.075,.085,width*1.30,roofRib,x,y-.12*Math.abs(i),side*.12,pavilion);
+        rib.rotation.x=side*.34;
+      }
+    }
+  }
   // Lanterns provide spatial cues while orbiting.
   const lanternMat=new THREE.MeshStandardMaterial({color:0xffc67e,emissive:0xff9c45,emissiveIntensity:2.6});
   for(const side of [-1,1])for(let n=0;n<7;n++){
@@ -126,6 +186,18 @@ if(garden){
     const mountain=cone(9+(i%4)*3,20+(i%5)*5,5,ridge,x,8,-68);
     mountain.rotation.y=i*.47;
   }
+  // Floating fireflies are real 3D sprites positioned through the sanctuary.
+  const lights=[];
+  for(let i=0;i<75;i++){
+    const theta=i*2.39996;
+    const r=4+(i%11)*1.55;
+    lights.push(Math.sin(theta)*r,1.25+(i%13)*.55,Math.cos(theta)*r-14);
+  }
+  const sparkleGeo=new THREE.BufferGeometry();
+  sparkleGeo.setAttribute('position',new THREE.Float32BufferAttribute(lights,3));
+  scene.add(new THREE.Points(sparkleGeo,new THREE.PointsMaterial({
+    color:0xffdc88,size:.18,sizeAttenuation:true,transparent:true,opacity:.78,depthWrite:false
+  })));
   // Camera orbit plus a walk-in zoom. User can drag/touch or use buttons.
   let azimuth=0, radius=31, elevation=.26, targetZ=-15, dragging=false,lastX=0,ready=false,raf=0;
   const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
