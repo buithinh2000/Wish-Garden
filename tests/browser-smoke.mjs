@@ -244,6 +244,21 @@ try{
   await page.locator('#delete').click();
   assert.deepEqual(errors,[],'no page errors');
   console.log('Browser smoke PASS viewport '+viewport.width+'x'+viewport.height);
+  // Independent 3D world must be visually distinct from legacy landing page.
+  const worldPage=await context.newPage();
+  await worldPage.goto('http://127.0.0.1:'+port+'/world.html');
+  await worldPage.waitForFunction(()=>document.querySelector('#sanctuary3d')?.dataset.rendered==='true' && document.querySelector('.garden')?.classList.contains('world-ready'),{timeout:15000});
+  assert.equal(await worldPage.locator('.hero-content').count(),0,'3D world cannot include old hero overlay');
+  assert.equal(await worldPage.locator('.avatar').count(),0,'3D world cannot include old SVG avatar');
+  assert.equal(await worldPage.locator('#fallback').isVisible(),false,'world renderer must remove loading cover');
+  const worldBounds=await worldPage.locator('#sanctuary3d').boundingBox();
+  assert.ok(worldBounds?.height>viewport.height*.9,'world must cover entire screen');
+  const beforeOrbit=await worldPage.evaluate(()=>window.WishWorld3D.getState());
+  await worldPage.locator('#worldRight').click();
+  const afterOrbit=await worldPage.evaluate(()=>window.WishWorld3D.getState());
+  assert.ok(afterOrbit.azimuth>beforeOrbit.azimuth,'world orbit must respond');
+  await worldPage.screenshot({path:'qa-screenshots/'+viewport.width+'-standalone-world.png',fullPage:false});
+  await worldPage.close();
   await context.close();
   // Repeat the key pose transition without reduced motion so animation
   // interpolation is exercised, not merely its final static IK position.
