@@ -20,6 +20,11 @@ class SiteOnlyPermissions(unittest.TestCase):
         self.assertIn("if aws cloudformation deploy --stack-name wish-garden-staging-site", workflow)
         self.assertIn("aws cloudformation deploy --stack-name wish-garden-staging-api", workflow)
 
+    def test_api_release_runs_live_fail_closed_smoke(self):
+        workflow = (ROOT / '.github/workflows/aws-staging.yml').read_text()
+        self.assertIn('python aws/scripts/smoke_readonly_api.py "$API_URL"', workflow)
+        self.assertIn("if: github.event.inputs.mode == 'api' || github.event.inputs.mode == 'deploy'", workflow)
+
     def test_api_only_has_no_site_upload(self):
         workflow = (ROOT / '.github/workflows/aws-staging.yml').read_text()
         self.assertIn("      - name: Build self-hosted 3D web assets\n        if: github.event.inputs.mode != 'api'", workflow)
