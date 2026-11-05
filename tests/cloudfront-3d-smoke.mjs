@@ -11,6 +11,13 @@ try{
   const response=await page.goto(url,{waitUntil:'domcontentloaded',timeout:30000});
   assert.equal(response?.status(),200,'public CloudFront must serve page');
   await page.waitForFunction(()=>document.querySelector('#sanctuary3d')?.dataset.rendered==='true' && document.querySelector('.garden')?.classList.contains('world-ready'),{timeout:25000});
+  assert.equal(await page.locator('body').getAttribute('class'),'world-showcase','3D preview must use distinct immersive layout');
+  assert.equal(await page.locator('.hero-content').isVisible(),false,'old landing text must not cover the 3D scene');
+  assert.equal(await page.locator('#visitorRig').isVisible(),false,'legacy 3D avatar must not block architecture in showcase');
+  const viewportScene=await page.locator('#sanctuary3d').boundingBox();
+  assert.ok(viewportScene?.height>viewport.height*.85,'3D canvas must fill nearly entire screen');
+  const visibleControls=await page.locator('#worldWalk').isVisible();
+  assert.equal(visibleControls,true,'Explore control must be visible to users');
   const world=await page.evaluate(()=>window.WishWorld3D?.getState());
   assert.ok(world?.ready&&world.meshes>=30,'public URL must render a true 3D world');
   const photo=await page.locator('.garden').evaluate(el=>getComputedStyle(el).backgroundImage);
