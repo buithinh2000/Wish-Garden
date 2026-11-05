@@ -40,6 +40,7 @@ body:not(.world-ready) .status:before{background:#e1ad79}
 body.world-ready #softwareWorld,body.world-ready #softwareControls{display:none!important}
 body.software-ready .heading{pointer-events:none}
 body.software-ready .status{bottom:95px}
+#worldBuild{position:fixed;z-index:21;left:clamp(18px,4vw,55px);bottom:9px;color:#e0cfa8b8;font-size:10px;letter-spacing:.08em;font-family:ui-monospace,monospace;pointer-events:none}
 #renderDiagnostics{position:fixed;z-index:40;left:clamp(16px,4vw,54px);bottom:130px;max-width:min(440px,calc(100vw - 32px));padding:15px 18px;background:#09202eea;border:1px solid #d0b48b72;border-radius:14px;box-shadow:0 16px 42px #0008;color:#f1e4cd;font-size:13px;line-height:1.5}
 #renderDiagnostics h2{font-size:15px;margin:0 0 8px}
 #renderDiagnostics p{margin:0 0 12px}
@@ -72,10 +73,11 @@ body.world-ready #showRenderDetails{display:none}
 <header class="site-head"><a class="brand" href="./index.html">✦ WISH GARDEN</a><a class="back" href="./index.html">← Private wishes</a></header>
 <section class="heading" aria-label="3D exploration introduction"><small>Interactive world · 3D</small><h1>Walk into the garden.</h1><p>Explore the pavilion and lantern path. Drag or swipe to turn; select Explore to move inside.</p></section>
 <div class="status" id="worldStatus" role="status">Starting 3D renderer</div>
+<div id="worldBuild" aria-label="World release version" title="GitHub Pages release source commit">Build __WISH_BUILD_SHA__</div>
 <button type="button" id="showRenderDetails" hidden aria-expanded="false" aria-controls="renderDiagnostics">Graphics details</button>
 <section id="renderDiagnostics" hidden aria-label="3D graphics diagnostics"><h2>3D graphics on this browser</h2><p id="renderDetailText"></p><p><a href="./gpu-check.html" id="gpuCheckLink" style="color:#f4d398;text-decoration:underline">Run independent GPU graphics check</a></p><button type="button" id="retryWebGL">Retry 3D graphics</button> <button type="button" id="closeRenderDetails">Close</button></section>
 <script>window.WishWorldAssetStatus='pending';</script>
-<script src="assets/sanctuary-world.bundle.js" defer onload="window.WishWorldAssetStatus='loaded'" onerror="window.WishWorldAssetStatus='failed'"></script>
+<script src="assets/sanctuary-world.bundle.js?v=__WISH_BUILD_SHA__" defer onload="window.WishWorldAssetStatus='loaded'" onerror="window.WishWorldAssetStatus='failed'"></script>
 <script>
 (function(){
  const root=document.querySelector('.garden'),status=document.querySelector('#worldStatus'),fallback=document.getElementById('fallback');
