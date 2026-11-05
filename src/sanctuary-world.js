@@ -263,14 +263,24 @@ if(garden){
   const motion=window.matchMedia('(prefers-reduced-motion: reduce)');
   const ro=new ResizeObserver(schedule);ro.observe(garden);
   document.addEventListener('visibilitychange',schedule);
-  document.getElementById('twilight')?.addEventListener('click',()=>{
-    scene.background.set(0x101e2c);scene.fog.color.set(0x122c39);
-    ambient.intensity=2.1;warm.intensity=52;schedule();
-  });
-  document.getElementById('dawn')?.addEventListener('click',()=>{
-    scene.background.set(0x526b75);scene.fog.color.set(0x526b75);
-    ambient.intensity=3;warm.intensity=25;schedule();
-  });
+  // Change the 3D world with the viewer's actual device-local clock.
+  // No location permission, paid weather API or user data transfer.
+  function applyDaylight(){
+    const daylight=window.WishDaylight?.getState();
+    const phase=daylight?.phase||'night';
+    const tones={
+      night:{sky:0x101e2c,fog:0x122c39,ambient:2.1,moon:2.25,warm:52,exposure:1.12},
+      dawn:{sky:0x947269,fog:0xac8876,ambient:2.6,moon:2.0,warm:32,exposure:1.22},
+      day:{sky:0x79aec5,fog:0x9cc9cd,ambient:3.2,moon:3.0,warm:10,exposure:1.28},
+      dusk:{sky:0xb16c6d,fog:0x8b636a,ambient:2.4,moon:1.8,warm:42,exposure:1.15}
+    };
+    const tone=tones[phase]||tones.night;
+    scene.background.setHex(tone.sky);scene.fog.color.setHex(tone.fog);
+    ambient.intensity=tone.ambient;moon.intensity=tone.moon;warm.intensity=tone.warm;
+    renderer.toneMappingExposure=tone.exposure;schedule();
+  }
+  window.addEventListener('wish-daylight-change',applyDaylight);
+  applyDaylight();
   // No false 3D success: ready only after a WebGL render has actually succeeded.
   try{
     ready=true;render();
@@ -281,6 +291,6 @@ if(garden){
     window.WishWorldWebGLError=String(error?.message||'WebGL scene initialization failed').slice(0,180);
     ro.disconnect();renderer.dispose();canvas.remove();controls.remove();
   }
-  window.WishWorld3D={getState(){return {ready,azimuth,radius,elevation,walkMode,walkT,walkDistance,walkLateral,visitorSource,visitorVisible:!!visitorModel,visitorAnimated:!!visitorMixer,visitorAnimationTime,meshes:scene.children.filter(x=>x.isMesh).length};},orbit,zoom};
+  window.WishWorld3D={getState(){return {ready,azimuth,radius,elevation,walkMode,walkT,walkDistance,walkLateral,visitorSource,visitorVisible:!!visitorModel,visitorAnimated:!!visitorMixer,visitorAnimationTime,daylight:window.WishDaylight?.getState().phase||'night',meshes:scene.children.filter(x=>x.isMesh).length};},orbit,zoom};
  }
 }
