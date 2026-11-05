@@ -259,6 +259,20 @@ try{
   assert.ok(afterOrbit.azimuth>beforeOrbit.azimuth,'world orbit must respond');
   await worldPage.screenshot({path:'qa-screenshots/'+viewport.width+'-standalone-world.png',fullPage:false});
   await worldPage.close();
+  // Simulate a user's browser failing to load WebGL: never leave an empty page.
+  const fallbackPage=await context.newPage();
+  await fallbackPage.route('**/assets/sanctuary-world.bundle.js',route=>route.abort());
+  await fallbackPage.goto('http://127.0.0.1:'+port+'/world.html');
+  await fallbackPage.waitForFunction(()=>window.WishSoftware3D?.getState().active===true,{timeout:12000});
+  assert.equal(await fallbackPage.locator('#fallback').isVisible(),false,'3D software fallback removes waiting overlay');
+  assert.equal(await fallbackPage.locator('#softwareWorld').isVisible(),true,'standalone world draws an actual perspective scene despite failed WebGL');
+  const swBefore=await fallbackPage.evaluate(()=>window.WishSoftware3D.getState());
+  assert.ok(swBefore.faces>100,'software fallback has substantive 3D scene geometry');
+  await fallbackPage.locator('#softwareControls button').last().click();
+  const swAfter=await fallbackPage.evaluate(()=>window.WishSoftware3D.getState());
+  assert.ok(swAfter.yaw>swBefore.yaw,'software perspective camera rotates');
+  await fallbackPage.screenshot({path:'qa-screenshots/'+viewport.width+'-software-3d-fallback.png',fullPage:false});
+  await fallbackPage.close();
   await context.close();
   // Repeat the key pose transition without reduced motion so animation
   // interpolation is exercised, not merely its final static IK position.
