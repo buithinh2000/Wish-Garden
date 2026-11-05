@@ -16,7 +16,6 @@ class ApiTests(unittest.TestCase):
     def setUp(self):
         self.config = patch.dict(os.environ, {
             'ALLOWED_ORIGIN': 'https://d3vvpfv5t9ws76.cloudfront.net',
-            'TABLE_NAME': 'wish-garden-staging-participation-916004827349',
             'REGISTRATION_ENABLED': 'false',
         })
         self.config.start()
@@ -27,6 +26,14 @@ class ApiTests(unittest.TestCase):
         self.assertEqual(result['batchId'], '2026-12-30')
         self.assertEqual(result['cutoffUtc'], '2026-12-29T12:00:00.000Z')
         self.assertEqual(next_batch(datetime(2026, 12, 30, 12, tzinfo=timezone.utc))['batchId'], '2027-03-30')
+
+    def test_readonly_stack_has_no_database_or_write_policy(self):
+        template=(Path(__file__).resolve().parents[1]/'cloudformation'/'api.yaml').read_text()
+        self.assertNotIn('AWS::DynamoDB::Table', template)
+        self.assertNotIn('TABLE_NAME:', template)
+        self.assertNotIn('dynamodb:', template.lower())
+        self.assertNotIn('TableName:', template)
+        self.assertNotIn('RegistrationEnabled:\\n    Value: \'true\'',template)
 
     def test_no_fabricated_participants_or_transmissions(self):
         resp = handler(self.req(), None)

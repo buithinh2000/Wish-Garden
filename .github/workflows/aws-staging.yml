@@ -3,9 +3,9 @@ on:
   workflow_dispatch:
     inputs:
       mode:
-        description: 'upload syncs website assets to existing S3; site provisions CloudFront; deploy also provisions API'
+        description: 'upload syncs website only; site provisions CloudFront; api provisions read-only backend only; deploy both'
         type: choice
-        options: [validate, upload, site, deploy]
+        options: [validate, upload, site, api, deploy]
         default: validate
         required: true
 permissions:
@@ -28,7 +28,7 @@ jobs:
           node --test tests/*.test.mjs
   deploy:
     needs: validate
-    if: ${{ (github.event.inputs.mode == 'upload' || github.event.inputs.mode == 'site' || github.event.inputs.mode == 'deploy') && github.ref == 'refs/heads/main' }}
+    if: ${{ (github.event.inputs.mode == 'upload' || github.event.inputs.mode == 'site' || github.event.inputs.mode == 'api' || github.event.inputs.mode == 'deploy') && github.ref == 'refs/heads/main' }}
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     environment: wish-garden-aws-staging
@@ -50,7 +50,7 @@ jobs:
         run: |
           test "$(aws sts get-caller-identity --query Account --output text)" = "916004827349"
       - name: Deploy isolated site stack with failure diagnostics
-        if: github.event.inputs.mode != 'upload'
+        if: github.event.inputs.mode == 'site' || github.event.inputs.mode == 'deploy'
         run: |
           if aws cloudformation deploy --stack-name wish-garden-staging-site \
             --template-file aws/cloudformation/site.yaml --no-fail-on-empty-changeset \
@@ -73,14 +73,14 @@ jobs:
             exit 1
           fi
       - name: Deploy isolated read-only API stack
-        if: github.event.inputs.mode == 'deploy'
+        if: github.event.inputs.mode == 'api' || github.event.inputs.mode == 'deploy'
         run: |
           aws cloudformation deploy --stack-name wish-garden-staging-api \
             --template-file aws/cloudformation/api.yaml --no-fail-on-empty-changeset \
             --capabilities CAPABILITY_NAMED_IAM \
             --tags Project=Wish-Garden Environment=staging
       - name: Release read-only Lambda (remote registration stays disabled)
-        if: github.event.inputs.mode == 'deploy'
+        if: github.event.inputs.mode == 'api' || github.event.inputs.mode == 'deploy'
         run: |
           mkdir -p /tmp/wish-garden-lambda
           cp aws/lambda/handler.py /tmp/wish-garden-lambda/index.py
@@ -89,6 +89,7 @@ jobs:
           aws lambda wait function-updated --function-name wish-garden-staging-api
           test "$(aws lambda get-function-configuration --function-name wish-garden-staging-api --query 'Environment.Variables.REGISTRATION_ENABLED' --output text)" = "false"
       - name: Build self-hosted 3D web assets
+        if: github.event.inputs.mode != 'api'
         run: |
           mkdir -p assets dist
           curl --fail --location --retry 3 --connect-timeout 15 --max-time 90 'https://images.unsplash.com/photo-1726954531046-d033ef59ff0f?auto=format&fit=crop&w=1600&q=76' --output assets/forest.jpg
@@ -109,6 +110,7 @@ jobs:
           cp -R assets dist/
           printf 'Not Found\n' >dist/404.html
       - name: Upload only site assets to dedicated private S3 bucket
+        if: github.event.inputs.mode != 'api'
         run: |
           BUCKET="wish-garden-staging-site-916004827349-sg1"
           test -n "$BUCKET"
@@ -117,7 +119,9 @@ jobs:
           aws s3 sync dist/ "s3://$BUCKET/" --delete --only-show-errors
       - name: Print AWS preview and API endpoint
         run: |
-          aws cloudformation describe-stacks --stack-name wish-garden-staging-site --query 'Stacks[0].Outputs' --output table
-          if [ "${{ github.event.inputs.mode }}" = 'deploy' ]; then
+          if [ "${{ github.event.inputs.mode }}" != 'api' ]; then
+            aws cloudformation describe-stacks --stack-name wish-garden-staging-site --query 'Stacks[0].Outputs' --output table
+          fi
+          if [ "${{ github.event.inputs.mode }}" = 'api' ] || [ "${{ github.event.inputs.mode }}" = 'deploy' ]; then
             aws cloudformation describe-stacks --stack-name wish-garden-staging-api --query 'Stacks[0].Outputs' --output table
           fi

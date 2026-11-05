@@ -13,11 +13,11 @@
 - The API stack `wish-garden-staging-api` is **not deployed**. Never claim remote registration, revocation or RF transmission is live.
 - The backend template now explicitly allows **only** the exact CloudFront origin above, not the prior GitHub Pages origin. Even if `REGISTRATION_ENABLED=true` is set manually, this Python handler refuses all POST/PUT/PATCH/DELETE writes.
 - Site-only IAM role `WishGardenGitHubStagingDeployRole` does **not** have API-stack provisioning permissions. Do not add broad permissions or run `mode=deploy` without a separate review of its named Lambda IAM role, HTTP API, DynamoDB, costs and a fail-closed read-only smoke test.
-- The next production gate is **read-only API** only, with `GET /api/v1/summary` showing `PLANNING_NOT_TRANSMITTED`, no real participation counts, and all registration methods returning 503. Consent collection and operator broadcasts remain separate future gates.
+- The next production gate is **read-only API** only, with independent `mode=api` that does not rerun website or upload assets, with `GET /api/v1/summary` showing `PLANNING_NOT_TRANSMITTED`, no real participation counts, and all registration methods returning 503. Consent collection and operator broadcasts remain separate future gates.
 
 ## Expected AWS components
 - CloudFormation stack `wish-garden-staging-site`: private, encrypted, versioned S3 bucket `wish-garden-staging-site-916004827349-sg1`; CloudFront with signed origin access (OAC), HTTPS preview and conservative price class.
-- Stack `wish-garden-staging-api`: API Gateway HTTP endpoint + small Python 3.12 Lambda + isolated DynamoDB pay-per-request table `wish-garden-staging-participation-916004827349`, with no registrations enabled.
+- Stack `wish-garden-staging-api`: API Gateway HTTP endpoint + small Python 3.12 Lambda and logs only. No DynamoDB table or participation store is provisioned in read-only phase. Future registration storage requires separate review.
 - `REGISTRATION_ENABLED=false` is enforced at all times by current Lambda implementation: all POST/DELETE operations return 503. The API returns only planning metadata and null community totals; it cannot fabricate registered users.
 - No custom domain, Route 53, Cloudflare, EC2, ECS, RDS, SMS, email or paid model API required.
 - Important: CloudFront, API Gateway, S3 and DynamoDB can incur real usage costs beyond free allowances. DynamoDB and CloudFront have no guarantee of a fixed monthly cap. Review AWS Budget alerts and stop if unexpected spend.
@@ -48,3 +48,9 @@ Documentation:
 - [CloudFront S3 Origin Access Control](https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/private-content-restricting-access-to-s3.html)
 - [GitHub OIDC AWS configuration](https://docs.github.com/en/actions/how-tos/secure-your-work/security-harden-deployments/oidc-in-aws)
 - [AWS configure-aws-credentials](https://github.com/aws-actions/configure-aws-credentials)
+
+## Read-only API gate — NOT deployed
+- `mode=api` deploys only the dedicated API stack and read-only Lambda; it skips S3/CloudFront changes and website assets. This source change does not authorize AWS execution.
+- There is **no DynamoDB table**, no private-data persistence and no write route. Participation methods return HTTP 503.
+- Creating this stack needs a new **named Lambda execution IAM role**. Before deployment, inspect exact CloudFormation change set and scoped permissions, assess AWS spend, and approve explicitly. Never attach administrator privileges.
+- Continue to use `mode=upload` for website releases. Do not use `mode=deploy` for API-only rollout.

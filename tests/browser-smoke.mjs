@@ -204,6 +204,7 @@ try{
   await page.locator('#wishBackupFile').setInputFiles(backup);
   assert.equal(await page.evaluate(()=>localStorage.getItem('wg-preview-local-01')),null,'cancelled import must not write');
   await page.locator('#wishBackupFile').setInputFiles({name:'invalid.json',mimeType:'application/json',buffer:Buffer.from('{bad')});
+  await page.waitForFunction(()=>document.querySelector('#wishRestoreNote')?.textContent?.includes('Import rejected'));
   assert.match(await page.locator('#wishRestoreNote').textContent(),/Import rejected/,'invalid backup is refused');
   assert.equal(await page.evaluate(()=>localStorage.getItem('wg-preview-local-01')),null,'invalid JSON never writes');
   page.once('dialog',d=>d.accept());
