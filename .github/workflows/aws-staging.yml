@@ -88,6 +88,12 @@ jobs:
           aws lambda update-function-code --function-name wish-garden-staging-api --zip-file fileb:///tmp/wish-garden-api.zip >/dev/null
           aws lambda wait function-updated --function-name wish-garden-staging-api
           test "$(aws lambda get-function-configuration --function-name wish-garden-staging-api --query 'Environment.Variables.REGISTRATION_ENABLED' --output text)" = "false"
+      - name: Verify deployed API is strictly read-only over HTTPS
+        if: github.event.inputs.mode == 'api' || github.event.inputs.mode == 'deploy'
+        run: |
+          API_URL="$(aws cloudformation describe-stacks --stack-name wish-garden-staging-api --query 'Stacks[0].Outputs[?OutputKey==\`ApiUrl\`].OutputValue | [0]' --output text)"
+          test -n "$API_URL" && test "$API_URL" != "None"
+          python aws/scripts/smoke_readonly_api.py "$API_URL"
       - name: Build self-hosted 3D web assets
         if: github.event.inputs.mode != 'api'
         run: |
