@@ -52,6 +52,15 @@ try{
   const zoomedWorld=await page.evaluate(()=>window.WishWorld3D.getState());
   assert.ok(zoomedWorld.radius<rotatedWorld.radius,'zoom controls change actual 3D camera distance');
   await page.locator('#worldLeft').click();
+  await page.locator('#worldWalk').click();
+  await page.waitForFunction(()=>window.WishWorld3D?.getState().walkT===1);
+  const explored=await page.evaluate(()=>window.WishWorld3D.getState());
+  assert.equal(explored.walkMode,true,'Explore enters an actual eye-level 3D view');
+  assert.equal(await page.locator('#worldWalk').getAttribute('aria-pressed'),'true');
+  await page.locator('#worldWalk').click();
+  await page.waitForFunction(()=>window.WishWorld3D?.getState().walkT===0);
+  assert.equal((await page.evaluate(()=>window.WishWorld3D.getState())).walkMode,false,'Overview returns from walk through');
+
   assert.equal(sceneVisual.svg,'none','old diagram layer no longer obscures environment');
   const imageLoaded=await page.evaluate(async()=>{const i=new Image();i.src='assets/forest.jpg';await i.decode();return i.naturalWidth>1000});
   assert.ok(imageLoaded,'forest source loaded at image resolution');
