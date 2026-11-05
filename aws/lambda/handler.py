@@ -1,5 +1,5 @@
 """Wish Garden AWS-only participation API (Python 3.12, Lambda HTTP API v2).
-Initial release is read-only. Opt-ins remain CLOSED until a separate AWS-native
+Initial release is read-only with no database. Opt-ins remain CLOSED until a separate AWS-native
 abuse-control and consent gate is reviewed and independently tested.
 No private wishes, names, or emails are accepted or persisted.
 """
@@ -39,7 +39,7 @@ def handler(event, context):
     allowed = os.environ.get("ALLOWED_ORIGIN", "")
     method = (event.get("requestContext") or {}).get("http", {}).get("method", "")
     path = event.get("rawPath", "")
-    if not allowed or not os.environ.get("TABLE_NAME"):
+    if not allowed:
         return response(503, {"error": "NOT_CONFIGURED"})
     if origin != allowed:
         return response(403, {"error": "ORIGIN_DENIED"})
