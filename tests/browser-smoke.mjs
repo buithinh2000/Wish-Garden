@@ -317,7 +317,7 @@ try{
   await fallbackPage.locator('#closeRenderDetails').click();
   assert.equal(await fallbackPage.locator('#renderDiagnostics').isVisible(),false);
 
-  await fallbackPage.locator('#softwareControls button').last().click();
+  await fallbackPage.locator('#softwareControls button[aria-label="Rotate right"]').click();
   const swAfter=await fallbackPage.evaluate(()=>window.WishSoftware3D.getState());
   assert.ok(swAfter.yaw>swBefore.yaw,'software perspective camera rotates');
   await fallbackPage.screenshot({path:'qa-screenshots/'+viewport.width+'-software-3d-fallback.png',fullPage:false});
