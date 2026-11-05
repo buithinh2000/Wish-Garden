@@ -3,9 +3,9 @@ on:
   workflow_dispatch:
     inputs:
       mode:
-        description: 'validate is local-only; deploy creates isolated AWS resources'
+        description: 'validate has no AWS writes; site deploys only S3 and CloudFront; deploy also provisions backend'
         type: choice
-        options: [validate, deploy]
+        options: [validate, site, deploy]
         default: validate
         required: true
 permissions:
@@ -28,7 +28,7 @@ jobs:
           node --test tests/*.test.mjs
   deploy:
     needs: validate
-    if: ${{ github.event.inputs.mode == 'deploy' && github.ref == 'refs/heads/main' }}
+    if: ${{ (github.event.inputs.mode == 'site' || github.event.inputs.mode == 'deploy') && github.ref == 'refs/heads/main' }}
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     environment: wish-garden-aws-staging
@@ -55,12 +55,14 @@ jobs:
             --template-file aws/cloudformation/site.yaml --no-fail-on-empty-changeset \
             --tags Project=Wish-Garden Environment=staging
       - name: Deploy isolated read-only API stack
+        if: github.event.inputs.mode == 'deploy'
         run: |
           aws cloudformation deploy --stack-name wish-garden-staging-api \
             --template-file aws/cloudformation/api.yaml --no-fail-on-empty-changeset \
             --capabilities CAPABILITY_NAMED_IAM \
             --tags Project=Wish-Garden Environment=staging
       - name: Release read-only Lambda (remote registration stays disabled)
+        if: github.event.inputs.mode == 'deploy'
         run: |
           mkdir -p /tmp/wish-garden-lambda
           cp aws/lambda/handler.py /tmp/wish-garden-lambda/index.py
