@@ -304,6 +304,15 @@ try{
   const afterOrbit=await worldPage.evaluate(()=>window.WishWorld3D.getState());
   assert.ok(afterOrbit.azimuth>beforeOrbit.azimuth,'world orbit must respond');
   await worldPage.screenshot({path:'qa-screenshots/'+viewport.width+'-standalone-world.png',fullPage:false});
+  // The sanctuary is a simple spiritual space, not a game: users should reach
+  // the existing private ceremony directly, without re-entering the homepage.
+  const wishEntry=worldPage.getByRole('link',{name:'Make a private wish in Wish Garden'});
+  assert.equal(await wishEntry.isVisible(),true,'world prayer CTA is visible on desktop and mobile');
+  await wishEntry.click();
+  await worldPage.waitForURL(url=>url.pathname.endsWith('/index.html'));
+  await worldPage.waitForFunction(()=>document.querySelector('#prayerPanel')?.classList.contains('open'),{timeout:7000});
+  assert.equal(await worldPage.locator('#wish').inputValue(),'','opening from 3D world does not prefill or expose private wish text');
+  assert.equal(new URL(worldPage.url()).searchParams.has('ritual'),false,'entry query is removed after opening ceremony');
   await worldPage.close();
   // Simulate a user's browser failing to load WebGL: never leave an empty page.
   const fallbackPage=await context.newPage();
