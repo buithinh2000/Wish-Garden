@@ -279,7 +279,11 @@ try{
   assert.equal(await worldPage.locator('#fallback').isVisible(),false,'world renderer must remove loading cover');
   const worldBounds=await worldPage.locator('#sanctuary3d').boundingBox();
   assert.ok(worldBounds?.height>viewport.height*.9,'world must cover entire screen');
-  const beforeOrbit=await worldPage.evaluate(()=>window.WishWorld3D.getState());
+  await worldPage.waitForFunction(()=>window.WishWorld3D?.getState().visitorSource==='civilian-glb',{timeout:15000});
+  const visitorState=await worldPage.evaluate(()=>window.WishWorld3D.getState());
+  assert.equal(visitorState.visitorVisible,true,'standalone world must include a visible human visitor');
+  assert.equal(visitorState.visitorSource,'civilian-glb','world must load the real civilian human asset, not just a primitive substitute');
+    const beforeOrbit=await worldPage.evaluate(()=>window.WishWorld3D.getState());
   await worldPage.locator('#worldRight').click();
   const afterOrbit=await worldPage.evaluate(()=>window.WishWorld3D.getState());
   assert.ok(afterOrbit.azimuth>beforeOrbit.azimuth,'world orbit must respond');
@@ -293,6 +297,7 @@ try{
   assert.equal(await fallbackPage.locator('#fallback').isVisible(),false,'3D software fallback removes waiting overlay');
   assert.equal(await fallbackPage.locator('#softwareWorld').isVisible(),true,'standalone world draws an actual perspective scene despite failed WebGL');
   const swBefore=await fallbackPage.evaluate(()=>window.WishSoftware3D.getState());
+  assert.equal(swBefore.visitorDrawn,true,'software world must visibly draw a human in perspective');
   assert.ok(swBefore.faces>100,'software fallback has substantive 3D scene geometry');
   assert.ok(swBefore.faces>1200,'rounded tree canopies have substantial 3D surface geometry');
   assert.ok(swBefore.faces>1400,'garden has additional spatial landscaping and pavilion geometry');
