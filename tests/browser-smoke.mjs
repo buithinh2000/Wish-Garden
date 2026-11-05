@@ -195,6 +195,8 @@ try{
   await page.locator('#mySky').click();
   assert.equal(await page.locator('.memory-star').count(),0,'no saved stars remain after deletion and reload');
   await page.locator('#closeSky').click();
+  await page.locator('#enter').click();
+  await page.locator('#wish').waitFor({state:'visible'});
   assert.equal(await page.locator('#wishRestore').isVisible(),true,'JSON restore action is available');
   const restored=[{id:'backup-test-'+viewport.width,text:'Private restored hope',topic:1,date:'2026-11-05T02:00:00.000Z'}];
   const backup={name:'wish-garden-export.json',mimeType:'application/json',buffer:Buffer.from(JSON.stringify(restored))};
