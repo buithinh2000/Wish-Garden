@@ -118,6 +118,7 @@ jobs:
           printf 'Not Found\n' >dist/404.html
           # Unique public preview path bypasses a previously cached /index.html and 3D bundle.
           cp dist/index.html dist/3d-preview.html
+          sed -i 's@<body>@<body class="world-showcase">@' dist/3d-preview.html
           cp dist/assets/sanctuary-world.bundle.js dist/assets/sanctuary-world-verified-v1.bundle.js
           sed -i 's@assets/sanctuary-world.bundle.js@assets/sanctuary-world-verified-v1.bundle.js@g' dist/3d-preview.html
           grep -q 'sanctuary-world-verified-v1.bundle.js' dist/3d-preview.html
