@@ -309,18 +309,27 @@ try{
   const afterOrbit=await worldPage.evaluate(()=>window.WishWorld3D.getState());
   assert.ok(afterOrbit.azimuth>beforeOrbit.azimuth,'world orbit must respond');
   await worldPage.screenshot({path:'qa-screenshots/'+viewport.width+'-standalone-world.png',fullPage:false});
-  // The sanctuary is a simple spiritual space, not a game: users should reach
-  // the existing private ceremony directly, without re-entering the homepage.
+  // The entire prayer ritual stays inside the same sanctuary and 3D canvas.
   const wishEntry=worldPage.getByRole('link',{name:'Make a private wish in Wish Garden'});
-  assert.equal(await wishEntry.isVisible(),true,'world prayer CTA is visible on desktop and mobile');
+  assert.equal(await wishEntry.isVisible(),true,'prayer entry is visible on desktop and mobile');
   await wishEntry.click();
-  await worldPage.waitForURL(url=>url.pathname.endsWith('/index.html'));
-  await worldPage.waitForFunction(()=>document.querySelector('#prayerPanel')?.classList.contains('open'),{timeout:7000});
-  assert.equal(await worldPage.locator('#wish').inputValue(),'','opening from 3D world does not prefill or expose private wish text');
-  assert.equal(new URL(worldPage.url()).searchParams.has('ritual'),false,'entry query is removed after opening ceremony');
+  assert.equal(new URL(worldPage.url()).pathname.endsWith('/world.html'),true,'prayer does not exit 3D world');
+  assert.equal(await worldPage.locator('#sanctuary3d').isVisible(),true,'3D sanctuary remains behind ritual');
+  assert.equal(await worldPage.locator('#ritualPanel').isVisible(),true,'in-scene prayer form opens');
+  assert.equal(await worldPage.locator('#ritualWords').inputValue(),'','private words start blank');
+  assert.equal(await worldPage.locator('#ritualRelease').isDisabled(),true,'cannot release empty words');
+  await worldPage.locator('#ritualWords').fill('A quiet light from this garden');
+  await worldPage.locator('#ritualRelease').click();
+  assert.equal(await worldPage.locator('#ritualComplete').isVisible(),true,'release ends with a ritual closure');
+  assert.equal(await worldPage.locator('#ritualLight').isVisible(),true,'symbolic light rises within same sanctuary');
+  assert.equal((await worldPage.evaluate(()=>window.WishInWorldRitual.getState())).stored,0,'unsaved prayers are not persisted by default');
+  assert.equal(await worldPage.locator('#sanctuary3d').isVisible(),true,'renderer stays visible after release');
+  await worldPage.locator('#ritualReturn').click();
+  assert.equal(await worldPage.locator('#ritualPanel').isVisible(),false,'ritual closes back to same sanctuary');
+  assert.equal(new URL(worldPage.url()).pathname.endsWith('/world.html'),true,'no navigation throughout wish');
   await worldPage.close();
-  // MVP return journey: the owner of a wish can reopen private saved wishes
-  // directly from the garden without starting the prayer or exposing wish text.
+  // Returning visitors can view/delete only their own locally saved wishes,
+  // in the same world and without starting a new prayer.
   const memoryPage=await context.newPage();
   await memoryPage.goto('http://127.0.0.1:'+port+'/world.html');
   await memoryPage.evaluate(()=>{
@@ -330,29 +339,32 @@ try{
     ]));
   });
   const memoryEntry=memoryPage.getByRole('link',{name:'View my saved wishes on this device'});
-  assert.equal(await memoryEntry.isVisible(),true,'My wishes action is visible in the garden on desktop and mobile');
+  assert.equal(await memoryEntry.isVisible(),true,'memories entry visible');
   await memoryEntry.click();
-  await memoryPage.waitForURL(url=>url.pathname.endsWith('/index.html'));
-  assert.equal(await memoryPage.locator('#prayerPanel').isVisible(),true,'saved wishes panel opens directly');
-  assert.match(await memoryPage.locator('#list').textContent(),/My saved private hope/,'previously stored local wish is visible');
-  assert.equal(await memoryPage.locator('.garden').evaluate(el=>el.classList.contains('walking')),false,'reading memories must not start walking or prayer');
-  assert.equal(await memoryPage.locator('#savedTitle').evaluate(el=>document.activeElement===el),true,'focus moves to saved wishes heading');
-  assert.match(await memoryPage.locator('#savedDeviceNotice').textContent(),/Not synced between devices/,'user sees device-only storage limitation');
-  assert.equal(new URL(memoryPage.url()).searchParams.has('mine'),false,'saved-wishes route is removed from the address');
-  assert.equal(await memoryPage.locator('.wish-delete-one').count(),2,'each saved wish has its own delete action');
+  assert.equal(new URL(memoryPage.url()).pathname.endsWith('/world.html'),true,'My wishes stays in sanctuary');
+  assert.equal(await memoryPage.locator('#ritualMemories').isVisible(),true,'saved wishes open in-scene');
+  assert.match(await memoryPage.locator('#ritualMemoryList').textContent(),/My saved private hope/,'local wish visible');
+  assert.equal(await memoryPage.locator('#ritualMemoriesTitle').evaluate(el=>document.activeElement===el),true,'focus reaches saved memories');
+  assert.equal(await memoryPage.locator('#ritualMemoryList button').count(),2,'individual deletion controls');
   memoryPage.once('dialog',dialog=>dialog.dismiss());
-  await memoryPage.locator('.wish-delete-one').first().click();
-  assert.equal(await memoryPage.locator('.wish-delete-one').count(),2,'cancel must keep both private wishes');
+  await memoryPage.locator('#ritualMemoryList button').first().click();
+  assert.equal(await memoryPage.locator('#ritualMemoryList button').count(),2,'cancel preserves both');
   memoryPage.once('dialog',dialog=>dialog.accept());
-  await memoryPage.locator('.wish-delete-one').first().click();
-  assert.equal(await memoryPage.locator('.wish-delete-one').count(),1,'delete one wish must retain other wishes');
-  assert.equal(await memoryPage.evaluate(()=>JSON.parse(localStorage.getItem('wg-preview-local-01'))[0].id),'my-wish-2');
-  assert.doesNotMatch(await memoryPage.locator('#list').textContent(),/My saved private hope/,'deleted wish no longer in local list');
-  assert.match(await memoryPage.locator('#list').textContent(),/Keep this second hope/,'remaining wish still visible');
+  await memoryPage.locator('#ritualMemoryList button').first().click();
+  assert.equal(await memoryPage.locator('#ritualMemoryList button').count(),1,'delete only selected wish');
+  assert.match(await memoryPage.locator('#ritualMemoryList').textContent(),/Keep this second hope/,'other wish survives');
+  await memoryPage.locator('#ritualNewWish').click();
+  await memoryPage.locator('#ritualWords').fill('Saved directly from the sanctuary');
+  await memoryPage.locator('#ritualSave').check();
+  await memoryPage.locator('#ritualRelease').click();
+  assert.equal((await memoryPage.evaluate(()=>window.WishInWorldRitual.getState())).stored,2,'opted-in prayer saves on device');
+  await memoryPage.locator('#ritualReturn').click();
   await memoryPage.reload();
-  assert.equal(await memoryPage.locator('.wish-delete-one').count(),1,'individual deletion persists after reload');
-  await memoryPage.locator('#mySky').click();
-  assert.equal(await memoryPage.locator('.memory-star').count(),1,'private sky immediately reflects individual deletion');
+  await memoryPage.getByRole('link',{name:'View my saved wishes on this device'}).click();
+  assert.match(await memoryPage.locator('#ritualMemoryList').textContent(),/Saved directly from the sanctuary/,'saved wish persists after reload');
+  assert.doesNotMatch(await memoryPage.locator('#ritualMemoryList').textContent(),/My saved private hope/,'deleted wish stays deleted');
+  await memoryPage.keyboard.press('Escape');
+  assert.equal(await memoryPage.locator('#ritualPanel').isVisible(),false,'Escape returns to sanctuary');
   await memoryPage.close();
   // Simulate a user's browser failing to load WebGL: never leave an empty page.
   const fallbackPage=await context.newPage();
