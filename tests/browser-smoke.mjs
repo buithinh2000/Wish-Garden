@@ -319,6 +319,26 @@ try{
   assert.equal(await worldPage.locator('#wish').inputValue(),'','opening from 3D world does not prefill or expose private wish text');
   assert.equal(new URL(worldPage.url()).searchParams.has('ritual'),false,'entry query is removed after opening ceremony');
   await worldPage.close();
+  // MVP return journey: the owner of a wish can reopen private saved wishes
+  // directly from the garden without starting the prayer or exposing wish text.
+  const memoryPage=await context.newPage();
+  await memoryPage.addInitScript(()=>{
+    localStorage.setItem('wg-preview-local-01',JSON.stringify([
+      {id:'my-wish-1',text:'My saved private hope',topic:0,date:'2026-11-05T02:00:00.000Z'}
+    ]));
+  });
+  await memoryPage.goto('http://127.0.0.1:'+port+'/world.html');
+  const memoryEntry=memoryPage.getByRole('link',{name:'View my saved wishes on this device'});
+  assert.equal(await memoryEntry.isVisible(),true,'My wishes action is visible in the garden on desktop and mobile');
+  await memoryEntry.click();
+  await memoryPage.waitForURL(url=>url.pathname.endsWith('/index.html'));
+  assert.equal(await memoryPage.locator('#prayerPanel').isVisible(),true,'saved wishes panel opens directly');
+  assert.match(await memoryPage.locator('#list').textContent(),/My saved private hope/,'previously stored local wish is visible');
+  assert.equal(await memoryPage.locator('.garden').evaluate(el=>el.classList.contains('walking')),false,'reading memories must not start walking or prayer');
+  assert.equal(await memoryPage.locator('#savedTitle').evaluate(el=>document.activeElement===el),true,'focus moves to saved wishes heading');
+  assert.match(await memoryPage.locator('#savedDeviceNotice').textContent(),/Not synced between devices/,'user sees device-only storage limitation');
+  assert.equal(new URL(memoryPage.url()).searchParams.has('mine'),false,'saved-wishes route is removed from the address');
+  await memoryPage.close();
   // Simulate a user's browser failing to load WebGL: never leave an empty page.
   const fallbackPage=await context.newPage();
   await fallbackPage.route('**/assets/sanctuary-world.bundle.js*',route=>route.abort());
