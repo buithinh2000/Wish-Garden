@@ -9,13 +9,13 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'lambda'))
 from handler import next_batch, handler
 
 class ApiTests(unittest.TestCase):
-    def req(self, method='GET', path='/api/v1/summary', origin='https://buithinh2000.github.io'):
+    def req(self, method='GET', path='/api/v1/summary', origin='https://d3vvpfv5t9ws76.cloudfront.net'):
         return {'headers': {'origin': origin}, 'rawPath': path,
                 'requestContext': {'http': {'method': method}}}
 
     def setUp(self):
         self.config = patch.dict(os.environ, {
-            'ALLOWED_ORIGIN': 'https://buithinh2000.github.io',
+            'ALLOWED_ORIGIN': 'https://d3vvpfv5t9ws76.cloudfront.net',
             'TABLE_NAME': 'wish-garden-staging-participation-916004827349',
             'REGISTRATION_ENABLED': 'false',
         })
@@ -45,6 +45,29 @@ class ApiTests(unittest.TestCase):
     def test_untrusted_origins_are_rejected(self):
         self.assertEqual(handler(self.req(origin='https://evil.invalid'), None)['statusCode'], 403)
         self.assertEqual(handler(self.req(origin=''), None)['statusCode'], 403)
+
+    def test_readonly_api_matches_verified_aws_frontend_origin(self):
+        from pathlib import Path
+        template = (Path(__file__).resolve().parents[1] / 'cloudformation' / 'api.yaml').read_text()
+        self.assertIn('Default: https://d3vvpfv5t9ws76.cloudfront.net', template)
+        self.assertNotIn('Default: https://buithinh2000.github.io', template)
+        response = handler(self.req(), None)
+        self.assertEqual(response['statusCode'], 200)
+        self.assertEqual(response['headers']['Access-Control-Allow-Origin'], 'https://d3vvpfv5t9ws76.cloudfront.net')
+        self.assertEqual(response['headers']['Cache-Control'], 'no-store')
+
+    def test_no_write_even_if_flag_accidentally_enabled(self):
+        with patch.dict(os.environ, {'REGISTRATION_ENABLED': 'true'}):
+            for method in ('POST', 'PATCH', 'DELETE', 'PUT'):
+                response = handler(self.req(method=method, path='/api/v1/participation'), None)
+                self.assertEqual(response['statusCode'], 503)
+                self.assertEqual(json.loads(response['body'])['error'], 'REGISTRATION_NOT_ENABLED')
+
+    def test_no_cross_origin_cors_or_private_data_on_reject(self):
+        response = handler(self.req(origin='https://attacker.invalid'), None)
+        self.assertEqual(response['statusCode'], 403)
+        self.assertNotIn('Access-Control-Allow-Origin', response['headers'])
+        self.assertNotIn('TABLE_NAME', response['body'])
 
     def test_missing_aws_config_fails_closed(self):
         with patch.dict(os.environ, {'ALLOWED_ORIGIN': ''}):
