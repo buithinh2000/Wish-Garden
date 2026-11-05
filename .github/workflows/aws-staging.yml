@@ -113,6 +113,7 @@ jobs:
           npx esbuild src/sanctuary-world.js --bundle --format=iife --target=es2020 --minify --outfile=assets/sanctuary-world.bundle.js
           node tests/browser-smoke.mjs
           cp index.html dist/
+          cp world.html dist/
           cp -R src dist/
           cp -R assets dist/
           printf 'Not Found\n' >dist/404.html
@@ -139,13 +140,13 @@ jobs:
           python3 - <<'PY'
           import urllib.request
           root="https://d3vvpfv5t9ws76.cloudfront.net"
-          with urllib.request.urlopen(root+"/3d-preview.html",timeout=20) as response:
+          with urllib.request.urlopen(root+"/world.html",timeout=20) as response:
               html=response.read().decode("utf-8")
-          assert "sanctuary-world-verified-v1.bundle.js" in html, "CloudFront returned wrong or stale 3D preview HTML"
-          with urllib.request.urlopen(root+"/assets/sanctuary-world-verified-v1.bundle.js",timeout=20) as response:
+          assert "Walk into the garden." in html and "sanctuary-world.bundle.js" in html, "CloudFront did not serve the standalone 3D world"
+          with urllib.request.urlopen(root+"/assets/sanctuary-world.bundle.js",timeout=20) as response:
               script=response.read()
           assert len(script)>10000, "CloudFront 3D bundle was missing"
-          print("PASS: CloudFront serves fresh 3D preview entry and first-party bundle")
+          print("PASS: CloudFront serves standalone 3D world and first-party bundle")
           PY
           node tests/cloudfront-3d-smoke.mjs
       - name: Print AWS preview and API endpoint
