@@ -81,7 +81,7 @@ body.world-ready #showRenderDetails{display:none}
  const root=document.querySelector('.garden'),status=document.querySelector('#worldStatus'),fallback=document.getElementById('fallback');
  const check=()=>{if(root.classList.contains('world-ready')){document.body.classList.add('world-ready');status.textContent='3D RENDERER ACTIVE · MOVE THE CAMERA';fallback.hidden=true;observer.disconnect();}};
  const observer=new MutationObserver(check);observer.observe(root,{attributes:true,attributeFilter:['class']});check();
- window.addEventListener('error',()=>{if(!root.classList.contains('world-ready'))status.textContent='3D unavailable on this device';});
+ window.addEventListener('error',()=>{if(!root.classList.contains('world-ready')&&!document.body.classList.contains('software-ready'))status.textContent='3D unavailable on this device';});
 })();
 </script>
 <script>
