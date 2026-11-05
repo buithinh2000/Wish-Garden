@@ -124,6 +124,9 @@ jobs:
           case "$BUCKET" in wish-garden-staging-site-916004827349-sg1) ;; *) echo "Unexpected destination"; exit 1;; esac
           test "$(aws cloudformation describe-stacks --stack-name wish-garden-staging-site --query "Stacks[0].StackStatus" --output text)" = "CREATE_COMPLETE"
           aws s3 sync dist/ "s3://$BUCKET/" --delete --only-show-errors
+          # Keep staging HTML and first-party 3D JS fresh after the ONE initial CloudFront invalidation.
+          # Force metadata updates even if asset bytes did not change; sync alone retains old Cache-Control.
+          aws s3 cp dist/ "s3://$BUCKET/" --recursive --cache-control "no-cache, max-age=0, must-revalidate" --only-show-errors
       - name: Print AWS preview and API endpoint
         run: |
           if [ "${{ github.event.inputs.mode }}" != 'api' ]; then
