@@ -82,6 +82,24 @@ if(garden){
   const secondEdge=cone(6.0,.30,4,roofEdge,0,10.5,0,pavilion);secondEdge.rotation.y=Math.PI/4;secondEdge.scale.z=.84;
   for(const x of [-2.5,2.5])for(const z of [-2,2])cylinder(.17,.17,2.6,darkWood,x,9,z,pavilion);
   cylinder(.12,.12,1.2,gold,0,13.0,0,pavilion);
+  // The focal sanctuary is an authored CC0 lotus garden GLB, not a
+  // procedural roof. The original lightweight pavilion is only a fallback.
+  let sanctuarySource='fallback',sanctuaryVisible=false;
+  const sanctuaryLoader=new GLTFLoader();
+  sanctuaryLoader.load('assets/sanctuary/lotus-pond-pavilion.glb',gltf=>{
+    const lotus=gltf.scene;
+    const bounds=new THREE.Box3().setFromObject(lotus);
+    const dimensions=bounds.getSize(new THREE.Vector3());
+    if(!Number.isFinite(dimensions.x)||!Number.isFinite(dimensions.y)||dimensions.x<.5||dimensions.y<.5)throw Error('Invalid pavilion dimensions');
+    const center=bounds.getCenter(new THREE.Vector3());
+    const scale=Math.min(1.35,24/Math.max(dimensions.x,dimensions.z));
+    lotus.scale.setScalar(scale);
+    lotus.position.set(-center.x*scale,-bounds.min.y*scale,-18-center.z*scale);
+    scene.add(lotus);
+    scene.remove(pavilion);
+    sanctuarySource='cc0-lotus-glb';sanctuaryVisible=true;
+    schedule();
+  },undefined,()=>{sanctuarySource='fallback';schedule();});
   // Lanterns provide spatial cues while orbiting.
   const lanternMat=new THREE.MeshStandardMaterial({color:0xffc67e,emissive:0xff9c45,emissiveIntensity:2.6});
   for(const side of [-1,1])for(let n=0;n<7;n++){
@@ -320,6 +338,6 @@ if(garden){
     window.WishWorldWebGLError=String(error?.message||'WebGL scene initialization failed').slice(0,180);
     ro.disconnect();renderer.dispose();canvas.remove();controls.remove();
   }
-  window.WishWorld3D={getState(){return {ready,azimuth,radius,elevation,walkMode,walkT,walkDistance,walkLateral,visitorSource,visitorVisible:!!visitorModel,visitorAnimated:!!visitorMixer,visitorAnimationTime,daylight:window.WishDaylight?.getState().phase||'night',natureSource,natureTreeCount,meshes:scene.children.filter(x=>x.isMesh).length};},orbit,zoom};
+  window.WishWorld3D={getState(){return {ready,azimuth,radius,elevation,walkMode,walkT,walkDistance,walkLateral,visitorSource,visitorVisible:!!visitorModel,visitorAnimated:!!visitorMixer,visitorAnimationTime,daylight:window.WishDaylight?.getState().phase||'night',natureSource,natureTreeCount,sanctuarySource,sanctuaryVisible,meshes:scene.children.filter(x=>x.isMesh).length};},orbit,zoom};
  }
 }
