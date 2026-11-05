@@ -19,7 +19,29 @@ jobs:
             echo "Not configured: Wish Garden dedicated OIDC role";
             exit 1;
           }
+      - name: Diagnose GitHub OIDC public claims only (never show JWT)
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const jwt = await core.getIDToken('sts.amazonaws.com');
+            const part = jwt.split('.')[1];
+            const payload = JSON.parse(Buffer.from(part, 'base64url').toString('utf8'));
+            const info = {
+              iss: payload.iss,
+              aud: payload.aud,
+              sub: payload.sub,
+              repository: payload.repository,
+              repository_id: payload.repository_id,
+              repository_owner_id: payload.repository_owner_id,
+              environment: payload.environment,
+              ref: payload.ref
+            };
+            console.log('SAFE_OIDC_CLAIMS=' + JSON.stringify(info));
+            if (payload.iss !== 'https://token.actions.githubusercontent.com' || payload.aud !== 'sts.amazonaws.com')
+              core.setFailed('Unexpected issuer or audience; do not change IAM policy');
       - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          disable-retry: true
         with:
           role-to-assume: ${{ vars.WISH_GARDEN_AWS_ROLE_ARN }}
           role-session-name: WishGardenOIDCPreflight
