@@ -278,7 +278,10 @@ try{
   assert.equal(await fallbackPage.locator('#showRenderDetails').isVisible(),true,'software mode gives user clear graphics diagnostic control');
   await fallbackPage.locator('#showRenderDetails').click();
   assert.equal(await fallbackPage.locator('#renderDiagnostics').isVisible(),true,'graphics diagnostics open without developer console');
-  assert.match(await fallbackPage.locator('#renderDetailText').textContent(),/WebGL|3D bundle/);
+  assert.match(await fallbackPage.locator('#renderDetailText').textContent(),/3D engine JavaScript failed to load/,'blocked bundle displays root cause');
+  assert.equal((await fallbackPage.evaluate(()=>window.WishRenderDiagnostic.getState())).assetStatus,'failed','3D bundle load failure is exposed');
+  assert.match(await fallbackPage.locator('#worldStatus').textContent(),/3D SCRIPT FAILED/,'visible HUD must name missing engine');
+  assert.equal(await fallbackPage.locator('#retryWebGL').isVisible(),true,'users can retry graphics from the app');
   await fallbackPage.locator('#closeRenderDetails').click();
   assert.equal(await fallbackPage.locator('#renderDiagnostics').isVisible(),false);
 

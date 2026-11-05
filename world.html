@@ -42,6 +42,7 @@ body.software-ready .status{bottom:95px}
 #renderDiagnostics h2{font-size:15px;margin:0 0 8px}
 #renderDiagnostics p{margin:0 0 12px}
 #renderDiagnostics button{border:1px solid #e2c69a;border-radius:12px;padding:9px 13px;background:#27414c;color:#f5e8d0;cursor:pointer}
+#renderDiagnostics #retryWebGL{background:#dfbf82;color:#14303a;font-weight:700}
 #renderDiagnostics[hidden]{display:none}
 #showRenderDetails{position:fixed;z-index:31;left:clamp(16px,4vw,54px);bottom:clamp(18px,6vh,66px);padding:8px 12px;color:#f5e3bd;background:#142f3bd9;border:1px solid #e2c69a7a;border-radius:24px;cursor:pointer;font-size:12px}
 body.world-ready #showRenderDetails{display:none}
@@ -69,9 +70,10 @@ body.world-ready #showRenderDetails{display:none}
 <header class="site-head"><a class="brand" href="./index.html">✦ WISH GARDEN</a><a class="back" href="./index.html">← Private wishes</a></header>
 <section class="heading" aria-label="3D exploration introduction"><small>Interactive world · 3D</small><h1>Walk into the garden.</h1><p>Explore the pavilion and lantern path. Drag or swipe to turn; select Explore to move inside.</p></section>
 <div class="status" id="worldStatus" role="status">Starting 3D renderer</div>
-<button type="button" id="showRenderDetails" hidden aria-expanded="false" aria-controls="renderDiagnostics">Why Software Mode?</button>
-<section id="renderDiagnostics" hidden aria-label="3D graphics diagnostics"><h2>3D graphics on this browser</h2><p id="renderDetailText"></p><button type="button" id="closeRenderDetails">Close</button></section>
-<script src="assets/sanctuary-world.bundle.js" defer></script>
+<button type="button" id="showRenderDetails" hidden aria-expanded="false" aria-controls="renderDiagnostics">Graphics details</button>
+<section id="renderDiagnostics" hidden aria-label="3D graphics diagnostics"><h2>3D graphics on this browser</h2><p id="renderDetailText"></p><button type="button" id="retryWebGL">Retry 3D graphics</button> <button type="button" id="closeRenderDetails">Close</button></section>
+<script>window.WishWorldAssetStatus='pending';</script>
+<script src="assets/sanctuary-world.bundle.js" defer onload="window.WishWorldAssetStatus='loaded'" onerror="window.WishWorldAssetStatus='failed'"></script>
 <script>
 (function(){
  const root=document.querySelector('.garden'),status=document.querySelector('#worldStatus'),fallback=document.getElementById('fallback');
@@ -263,14 +265,24 @@ function start(){
  try{const probe=document.createElement('canvas');gl2=!!probe.getContext('webgl2');if(!gl2)gl1=!!probe.getContext('webgl');}
  catch{}
  const safeError=(window.WishWorldWebGLError||'').replace(/[<>]/g,'').slice(0,140);
- const reason=!gl2?(gl1?'WebGL 1 is available, but this scene needs WebGL 2.':'WebGL graphics are unavailable or blocked in this browser.'):
-   safeError?'WebGL 2 exists, but this scene could not initialize: '+safeError:
-   'WebGL 2 is available, but the 3D bundle did not finish loading or initializing.';
- detailsText.textContent=reason+' This preview is using an interactive software-rendered perspective instead. No diagnostics leave your browser.';
+ const assetStatus=window.WishWorldAssetStatus||'unknown';
+ const reason=assetStatus==='failed'
+   ? '3D engine JavaScript failed to load. Please verify the internet connection or browser extensions.'
+   : !gl2
+     ? (gl1?'WebGL 1 works, but the full scene needs WebGL 2.':'Chrome has blocked or disabled WebGL graphics on this device.')
+     : safeError
+       ? 'WebGL 2 is available, but the scene failed to start: '+safeError
+       : 'WebGL 2 appears available, but the 3D scene did not finish starting.';
+ const brief=assetStatus==='failed'?'3D SCRIPT FAILED':
+   !gl2?(gl1?'WEBGL 2 UNAVAILABLE':'WEBGL DISABLED'):
+   safeError?'WEBGL SCENE ERROR':'3D SCENE DID NOT START';
+ status.textContent='PERSPECTIVE MODE · '+brief+' · CLICK GRAPHICS DETAILS';
+ detailsText.textContent=reason+' 3D file: '+assetStatus+'. The perspective scene remains interactive. Nothing is sent to a server.';
  details.hidden=false;
  details.addEventListener('click',()=>{panel.hidden=!panel.hidden;details.setAttribute('aria-expanded',String(!panel.hidden));});
+ document.getElementById('retryWebGL').addEventListener('click',()=>window.location.reload());
  document.getElementById('closeRenderDetails').addEventListener('click',()=>{panel.hidden=true;details.setAttribute('aria-expanded','false');});
- window.WishRenderDiagnostic={getState:()=>({gl2,gl1,reason,mode:'software'})};
+ window.WishRenderDiagnostic={getState:()=>({gl2,gl1,reason,assetStatus,mode:'software'})};
 
  window.WishSoftware3D={getState:()=>({active,yaw,zoom,walk,faces:faces.length})};
  paint();
