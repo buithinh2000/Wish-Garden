@@ -34,6 +34,17 @@ jobs:
         run: |
           npm install --no-save playwright@1.56.1 three@0.180.0 esbuild@0.25.12 @gltf-transform/cli@4.5.1
           npx playwright install chromium
+      - name: Fetch selected Kenney Nature Kit CC0 models
+        run: |
+          curl --fail --location --retry 3 --connect-timeout 15 --max-time 90 'https://kenney.nl/media/pages/assets/nature-kit/37ac38a37b-1677698939/kenney_nature-kit.zip' --output /tmp/wish-nature-kit.zip
+          echo 'fa7974a0d342bfe63c38664ba9f8ec1a4aab8ea25f099bdc56870e33588c4d9d  /tmp/wish-nature-kit.zip' | sha256sum -c -
+          mkdir -p assets/nature
+          unzip -p /tmp/wish-nature-kit.zip 'Models/GLTF format/tree_default.glb' > assets/nature/tree_default.glb
+          unzip -p /tmp/wish-nature-kit.zip 'Models/GLTF format/tree_oak.glb' > assets/nature/tree_oak.glb
+          unzip -p /tmp/wish-nature-kit.zip 'Models/GLTF format/rock_largeA.glb' > assets/nature/rock_largeA.glb
+          test "$(wc -c < assets/nature/tree_default.glb)" -gt 200
+          test "$(wc -c < assets/nature/tree_oak.glb)" -gt 200
+          test "$(wc -c < assets/nature/rock_largeA.glb)" -gt 200
       - name: Build 3D visitor with existing preview pipeline
         run: |
           curl --fail --location --retry 3 --connect-timeout 15 --max-time 90 'https://gobkit.com/freebies/human003/Priestess.glb' --output assets/visitor-rig.glb
