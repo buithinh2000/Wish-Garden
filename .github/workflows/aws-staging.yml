@@ -116,6 +116,11 @@ jobs:
           cp -R src dist/
           cp -R assets dist/
           printf 'Not Found\n' >dist/404.html
+          # Unique public preview path bypasses a previously cached /index.html and 3D bundle.
+          cp dist/index.html dist/3d-preview.html
+          cp dist/assets/sanctuary-world.bundle.js dist/assets/sanctuary-world-verified-v1.bundle.js
+          sed -i 's@assets/sanctuary-world.bundle.js@assets/sanctuary-world-verified-v1.bundle.js@g' dist/3d-preview.html
+          grep -q 'sanctuary-world-verified-v1.bundle.js' dist/3d-preview.html
       - name: Upload only site assets to dedicated private S3 bucket
         if: github.event.inputs.mode != 'api'
         run: |
@@ -124,6 +129,24 @@ jobs:
           case "$BUCKET" in wish-garden-staging-site-916004827349-sg1) ;; *) echo "Unexpected destination"; exit 1;; esac
           test "$(aws cloudformation describe-stacks --stack-name wish-garden-staging-site --query "Stacks[0].StackStatus" --output text)" = "CREATE_COMPLETE"
           aws s3 sync dist/ "s3://$BUCKET/" --delete --only-show-errors
+          # Keep staging HTML and first-party 3D JS fresh after the ONE initial CloudFront invalidation.
+          # Force metadata updates even if asset bytes did not change; sync alone retains old Cache-Control.
+          aws s3 cp dist/ "s3://$BUCKET/" --recursive --cache-control "no-cache, max-age=0, must-revalidate" --only-show-errors
+      - name: Verify live CloudFront 3D preview from public HTTPS
+        if: github.event.inputs.mode != 'api'
+        run: |
+          python3 - <<'PY'
+          import urllib.request
+          root="https://d3vvpfv5t9ws76.cloudfront.net"
+          with urllib.request.urlopen(root+"/3d-preview.html",timeout=20) as response:
+              html=response.read().decode("utf-8")
+          assert "sanctuary-world-verified-v1.bundle.js" in html, "CloudFront returned wrong or stale 3D preview HTML"
+          with urllib.request.urlopen(root+"/assets/sanctuary-world-verified-v1.bundle.js",timeout=20) as response:
+              script=response.read()
+          assert len(script)>10000, "CloudFront 3D bundle was missing"
+          print("PASS: CloudFront serves fresh 3D preview entry and first-party bundle")
+          PY
+          node tests/cloudfront-3d-smoke.mjs
       - name: Print AWS preview and API endpoint
         run: |
           if [ "${{ github.event.inputs.mode }}" != 'api' ]; then

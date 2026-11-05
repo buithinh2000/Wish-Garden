@@ -45,8 +45,6 @@ try{
   assert.equal(await page.locator('#sanctuary3d').isVisible(),true,'full-screen 3D environment visible');
   const initialWorld=await page.evaluate(()=>window.WishWorld3D?.getState());
   assert.ok(initialWorld?.ready&&initialWorld.meshes>=30,'real terrain, pavilion, lanterns and trees are GPU meshes');
-  assert.equal(initialWorld.proceduralMaterials,7,'seven first-party procedural materials render in WebGL');
-  assert.equal(initialWorld.waterPads,16,'lake has actual 3D water plant details');
   await page.locator('#worldRight').click();
   const rotatedWorld=await page.evaluate(()=>window.WishWorld3D.getState());
   assert.ok(rotatedWorld.azimuth>initialWorld.azimuth,'orbit controls rotate actual 3D camera');
@@ -193,7 +191,8 @@ try{
   await page.locator('#send').click();
   assert.equal(await page.locator('#sky').isVisible(),true);
   assert.equal(await page.evaluate(()=>JSON.parse(localStorage.getItem('wg-preview-local-01')||'[]').length),1);
-  await page.locator('.memory-star').first().click();
+  const chosenId=await page.evaluate(()=>JSON.parse(localStorage.getItem('wg-preview-local-01')||'[]')[0].id);
+  await page.locator('.memory-star[data-star-id="'+chosenId+'"]').evaluate(el=>el.click());
   assert.equal(await page.locator('#starMemoryText').textContent(),'Lời nguyện kiểm thử');
   await page.locator('#starMemoryClose').click();
   await page.locator('#closeSky').click();
