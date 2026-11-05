@@ -65,6 +65,15 @@ jobs:
           path: qa-screenshots/
           if-no-files-found: ignore
           retention-days: 14
+      - name: Stamp source commit into public world and bust cached 3D bundle
+        env:
+          RELEASE_SHA: ${{ github.sha }}
+        run: |
+          SHORT_SHA="${RELEASE_SHA:0:12}"
+          sed -i "s/__WISH_BUILD_SHA__/${SHORT_SHA}/g" world.html
+          grep -Fq "Build ${SHORT_SHA}" world.html
+          grep -Fq "sanctuary-world.bundle.js?v=${SHORT_SHA}" world.html
+          ! grep -Fq '__WISH_BUILD_SHA__' world.html
       - name: Exclude temporary npm dependencies from Pages artifact
         run: rm -rf node_modules
       - name: Configure GitHub Pages
