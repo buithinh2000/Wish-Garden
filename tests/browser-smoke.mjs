@@ -40,7 +40,18 @@ try{
 
   assert.equal(await page.locator('.garden').getAttribute('aria-hidden'),null,'sanctuary controls cannot be hidden from accessibility tree');
   const sceneVisual=await page.locator('.garden').evaluate(el=>{const s=getComputedStyle(el);const svg=el.querySelector('.garden-art');return {image:s.backgroundImage,svg:getComputedStyle(svg).display}});
-  assert.ok(sceneVisual.image.includes('assets/forest.jpg'),'cinematic forest image applied');
+  await page.waitForFunction(()=>document.querySelector('.garden')?.classList.contains('world-ready') && document.querySelector('#sanctuary3d')?.dataset.rendered==='true',{timeout:15000});
+  assert.equal(sceneVisual.svg,'none','old diagram layer no longer obscures environment');
+  assert.equal(await page.locator('#sanctuary3d').isVisible(),true,'full-screen 3D environment visible');
+  const initialWorld=await page.evaluate(()=>window.WishWorld3D?.getState());
+  assert.ok(initialWorld?.ready&&initialWorld.meshes>=30,'real terrain, pavilion, lanterns and trees are GPU meshes');
+  await page.locator('#worldRight').click();
+  const rotatedWorld=await page.evaluate(()=>window.WishWorld3D.getState());
+  assert.ok(rotatedWorld.azimuth>initialWorld.azimuth,'orbit controls rotate actual 3D camera');
+  await page.locator('#worldNear').click();
+  const zoomedWorld=await page.evaluate(()=>window.WishWorld3D.getState());
+  assert.ok(zoomedWorld.radius<rotatedWorld.radius,'zoom controls change actual 3D camera distance');
+  await page.locator('#worldLeft').click();
   assert.equal(sceneVisual.svg,'none','old diagram layer no longer obscures environment');
   const imageLoaded=await page.evaluate(async()=>{const i=new Image();i.src='assets/forest.jpg';await i.decode();return i.naturalWidth>1000});
   assert.ok(imageLoaded,'forest source loaded at image resolution');

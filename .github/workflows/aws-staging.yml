@@ -110,6 +110,7 @@ jobs:
           mv assets/visitor-human-small.glb assets/visitor-human.glb
           rm -f assets/visitor-human-resized.glb
           npx esbuild src/visitor-rig.js --bundle --format=iife --target=es2020 --minify --outfile=assets/visitor-rig.bundle.js
+          npx esbuild src/sanctuary-world.js --bundle --format=iife --target=es2020 --minify --outfile=assets/sanctuary-world.bundle.js
           node tests/browser-smoke.mjs
           cp index.html dist/
           cp -R src dist/

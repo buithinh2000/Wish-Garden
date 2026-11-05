@@ -1,0 +1,159 @@
+/* Wish Garden: actual navigable 3D sanctuary. Three.js meshes, not a painted scene.
+ * Local first-party bundle; no external runtime calls, telemetry, or private data.
+ * Canvas and controls are progressive: photographic scene remains if WebGL fails.
+ */
+import * as THREE from 'three';
+
+const garden=document.querySelector('.garden');
+if(garden){
+ const canvas=document.createElement('canvas');
+ canvas.id='sanctuary3d';
+ canvas.setAttribute('aria-label','Interactive 3D sanctuary with pavilion, lake, forest and lantern path');
+ canvas.setAttribute('role','img');
+ canvas.style.touchAction='pan-y';
+ garden.prepend(canvas);
+ let renderer;
+ try{renderer=new THREE.WebGLRenderer({canvas,alpha:false,antialias:true,powerPreference:'high-performance'});}
+ catch{canvas.remove();}
+ if(renderer){
+  renderer.setPixelRatio(Math.min(devicePixelRatio||1,1.5));
+  renderer.outputColorSpace=THREE.SRGBColorSpace;
+  renderer.toneMapping=THREE.ACESFilmicToneMapping;
+  renderer.toneMappingExposure=1.12;
+  renderer.shadowMap.enabled=false;
+  const scene=new THREE.Scene();
+  scene.background=new THREE.Color(0x101e2c);
+  scene.fog=new THREE.FogExp2(0x122c39,.020);
+  const camera=new THREE.PerspectiveCamera(53,1,.1,180);
+  const ambient=new THREE.HemisphereLight(0xa9c8dc,0x314b42,2.1);
+  scene.add(ambient);
+  const moon=new THREE.DirectionalLight(0xc0dbff,2.25);moon.position.set(-16,30,16);scene.add(moon);
+  const warm=new THREE.PointLight(0xff9f52,52,32,1.8);warm.position.set(0,8,-12);scene.add(warm);
+  const mat=(color,roughness=1,metalness=0)=>new THREE.MeshStandardMaterial({color,roughness,metalness});
+  const earth=mat(0x263e3b),path=mat(0x807b68),bark=mat(0x382c27),leaf=mat(0x254c42),stone=mat(0x77796f);
+  const darkWood=mat(0x302522),roof=mat(0x26363e),roofEdge=mat(0x52616b),gold=mat(0xe5a760),water=new THREE.MeshStandardMaterial({color:0x1f5664,roughness:.19,metalness:.22,transparent:true,opacity:.88});
+  function mesh(geometry,material,parent=scene){const obj=new THREE.Mesh(geometry,material);parent.add(obj);return obj;}
+  function box(w,h,d,m,x,y,z,parent=scene){const obj=mesh(new THREE.BoxGeometry(w,h,d),m,parent);obj.position.set(x,y,z);return obj;}
+  function cone(rad,height,segments,m,x,y,z,parent=scene){const obj=mesh(new THREE.ConeGeometry(rad,height,segments),m,parent);obj.position.set(x,y,z);return obj;}
+  function cylinder(top,bottom,height,m,x,y,z,parent=scene){const obj=mesh(new THREE.CylinderGeometry(top,bottom,height,10),m,parent);obj.position.set(x,y,z);return obj;}
+  const ground=mesh(new THREE.PlaneGeometry(170,170),earth);ground.rotation.x=-Math.PI/2;ground.position.y=-.10;
+  const walkway=mesh(new THREE.PlaneGeometry(3.3,33),path);walkway.rotation.x=-Math.PI/2;walkway.position.set(0,.018,3);
+  for(let i=0;i<15;i++){box(3.4,.055,.105,stone,0,.048,17-i*1.75);}
+  // A reflective, three-dimensional lake with individual bank stones and islands.
+  const lake=mesh(new THREE.CircleGeometry(17,64),water);lake.rotation.x=-Math.PI/2;lake.scale.set(1.25,.65,1);lake.position.set(12,.005,-20);
+  const island=cylinder(6.0,6.4,.35,earth,9,.10,-18);island.scale.z=.65;
+  for(let i=0;i<30;i++){
+    const a=i*Math.PI*2/30,r=11+(i%3)*1.2;
+    const pebble=mesh(new THREE.DodecahedronGeometry(.45+(i%4)*.13,0),stone);
+    pebble.position.set(12+Math.cos(a)*r,.12,-20+Math.sin(a)*r*.7);
+    pebble.rotation.y=a;
+  }
+  // Pavilion: elevated platform, load-bearing pillars, roof with deep eaves.
+  const pavilion=new THREE.Group();scene.add(pavilion);pavilion.position.set(0,0,-18);
+  box(12,.8,11,darkWood,0,.70,0,pavilion);
+  box(13,.22,12,stone,0,.27,0,pavilion);
+  for(const x of [-4.6,4.6])for(const z of [-3.8,3.8]){
+   cylinder(.25,.30,6.3,darkWood,x,4.2,z,pavilion);
+   cylinder(.43,.43,.22,gold,x,1.15,z,pavilion);
+   box(1.1,.15,1.1,stone,x,1.02,z,pavilion);
+  }
+  for(const z of [-4.25,4.25]){
+    box(11.2,.20,.26,darkWood,0,2.75,z,pavilion);
+    box(11.2,.16,.23,darkWood,0,2.13,z,pavilion);
+  }
+  // The roof is visible from every orbit angle, with two architectural tiers.
+  const firstRoof=cone(9.4,3.7,4,roof,0,8.0,0,pavilion);firstRoof.rotation.y=Math.PI/4;firstRoof.scale.z=.83;
+  const edge=cone(9.7,.40,4,roofEdge,0,6.45,0,pavilion);edge.rotation.y=Math.PI/4;edge.scale.z=.83;
+  const secondRoof=cone(5.8,2.3,4,roof,0,11.5,0,pavilion);secondRoof.rotation.y=Math.PI/4;secondRoof.scale.z=.84;
+  const secondEdge=cone(6.0,.30,4,roofEdge,0,10.5,0,pavilion);secondEdge.rotation.y=Math.PI/4;secondEdge.scale.z=.84;
+  for(const x of [-2.5,2.5])for(const z of [-2,2])cylinder(.17,.17,2.6,darkWood,x,9,z,pavilion);
+  cylinder(.12,.12,1.2,gold,0,13.0,0,pavilion);
+  // Lanterns provide spatial cues while orbiting.
+  const lanternMat=new THREE.MeshStandardMaterial({color:0xffc67e,emissive:0xff9c45,emissiveIntensity:2.6});
+  for(const side of [-1,1])for(let n=0;n<7;n++){
+    const z=12-n*4.4,x=side*(3.1+(n%2)*.30);
+    cylinder(.085,.10,2.7,darkWood,x,1.35,z);
+    box(.8,.93,.8,lanternMat,x,2.9,z);
+    box(1.02,.13,1.02,roof,x,3.43,z);
+    box(.96,.12,.96,darkWood,x,2.37,z);
+    const light=new THREE.PointLight(0xffb46d,3.8,6,2);light.position.set(x,2.9,z);scene.add(light);
+  }
+  // Trunks, branches and foliage are actual meshes at different depths.
+  function tree(x,z,scale,seed){
+    const group=new THREE.Group();group.position.set(x,0,z);group.scale.setScalar(scale);scene.add(group);
+    cylinder(.39,.57,6.5,bark,0,3.10,0,group);
+    for(let j=0;j<4;j++){
+      const a=seed+j*2.1,rad=2.2+j*.22;
+      const branch=cylinder(.12,.20,3.3,bark,Math.cos(a)*1.1,5.9,Math.sin(a)*1.1,group);
+      branch.rotation.z=Math.sin(a)*.6;branch.rotation.x=Math.cos(a)*.6;
+      const canopy=mesh(new THREE.IcosahedronGeometry(rad,1),leaf,group);
+      canopy.position.set(Math.cos(a)*2.1,7.1+(j%2)*.9,Math.sin(a)*2.1);
+      canopy.scale.set(1,.56,.90);
+    }
+  }
+  const trees=[[-13,-9,1.3],[15,-9,1.2],[-20,-22,1.55],[22,-30,1.5],[-11,16,1.1],[12,19,1.4],[-24,6,1.5],[27,10,1.4],[-31,-31,1.7],[32,-43,1.8],[-24,32,1.4],[24,35,1.4]];
+  trees.forEach(([x,z,s],i)=>tree(x,z,s,i*.93));
+  // Stars provide parallax and clearly move with the camera, unlike CSS imagery.
+  const stars=[];
+  for(let i=0;i<100;i++){
+    const phi=(i*2.39996),rad=35+(i%7)*4;
+    stars.push(Math.cos(phi)*rad,17+(i%19)*2,Math.sin(phi)*rad-20);
+  }
+  const starGeo=new THREE.BufferGeometry();
+  starGeo.setAttribute('position',new THREE.Float32BufferAttribute(stars,3));
+  scene.add(new THREE.Points(starGeo,new THREE.PointsMaterial({color:0xe8eefb,size:.17,sizeAttenuation:true})));
+  // Camera orbit plus a walk-in zoom. User can drag/touch or use buttons.
+  let azimuth=0, radius=31, elevation=.26, targetZ=-15, dragging=false,lastX=0,ready=false,raf=0;
+  const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+  function positionCamera(){
+    camera.position.set(Math.sin(azimuth)*radius,7+radius*Math.sin(elevation)*.72,targetZ+Math.cos(azimuth)*radius);
+    camera.lookAt(0,5,targetZ);
+  }
+  const controls=document.createElement('div');controls.id='worldControls';
+  controls.innerHTML='<span id="worldHint"></span><button type="button" id="worldLeft" aria-label="Rotate 3D view left">↶</button><button type="button" id="worldNear" aria-label="Move closer in 3D scene">＋</button><button type="button" id="worldFar" aria-label="Move back in 3D scene">－</button><button type="button" id="worldRight" aria-label="Rotate 3D view right">↷</button>';
+  garden.append(controls);
+  const hint=controls.querySelector('#worldHint');
+  function setHint(){hint.textContent=document.documentElement.lang==='vi'?'3D THẬT · KÉO ĐỂ XOAY':'REAL 3D · DRAG TO ORBIT';}
+  setHint();document.getElementById('lang')?.addEventListener('click',()=>queueMicrotask(setHint));
+  function render(){
+    raf=0;if(!ready||document.hidden)return;
+    const width=Math.max(1,garden.clientWidth),height=Math.max(1,garden.clientHeight);
+    if(canvas.width!==Math.round(width*renderer.getPixelRatio())||canvas.height!==Math.round(height*renderer.getPixelRatio())){
+      renderer.setSize(width,height,false);
+      camera.aspect=width/height;camera.updateProjectionMatrix();
+    }
+    positionCamera();renderer.render(scene,camera);
+  }
+  function schedule(){if(!raf&&ready&&!document.hidden)raf=requestAnimationFrame(render);}
+  function orbit(delta){azimuth=clamp(azimuth+delta,-1.32,1.32);schedule();}
+  function zoom(delta){radius=clamp(radius+delta,17,47);schedule();}
+  canvas.addEventListener('pointerdown',e=>{dragging=true;lastX=e.clientX;canvas.setPointerCapture(e.pointerId);});
+  canvas.addEventListener('pointermove',e=>{if(!dragging)return;const dx=e.clientX-lastX;lastX=e.clientX;orbit(dx*.006);});
+  canvas.addEventListener('pointerup',()=>{dragging=false;});
+  canvas.addEventListener('pointercancel',()=>{dragging=false;});
+  controls.querySelector('#worldLeft').addEventListener('click',()=>orbit(-.24));
+  controls.querySelector('#worldRight').addEventListener('click',()=>orbit(.24));
+  controls.querySelector('#worldNear').addEventListener('click',()=>zoom(-3));
+  controls.querySelector('#worldFar').addEventListener('click',()=>zoom(3));
+  const motion=window.matchMedia('(prefers-reduced-motion: reduce)');
+  const ro=new ResizeObserver(schedule);ro.observe(garden);
+  document.addEventListener('visibilitychange',schedule);
+  document.getElementById('twilight')?.addEventListener('click',()=>{
+    scene.background.set(0x101e2c);scene.fog.color.set(0x122c39);
+    ambient.intensity=2.1;warm.intensity=52;schedule();
+  });
+  document.getElementById('dawn')?.addEventListener('click',()=>{
+    scene.background.set(0x526b75);scene.fog.color.set(0x526b75);
+    ambient.intensity=3;warm.intensity=25;schedule();
+  });
+  // No false 3D success: ready only after a WebGL render has actually succeeded.
+  try{
+    ready=true;render();
+    garden.classList.add('world-ready');
+    canvas.dataset.rendered='true';
+  }catch(error){
+    ready=false;ro.disconnect();renderer.dispose();canvas.remove();controls.remove();
+  }
+  window.WishWorld3D={getState(){return {ready,azimuth,radius,elevation,meshes:scene.children.filter(x=>x.isMesh).length};},orbit,zoom};
+ }
+}
