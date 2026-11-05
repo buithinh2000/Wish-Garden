@@ -109,3 +109,24 @@ jobs:
       - name: Deploy static preview
         id: deployment
         uses: actions/deploy-pages@v4
+      - name: Verify public Pages release and 3D assets
+        env:
+          PAGES_URL: ${{ steps.deployment.outputs.page_url }}
+          RELEASE_SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          test -n "$PAGES_URL"
+          SHORT_SHA="${RELEASE_SHA:0:12}"
+          BASE="${PAGES_URL%/}"
+          echo "Verify deployed site: $BASE/world.html"
+          curl --fail --silent --show-error --location --retry 12 --retry-delay 5 --retry-all-errors --max-time 30 "$BASE/world.html" -o /tmp/live-wish-world.html
+          grep -Fq "Build $SHORT_SHA" /tmp/live-wish-world.html
+          grep -Fq "sanctuary-world.bundle.js?v=$SHORT_SHA" /tmp/live-wish-world.html
+          grep -Fq 'id="daylightStatus"' /tmp/live-wish-world.html
+          grep -Fq 'class="world-prayer-link"' /tmp/live-wish-world.html
+          for FILE in assets/sanctuary-world.bundle.js assets/sanctuary/lotus-pond-pavilion.glb assets/nature/tree_oak.glb assets/visitor-human.glb assets/daylight-clock.js; do
+            curl --fail --silent --show-error --location --retry 5 --retry-delay 3 --retry-all-errors --max-time 30 "$BASE/$FILE" -o /tmp/wish-public-asset
+            test -s /tmp/wish-public-asset
+            echo "PUBLIC OK: $FILE"
+          done
+          echo "PUBLIC PAGES VERIFIED: Build $SHORT_SHA and 3D assets"
