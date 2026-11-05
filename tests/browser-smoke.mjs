@@ -326,7 +326,7 @@ try{
   await worldPage.locator('#ritualRelease').click();
   assert.equal(await worldPage.locator('#ritualComplete').isVisible(),true,'release ends with a ritual closure');
   await worldPage.screenshot({path:'qa-screenshots/'+viewport.width+'-in-world-release.png',fullPage:false});
-  assert.equal(await worldPage.locator('#ritualLight').isVisible(),true,'symbolic light rises within same sanctuary');
+  assert.equal((await worldPage.evaluate(()=>window.WishWorld3D.getState())).wishLightVisible,true,'real sanctuary WebGL light is activated even if reduced-motion hides UI animation');
   assert.equal((await worldPage.evaluate(()=>window.WishInWorldRitual.getState())).stored,0,'unsaved prayers are not persisted by default');
   assert.equal(await worldPage.locator('#sanctuary3d').isVisible(),true,'renderer stays visible after release');
   await worldPage.locator('#ritualReturn').click();
