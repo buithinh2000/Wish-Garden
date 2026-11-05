@@ -127,7 +127,8 @@ if(garden){
     mountain.rotation.y=i*.47;
   }
   // Camera orbit plus a walk-in zoom. User can drag/touch or use buttons.
-  let azimuth=0, radius=31, elevation=.26, targetZ=-15, dragging=false,lastX=0,ready=false,raf=0;
+  const showcase=document.body.classList.contains('world-showcase');
+  let azimuth=showcase?.18:0, radius=showcase?21:31, elevation=showcase?.10:.26, targetZ=showcase?-17:-15, dragging=false,lastX=0,ready=false,raf=0;
   const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
   function positionCamera(){
     const orbitPos=new THREE.Vector3(Math.sin(azimuth)*radius,7+radius*Math.sin(elevation)*.72,targetZ+Math.cos(azimuth)*radius);
