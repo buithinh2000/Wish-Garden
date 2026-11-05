@@ -191,7 +191,8 @@ try{
   await page.locator('#send').click();
   assert.equal(await page.locator('#sky').isVisible(),true);
   assert.equal(await page.evaluate(()=>JSON.parse(localStorage.getItem('wg-preview-local-01')||'[]').length),1);
-  await page.locator('.memory-star').first().click();
+  const chosenId=await page.evaluate(()=>JSON.parse(localStorage.getItem('wg-preview-local-01')||'[]')[0].id);
+  await page.locator('.memory-star[data-star-id="'+chosenId+'"]').evaluate(el=>el.click());
   assert.equal(await page.locator('#starMemoryText').textContent(),'Lời nguyện kiểm thử');
   await page.locator('#starMemoryClose').click();
   await page.locator('#closeSky').click();
