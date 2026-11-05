@@ -3,9 +3,9 @@ on:
   workflow_dispatch:
     inputs:
       mode:
-        description: 'validate has no AWS writes; site deploys only S3 and CloudFront; deploy also provisions backend'
+        description: 'upload syncs website assets to existing S3; site provisions CloudFront; deploy also provisions API'
         type: choice
-        options: [validate, site, deploy]
+        options: [validate, upload, site, deploy]
         default: validate
         required: true
 permissions:
@@ -28,7 +28,7 @@ jobs:
           node --test tests/*.test.mjs
   deploy:
     needs: validate
-    if: ${{ (github.event.inputs.mode == 'site' || github.event.inputs.mode == 'deploy') && github.ref == 'refs/heads/main' }}
+    if: ${{ (github.event.inputs.mode == 'upload' || github.event.inputs.mode == 'site' || github.event.inputs.mode == 'deploy') && github.ref == 'refs/heads/main' }}
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     environment: wish-garden-aws-staging
@@ -50,6 +50,7 @@ jobs:
         run: |
           test "$(aws sts get-caller-identity --query Account --output text)" = "916004827349"
       - name: Deploy isolated site stack with failure diagnostics
+        if: github.event.inputs.mode != 'upload'
         run: |
           if aws cloudformation deploy --stack-name wish-garden-staging-site \
             --template-file aws/cloudformation/site.yaml --no-fail-on-empty-changeset \
@@ -112,6 +113,7 @@ jobs:
           BUCKET="wish-garden-staging-site-916004827349-sg1"
           test -n "$BUCKET"
           case "$BUCKET" in wish-garden-staging-site-916004827349-sg1) ;; *) echo "Unexpected destination"; exit 1;; esac
+          test "$(aws cloudformation describe-stacks --stack-name wish-garden-staging-site --query "Stacks[0].StackStatus" --output text)" = "CREATE_COMPLETE"
           aws s3 sync dist/ "s3://$BUCKET/" --delete --only-show-errors
       - name: Print AWS preview and API endpoint
         run: |
