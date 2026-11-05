@@ -12,6 +12,11 @@ class SiteOnlyPermissions(unittest.TestCase):
   self.assertFalse(any(s['Action']== '*' or s['Resource']=='arn:aws:s3:::*' for s in policy['Statement']))
  def test_site_mode_skips_api_and_lambda(self):
   workflow=(ROOT/'.github/workflows/aws-staging.yml').read_text()
-  self.assertIn('options: [validate, site, deploy]',workflow)
+  self.assertIn('options: [validate, upload, site, deploy]',workflow)
   self.assertIn("if: github.event.inputs.mode == 'deploy'\n        run: |\n          aws cloudformation deploy --stack-name wish-garden-staging-api",workflow)
   self.assertIn("if: github.event.inputs.mode == 'deploy'\n        run: |\n          mkdir -p /tmp/wish-garden-lambda",workflow)
+
+ def test_upload_does_not_touch_existing_stacks(self):
+  workflow=(ROOT/'.github/workflows/aws-staging.yml').read_text()
+  self.assertIn("if: github.event.inputs.mode != 'upload'\n        run: |\n          if aws cloudformation deploy --stack-name wish-garden-staging-site",workflow)
+  self.assertIn("test \"$(aws cloudformation describe-stacks --stack-name wish-garden-staging-site --query \"Stacks[0].StackStatus\" --output text)\" = \"CREATE_COMPLETE\"",workflow)
