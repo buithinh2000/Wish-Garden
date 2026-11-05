@@ -224,7 +224,7 @@ if(garden){
   function render(now=performance.now()){
     raf=0;if(!ready||document.hidden)return;
     const moving=walkMode&&now<walkAnimateUntil&&!motion.matches;
-    if(visitorMixer&&moving){const elapsed=lastRenderTime?Math.min(.06,Math.max(0,(now-lastRenderTime)/1000)):0;visitorMixer.update(elapsed);visitorAnimationTime+=elapsed;}
+    if(visitorMixer&&moving){const elapsed=lastRenderTime?Math.min(.18,Math.max(.06,(now-lastRenderTime)/1000)):.12;visitorMixer.update(elapsed);visitorAnimationTime+=elapsed;}
     lastRenderTime=now;
     const width=Math.max(1,garden.clientWidth),height=Math.max(1,garden.clientHeight);
     if(canvas.width!==Math.round(width*renderer.getPixelRatio())||canvas.height!==Math.round(height*renderer.getPixelRatio())){
@@ -237,7 +237,7 @@ if(garden){
   function schedule(){if(!raf&&ready&&!document.hidden)raf=requestAnimationFrame(render);}
   function orbit(delta){azimuth=clamp(azimuth+delta,-1.32,1.32);schedule();}
   function zoom(delta){if(walkMode){walkTo(false);}radius=clamp(radius+delta,17,47);schedule();}
-  function moveOnPath(delta){if(!walkMode)return;const next=clamp(walkDistance+delta,0,23);if(next!==walkDistance){walkDistance=next;walkAnimateUntil=performance.now()+720;lastRenderTime=0;}schedule();}
+  function moveOnPath(delta){if(!walkMode)return;const next=clamp(walkDistance+delta,0,23);if(next!==walkDistance){walkDistance=next;walkAnimateUntil=performance.now()+1400;lastRenderTime=0;}schedule();}
   function strafe(delta){if(!walkMode)return;walkLateral=clamp(walkLateral+delta,-1.15,1.15);schedule();}
   canvas.addEventListener('pointerdown',e=>{dragging=true;lastX=e.clientX;canvas.setPointerCapture(e.pointerId);});
   canvas.addEventListener('pointermove',e=>{if(!dragging)return;const dx=e.clientX-lastX;lastX=e.clientX;orbit(dx*.006);});
