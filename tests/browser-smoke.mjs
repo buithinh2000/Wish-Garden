@@ -368,7 +368,23 @@ try{
   await motionPage.waitForFunction(()=>document.querySelector('#visitorRig')?.dataset.posePhase==='idle',{timeout:4500});
   await motionPage.locator('.garden').scrollIntoViewIfNeeded();
   await motionPage.screenshot({path:'qa-screenshots/'+viewport.width+'-after-prayer.png',fullPage:false});
-  assert.deepEqual(motionErrors,[],'animation path should not throw errors');
+  // The standalone world must animate its real GLB when the visitor takes a step.
+  const animatedWorld=await motionContext.newPage();
+  animatedWorld.on('pageerror',e=>motionErrors.push(e.message));
+  await animatedWorld.goto('http://127.0.0.1:'+port+'/world.html');
+  await animatedWorld.waitForFunction(()=>window.WishWorld3D?.getState().visitorSource==='civilian-glb',{timeout:15000});
+  const animationReady=await animatedWorld.evaluate(()=>window.WishWorld3D.getState());
+  assert.equal(animationReady.visitorAnimated,true,'the civilian GLB provides an animation mixer');
+  await animatedWorld.locator('#worldWalk').click();
+  await animatedWorld.waitForFunction(()=>window.WishWorld3D?.getState().walkT===1,{timeout:5000});
+  const beforeStep=await animatedWorld.evaluate(()=>window.WishWorld3D.getState().visitorAnimationTime);
+  await animatedWorld.locator('#worldForward').click();
+  await animatedWorld.waitForFunction(before=>window.WishWorld3D?.getState().visitorAnimationTime>before+.08,beforeStep,{timeout:5000});
+  const moved=await animatedWorld.evaluate(()=>window.WishWorld3D.getState());
+  assert.ok(moved.walkDistance>0&&moved.visitorAnimationTime>beforeStep,'human walks and animates on the lantern path');
+  await animatedWorld.screenshot({path:'qa-screenshots/'+viewport.width+'-human-walking.png',fullPage:false});
+  await animatedWorld.close();
+    assert.deepEqual(motionErrors,[],'animation path should not throw errors');
   await motionContext.close();
  }
 }finally{if(browser)await browser.close();await new Promise(resolve=>server.close(resolve));}
