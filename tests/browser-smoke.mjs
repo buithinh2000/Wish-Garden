@@ -268,6 +268,14 @@ try{
   assert.equal(await fallbackPage.locator('#softwareWorld').isVisible(),true,'standalone world draws an actual perspective scene despite failed WebGL');
   const swBefore=await fallbackPage.evaluate(()=>window.WishSoftware3D.getState());
   assert.ok(swBefore.faces>100,'software fallback has substantive 3D scene geometry');
+  assert.ok(swBefore.faces>1200,'rounded tree canopies have substantial 3D surface geometry');
+  assert.equal(await fallbackPage.locator('#showRenderDetails').isVisible(),true,'software mode gives user clear graphics diagnostic control');
+  await fallbackPage.locator('#showRenderDetails').click();
+  assert.equal(await fallbackPage.locator('#renderDiagnostics').isVisible(),true,'graphics diagnostics open without developer console');
+  assert.match(await fallbackPage.locator('#renderDetailText').textContent(),/WebGL|3D bundle/);
+  await fallbackPage.locator('#closeRenderDetails').click();
+  assert.equal(await fallbackPage.locator('#renderDiagnostics').isVisible(),false);
+
   await fallbackPage.locator('#softwareControls button').last().click();
   const swAfter=await fallbackPage.evaluate(()=>window.WishSoftware3D.getState());
   assert.ok(swAfter.yaw>swBefore.yaw,'software perspective camera rotates');

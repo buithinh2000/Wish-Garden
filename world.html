@@ -35,6 +35,15 @@ body:not(.world-ready) .status:before{background:#e1ad79}
 body.world-ready #softwareWorld,body.world-ready #softwareControls{display:none!important}
 body.software-ready .heading{pointer-events:none}
 body.software-ready .status{bottom:95px}
+#renderDiagnostics{position:fixed;z-index:40;left:clamp(16px,4vw,54px);bottom:130px;max-width:min(440px,calc(100vw - 32px));padding:15px 18px;background:#09202eea;border:1px solid #d0b48b72;border-radius:14px;box-shadow:0 16px 42px #0008;color:#f1e4cd;font-size:13px;line-height:1.5}
+#renderDiagnostics h2{font-size:15px;margin:0 0 8px}
+#renderDiagnostics p{margin:0 0 12px}
+#renderDiagnostics button{border:1px solid #e2c69a;border-radius:12px;padding:9px 13px;background:#27414c;color:#f5e8d0;cursor:pointer}
+#renderDiagnostics[hidden]{display:none}
+#showRenderDetails{position:fixed;z-index:31;left:clamp(16px,4vw,54px);bottom:clamp(18px,6vh,66px);padding:8px 12px;color:#f5e3bd;background:#142f3bd9;border:1px solid #e2c69a7a;border-radius:24px;cursor:pointer;font-size:12px}
+body.world-ready #showRenderDetails{display:none}
+@media(max-width:650px){#showRenderDetails{bottom:130px;left:12px}#renderDiagnostics{bottom:185px}}
+
 .fallback{position:fixed;inset:0;display:grid;place-items:center;padding:32px;text-align:center;background:linear-gradient(#0f2832,#06131d);z-index:2}
 .fallback p{max-width:440px;color:#d8e4df;line-height:1.7}
 .garden.world-ready~.fallback,body.software-ready .fallback{display:none}
@@ -57,6 +66,8 @@ body.software-ready .status{bottom:95px}
 <header class="site-head"><a class="brand" href="./index.html">✦ WISH GARDEN</a><a class="back" href="./index.html">← Private wishes</a></header>
 <section class="heading" aria-label="3D exploration introduction"><small>Interactive world · 3D</small><h1>Walk into the garden.</h1><p>Explore the pavilion and lantern path. Drag or swipe to turn; select Explore to move inside.</p></section>
 <div class="status" id="worldStatus" role="status">Starting 3D renderer</div>
+<button type="button" id="showRenderDetails" hidden aria-expanded="false" aria-controls="renderDiagnostics">Why Software Mode?</button>
+<section id="renderDiagnostics" hidden aria-label="3D graphics diagnostics"><h2>3D graphics on this browser</h2><p id="renderDetailText"></p><button type="button" id="closeRenderDetails">Close</button></section>
 <script src="assets/sanctuary-world.bundle.js" defer></script>
 <script>
 (function(){
@@ -90,15 +101,30 @@ function roof(x,y,z,w,d,h,color='#38505b'){
  const peak=v(x,y+h,z);
  for(let i=0;i<4;i++)polygon([base[i],base[(i+1)%4],peak],i%2?color:'#526c74','#b4a6802c');
 }
-function tree(x,z,s){
- cube(x,0,z,0.38*s,4*s,.45*s,'#49372b','#382e28','#54402c');
- for(let i=0;i<3;i++){
-  const y=(3.1+i*.9)*s,r=(2.5-i*.45)*s;
-  const base=[];
-  for(let j=0;j<7;j++){let a=j*2*Math.PI/7;base.push(v(x+Math.cos(a)*r,y,z+Math.sin(a)*r));}
-  const tip=v(x,y+2.6*s,z);
-  for(let j=0;j<7;j++)polygon([base[j],base[(j+1)%7],tip],j%2?'#32685a':'#244e48','#a4bd8a18');
+function canopy(x,y,z,r,salt){
+ // Faceted rounded leaf clusters are more natural than repeated cone trees.
+ const segments=9, rings=5;
+ const color=['#24534a','#32685a','#417768','#557c62','#254c43','#6c8c6b'];
+ for(let k=0;k<rings;k++){
+  const lat0=-Math.PI/2+k*Math.PI/rings,lat1=-Math.PI/2+(k+1)*Math.PI/rings;
+  for(let j=0;j<segments;j++){
+   const a=j*Math.PI*2/segments,b=(j+1)*Math.PI*2/segments;
+   const p=(lat,theta)=>{
+     const irregular=1+.075*Math.sin(theta*5+salt)+.065*Math.cos(theta*3+salt);
+     return v(x+Math.cos(theta)*Math.cos(lat)*r*irregular,y+Math.sin(lat)*r*.69,z+Math.sin(theta)*Math.cos(lat)*r*irregular);
+   };
+   polygon([p(lat0,a),p(lat0,b),p(lat1,b),p(lat1,a)],color[(j+k+salt)%color.length],'#bdd4b00c');
+  }
  }
+}
+function tree(x,z,s){
+ cube(x,0,z,.36*s,4.7*s,.41*s,'#5d4938','#382e28','#8c6445');
+ for(let i=0;i<4;i++){
+  const angle=i*2.39996,dx=Math.cos(angle)*1.8*s,dz=Math.sin(angle)*1.8*s;
+  cube(x+dx*.52,3.4*s,z+dz*.52,.17*s,2*s,.16*s,'#554335','#392d27','#7e6146');
+  canopy(x+dx,5.2*s+(i%2)*.7*s,z+dz,2.25*s,i);
+ }
+ canopy(x,6.45*s,z,2.75*s,7);
 }
 function prepare(){
  faces.length=0;
@@ -137,8 +163,14 @@ function paint(){
  if(canvas.width!==Math.round(w*dpr)||canvas.height!==Math.round(h*dpr)){canvas.width=Math.round(w*dpr);canvas.height=Math.round(h*dpr);}
  ctx.setTransform(dpr,0,0,dpr,0,0);
  const sky=ctx.createLinearGradient(0,0,0,h);
- sky.addColorStop(0,'#071725');sky.addColorStop(.55,'#29495b');sky.addColorStop(1,'#254437');
+ sky.addColorStop(0,'#07121e');sky.addColorStop(.39,'#1b3547');sky.addColorStop(.70,'#46635f');sky.addColorStop(1,'#30483e');
  ctx.fillStyle=sky;ctx.fillRect(0,0,w,h);
+ // Soft moon glow, atmospheric haze and depth cues are CPU-drawn.
+ const moon=ctx.createRadialGradient(w*.80,h*.19,7,w*.80,h*.19,Math.min(w,h)*.37);
+ moon.addColorStop(0,'#e2dfb65c');moon.addColorStop(.15,'#cdd6bb24');moon.addColorStop(1,'#d2deba00');
+ ctx.fillStyle=moon;ctx.fillRect(0,0,w,h);
+ ctx.beginPath();ctx.arc(w*.8,h*.19,Math.max(8,Math.min(w,h)*.025),0,Math.PI*2);
+ ctx.fillStyle='#ededd3b0';ctx.fill();
  // Camera looks toward center of pavilion. A true 3D perspective matrix.
  const camera=[Math.sin(yaw)*32*zoom,13*zoom,10+Math.cos(yaw)*32*zoom];
  const target=[0,5,-18];
@@ -150,7 +182,19 @@ function paint(){
  const focal=Math.min(w*1.05,h*1.55);
  const project=p=>{const q=p.map((x,i)=>x-camera[i]);const dot=a=>a.reduce((sum,n,i)=>sum+n*q[i],0);const z=dot(forward);if(z<.2)return null;return [w/2+dot(right)*focal/z,h*.57-dot(up)*focal/z,z]};
  const drawn=faces.map(face=>{const pts=face.points.map(project);return pts.every(Boolean)?{...face,pts,depth:pts.reduce((a,p)=>a+p[2],0)/pts.length}:null}).filter(Boolean).sort((a,b)=>b.depth-a.depth);
- for(const face of drawn){ctx.beginPath();face.pts.forEach((p,i)=>i?ctx.lineTo(p[0],p[1]):ctx.moveTo(p[0],p[1]));ctx.closePath();ctx.fillStyle=face.color;ctx.fill();ctx.lineWidth=.7;ctx.strokeStyle=face.edge;ctx.stroke();}
+ for(const face of drawn){ctx.beginPath();face.pts.forEach((p,i)=>i?ctx.lineTo(p[0],p[1]):ctx.moveTo(p[0],p[1]));ctx.closePath();ctx.fillStyle=face.color;ctx.fill();ctx.lineWidth=.5;ctx.strokeStyle=face.edge;ctx.stroke();}
+ // Bloom around the actual three-dimensional positions of path lanterns.
+ for(const side of [-1,1])for(let j=0;j<8;j++){
+   const p=project(v(side*3.9,2.85,16-j*4.3));if(!p)continue;
+   const radius=clamp(focal/p[2]*3.0,10,85);
+   const glow=ctx.createRadialGradient(p[0],p[1],2,p[0],p[1],radius);
+   glow.addColorStop(0,'#ffe7aaab');glow.addColorStop(.21,'#ffc77757');glow.addColorStop(1,'#ffc77700');
+   ctx.fillStyle=glow;ctx.beginPath();ctx.arc(p[0],p[1],radius,0,Math.PI*2);ctx.fill();
+ }
+ // Scenic vignette: soft dark corners keep the pavilion as visual focus.
+ const vignette=ctx.createRadialGradient(w*.53,h*.52,h*.12,w*.53,h*.52,Math.max(w,h)*.75);
+ vignette.addColorStop(0,'#00000000');vignette.addColorStop(1,'#04121bb3');
+ ctx.fillStyle=vignette;ctx.fillRect(0,0,w,h);
 }
 function move(delta){yaw=clamp(yaw+delta,-1.4,1.4);paint();}
 function start(){
@@ -170,6 +214,24 @@ function start(){
  canvas.addEventListener('pointerup',()=>drag=false);canvas.addEventListener('pointercancel',()=>drag=false);
  window.addEventListener('resize',paint);
  status.textContent='INTERACTIVE 3D PERSPECTIVE · SOFTWARE MODE (WEBGL NOT AVAILABLE)';
+ // Explain the difference between WebGL being blocked and the WebGL scene
+ // failing, without sending device information or errors to any server.
+ const details=document.getElementById('showRenderDetails');
+ const panel=document.getElementById('renderDiagnostics');
+ const detailsText=document.getElementById('renderDetailText');
+ let gl2=false,gl1=false;
+ try{const probe=document.createElement('canvas');gl2=!!probe.getContext('webgl2');if(!gl2)gl1=!!probe.getContext('webgl');}
+ catch{}
+ const safeError=(window.WishWorldWebGLError||'').replace(/[<>]/g,'').slice(0,140);
+ const reason=!gl2?(gl1?'WebGL 1 is available, but this scene needs WebGL 2.':'WebGL graphics are unavailable or blocked in this browser.'):
+   safeError?'WebGL 2 exists, but this scene could not initialize: '+safeError:
+   'WebGL 2 is available, but the 3D bundle did not finish loading or initializing.';
+ detailsText.textContent=reason+' This preview is using an interactive software-rendered perspective instead. No diagnostics leave your browser.';
+ details.hidden=false;
+ details.addEventListener('click',()=>{panel.hidden=!panel.hidden;details.setAttribute('aria-expanded',String(!panel.hidden));});
+ document.getElementById('closeRenderDetails').addEventListener('click',()=>{panel.hidden=true;details.setAttribute('aria-expanded','false');});
+ window.WishRenderDiagnostic={getState:()=>({gl2,gl1,reason,mode:'software'})};
+
  window.WishSoftware3D={getState:()=>({active,yaw,zoom,faces:faces.length})};
  paint();
 }
