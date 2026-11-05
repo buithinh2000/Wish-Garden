@@ -1,0 +1,100 @@
+name: Wish Garden AWS-only staging migration
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: 'validate is local-only; deploy creates isolated AWS resources'
+        type: choice
+        options: [validate, deploy]
+        default: validate
+        required: true
+permissions:
+  contents: read
+  id-token: write
+concurrency:
+  group: wish-garden-aws-staging
+  cancel-in-progress: false
+jobs:
+  validate:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate AWS resource schemas and Python
+        run: |
+          python -m pip install --disable-pip-version-check cfn-lint
+          cfn-lint aws/cloudformation/site.yaml aws/cloudformation/api.yaml
+          python -m unittest discover -s aws/tests -v
+          node --test tests/*.test.mjs
+  deploy:
+    needs: validate
+    if: ${{ github.event.inputs.mode == 'deploy' && github.ref == 'refs/heads/main' }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    environment: wish-garden-aws-staging
+    steps:
+      - uses: actions/checkout@v4
+      - name: Require scoped Wish Garden AWS deployment role
+        env:
+          ROLE_ARN: ${{ vars.WISH_GARDEN_AWS_ROLE_ARN }}
+        run: |
+          test -n "$ROLE_ARN"
+          case "$ROLE_ARN" in arn:aws:iam::916004827349:role/*) ;; *) echo "Unexpected AWS role account"; exit 1;; esac
+      - name: AWS temporary GitHub OIDC credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.WISH_GARDEN_AWS_ROLE_ARN }}
+          role-session-name: WishGardenStaging
+          aws-region: ap-southeast-1
+      - name: Verify AWS account without long-lived keys
+        run: |
+          test "$(aws sts get-caller-identity --query Account --output text)" = "916004827349"
+      - name: Deploy isolated site stack
+        run: |
+          aws cloudformation deploy --stack-name wish-garden-staging-site \
+            --template-file aws/cloudformation/site.yaml --no-fail-on-empty-changeset \
+            --tags Project=Wish-Garden Environment=staging
+      - name: Deploy isolated read-only API stack
+        run: |
+          aws cloudformation deploy --stack-name wish-garden-staging-api \
+            --template-file aws/cloudformation/api.yaml --no-fail-on-empty-changeset \
+            --capabilities CAPABILITY_NAMED_IAM \
+            --tags Project=Wish-Garden Environment=staging
+      - name: Release read-only Lambda (remote registration stays disabled)
+        run: |
+          mkdir -p /tmp/wish-garden-lambda
+          cp aws/lambda/handler.py /tmp/wish-garden-lambda/index.py
+          (cd /tmp/wish-garden-lambda && zip -q /tmp/wish-garden-api.zip index.py)
+          aws lambda update-function-code --function-name wish-garden-staging-api --zip-file fileb:///tmp/wish-garden-api.zip >/dev/null
+          aws lambda wait function-updated --function-name wish-garden-staging-api
+          test "$(aws lambda get-function-configuration --function-name wish-garden-staging-api --query 'Environment.Variables.REGISTRATION_ENABLED' --output text)" = "false"
+      - name: Build self-hosted 3D web assets
+        run: |
+          mkdir -p assets dist
+          curl --fail --location --retry 3 --connect-timeout 15 --max-time 90 'https://images.unsplash.com/photo-1726954531046-d033ef59ff0f?auto=format&fit=crop&w=1600&q=76' --output assets/forest.jpg
+          curl --fail --location --retry 3 --connect-timeout 15 --max-time 90 'https://images.unsplash.com/photo-1661777032455-5582bf3eba07?auto=format&fit=crop&w=1600&q=76' --output assets/cosmos.jpg
+          npm install --no-save playwright@1.56.1 three@0.180.0 esbuild@0.25.12 @gltf-transform/cli@4.5.1
+          npx playwright install chromium
+          curl --fail --location --retry 3 --connect-timeout 15 --max-time 90 'https://gobkit.com/freebies/human003/Priestess.glb' --output assets/visitor-rig.glb
+          python3 scripts/clean_visitor_glb.py assets/visitor-rig.glb
+          curl --fail --location --retry 2 --connect-timeout 15 --max-time 120 'https://files.innerscene.com/library/locomotion-collection-maya-3d-person-animated-1499b2fd/565cfb8a45b8a67a79c4/locomotion-collection-maya-3d-person-animated.glb' --output assets/visitor-human.glb
+          npx gltf-transform resize assets/visitor-human.glb assets/visitor-human-resized.glb --width 1024 --height 1024
+          npx gltf-transform webp assets/visitor-human-resized.glb assets/visitor-human-small.glb
+          mv assets/visitor-human-small.glb assets/visitor-human.glb
+          rm -f assets/visitor-human-resized.glb
+          npx esbuild src/visitor-rig.js --bundle --format=iife --target=es2020 --minify --outfile=assets/visitor-rig.bundle.js
+          node tests/browser-smoke.mjs
+          cp index.html dist/
+          cp -R src dist/
+          cp -R assets dist/
+          printf 'Not Found\n' >dist/404.html
+      - name: Upload only site assets to dedicated private S3 bucket
+        run: |
+          BUCKET="wish-garden-staging-site-916004827349-sg1"
+          test -n "$BUCKET"
+          case "$BUCKET" in wish-garden-staging-site-916004827349-sg1) ;; *) echo "Unexpected destination"; exit 1;; esac
+          aws s3 sync dist/ "s3://$BUCKET/" --delete --only-show-errors
+      - name: Print AWS preview and API endpoint
+        run: |
+          aws cloudformation describe-stacks --stack-name wish-garden-staging-site --query 'Stacks[0].Outputs' --output table
+          aws cloudformation describe-stacks --stack-name wish-garden-staging-api --query 'Stacks[0].Outputs' --output table

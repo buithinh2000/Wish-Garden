@@ -1,0 +1,128 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Wish Garden AWS-only staging API, fail-closed (no participation writes)
+Parameters:
+  AllowedOrigin:
+    Type: String
+    Default: https://buithinh2000.github.io
+    Description: Exact frontend origin; update to CloudFront origin before public release
+Resources:
+  ParticipationTable:
+    Type: AWS::DynamoDB::Table
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      TableName: !Sub 'wish-garden-staging-participation-${AWS::AccountId}'
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: receiptHash
+          AttributeType: S
+      KeySchema:
+        - AttributeName: receiptHash
+          KeyType: HASH
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: false
+      SSESpecification:
+        SSEEnabled: true
+      Tags:
+        - Key: Project
+          Value: Wish-Garden
+        - Key: Environment
+          Value: staging
+  ApiLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: /aws/lambda/wish-garden-staging-api
+      RetentionInDays: 7
+  LambdaRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub 'WishGardenStagingLambdaRole-${AWS::AccountId}'
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: wish-garden-logs-only
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                Resource: !Sub 'arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/wish-garden-staging-api:*'
+  ApiFunction:
+    Type: AWS::Lambda::Function
+    DependsOn: ApiLogGroup
+    Properties:
+      FunctionName: wish-garden-staging-api
+      Runtime: python3.12
+      Architectures: [arm64]
+      Timeout: 5
+      MemorySize: 128
+      Handler: index.handler
+      Role: !GetAtt LambdaRole.Arn
+      Environment:
+        Variables:
+          ALLOWED_ORIGIN: !Ref AllowedOrigin
+          TABLE_NAME: !Ref ParticipationTable
+          REGISTRATION_ENABLED: 'false'
+      Code:
+        ZipFile: |
+          import json
+          def handler(event, context):
+              return {'statusCode': 503, 'headers': {'Content-Type':'application/json','Cache-Control':'no-store'},
+                'body':json.dumps({'error':'AWS_STAGING_CODE_NOT_RELEASED'})}
+      Tags:
+        - Key: Project
+          Value: Wish-Garden
+        - Key: Environment
+          Value: staging
+  ApiGateway:
+    Type: AWS::ApiGatewayV2::Api
+    Properties:
+      Name: wish-garden-staging-http-api
+      ProtocolType: HTTP
+      CorsConfiguration:
+        AllowOrigins:
+          - !Ref AllowedOrigin
+        AllowMethods: [GET, OPTIONS]
+        AllowHeaders: [Content-Type]
+  Integration:
+    Type: AWS::ApiGatewayV2::Integration
+    Properties:
+      ApiId: !Ref ApiGateway
+      IntegrationType: AWS_PROXY
+      IntegrationUri: !GetAtt ApiFunction.Arn
+      PayloadFormatVersion: '2.0'
+  ApiRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref ApiGateway
+      RouteKey: 'ANY /api/v1/{proxy+}'
+      Target: !Sub 'integrations/${Integration}'
+  ApiStage:
+    Type: AWS::ApiGatewayV2::Stage
+    Properties:
+      ApiId: !Ref ApiGateway
+      StageName: '$default'
+      AutoDeploy: true
+  Permission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !Ref ApiFunction
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub 'arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${ApiGateway}/*/*'
+Outputs:
+  ApiUrl:
+    Value: !GetAtt ApiGateway.ApiEndpoint
+  LambdaName:
+    Value: !Ref ApiFunction
+  TableName:
+    Value: !Ref ParticipationTable
+  RegistrationEnabled:
+    Value: 'false'
