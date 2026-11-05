@@ -269,6 +269,12 @@ try{
   const swBefore=await fallbackPage.evaluate(()=>window.WishSoftware3D.getState());
   assert.ok(swBefore.faces>100,'software fallback has substantive 3D scene geometry');
   assert.ok(swBefore.faces>1200,'rounded tree canopies have substantial 3D surface geometry');
+  assert.ok(swBefore.faces>1400,'garden has additional spatial landscaping and pavilion geometry');
+  await fallbackPage.locator('#softwareExplore').click();
+  assert.equal((await fallbackPage.evaluate(()=>window.WishSoftware3D.getState())).walk,true,'software Explore enters near-eye view');
+  await fallbackPage.locator('#softwareExplore').click();
+  assert.equal((await fallbackPage.evaluate(()=>window.WishSoftware3D.getState())).walk,false,'software Overview returns to garden viewpoint');
+
   assert.equal(await fallbackPage.locator('#showRenderDetails').isVisible(),true,'software mode gives user clear graphics diagnostic control');
   await fallbackPage.locator('#showRenderDetails').click();
   assert.equal(await fallbackPage.locator('#renderDiagnostics').isVisible(),true,'graphics diagnostics open without developer console');
