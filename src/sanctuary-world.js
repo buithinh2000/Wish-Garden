@@ -102,18 +102,73 @@ if(garden){
   const starGeo=new THREE.BufferGeometry();
   starGeo.setAttribute('position',new THREE.Float32BufferAttribute(stars,3));
   scene.add(new THREE.Points(starGeo,new THREE.PointsMaterial({color:0xe8eefb,size:.17,sizeAttenuation:true})));
+  // Spatial detail: three-dimensional stepping-stones and vegetation, not a texture overlay.
+  const moss=mat(0x476b50),fern=mat(0x557954),flower=mat(0xf2c57c);
+  for(let i=0;i<96;i++){
+    const z=19-i*.41;
+    const side=i%2===0?-1:1;
+    const x=side*(2.05+(i%7)*.27);
+    const rock=mesh(new THREE.DodecahedronGeometry(.16+(i%5)*.055,0),i%4===0?stone:moss);
+    rock.position.set(x,.13,z);rock.scale.set(1,.5,1.35);rock.rotation.y=i*.87;
+    if(i%3===0){
+      const stem=cone(.26,.9,5,fern,x,.46,z);
+      stem.rotation.z=side*.25;
+      const blossom=mesh(new THREE.IcosahedronGeometry(.08,0),flower);
+      blossom.position.set(x,.88,z);
+    }
+  }
+  // Small lit garden tree in the central island is a distinct navigation landmark.
+  tree(9,-18,.85,2.3);
+  // Distant ridge silhouettes stay physically in the scene while camera moves.
+  const ridge=mat(0x253e44);
+  for(let i=0;i<12;i++){
+    const x=-55+i*10;
+    const mountain=cone(9+(i%4)*3,20+(i%5)*5,5,ridge,x,8,-68);
+    mountain.rotation.y=i*.47;
+  }
   // Camera orbit plus a walk-in zoom. User can drag/touch or use buttons.
   let azimuth=0, radius=31, elevation=.26, targetZ=-15, dragging=false,lastX=0,ready=false,raf=0;
   const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
   function positionCamera(){
-    camera.position.set(Math.sin(azimuth)*radius,7+radius*Math.sin(elevation)*.72,targetZ+Math.cos(azimuth)*radius);
-    camera.lookAt(0,5,targetZ);
+    const orbitPos=new THREE.Vector3(Math.sin(azimuth)*radius,7+radius*Math.sin(elevation)*.72,targetZ+Math.cos(azimuth)*radius);
+    const eye=new THREE.Vector3(Math.sin(azimuth*.37)*1.5,2.55+Math.sin(elevation)*1.8,3.5);
+    const lookZ=-19;
+    camera.position.copy(orbitPos.lerp(eye,walkT));
+    const lookAt=new THREE.Vector3(0,5,targetZ).lerp(new THREE.Vector3(Math.sin(azimuth)*4,3.8,lookZ),walkT);
+    camera.lookAt(lookAt);
   }
   const controls=document.createElement('div');controls.id='worldControls';
-  controls.innerHTML='<span id="worldHint"></span><button type="button" id="worldLeft" aria-label="Rotate 3D view left">↶</button><button type="button" id="worldNear" aria-label="Move closer in 3D scene">＋</button><button type="button" id="worldFar" aria-label="Move back in 3D scene">－</button><button type="button" id="worldRight" aria-label="Rotate 3D view right">↷</button>';
+  controls.innerHTML='<span id="worldHint"></span><button type="button" id="worldWalk" aria-label="Walk through the 3D garden">Explore</button><button type="button" id="worldLeft" aria-label="Rotate 3D view left">↶</button><button type="button" id="worldNear" aria-label="Move closer in 3D scene">＋</button><button type="button" id="worldFar" aria-label="Move back in 3D scene">－</button><button type="button" id="worldRight" aria-label="Rotate 3D view right">↷</button>';
   garden.append(controls);
   const hint=controls.querySelector('#worldHint');
-  function setHint(){hint.textContent=document.documentElement.lang==='vi'?'3D THẬT · KÉO ĐỂ XOAY':'REAL 3D · DRAG TO ORBIT';}
+  let walkMode=false,walkT=0,transitionStart=0,transitionFrom=0,transitionTo=0;
+  const walkBtn=controls.querySelector('#worldWalk');
+  function setHint(){
+    const vi=document.documentElement.lang==='vi';
+    hint.textContent=walkMode?(vi?'DẠO TRONG VƯỜN 3D':'WALKING INSIDE 3D'):(vi?'KÉO ĐỂ XOAY CẢNH 3D':'DRAG TO ORBIT 3D');
+    walkBtn.textContent=walkMode?(vi?'Toàn cảnh':'Overview'):(vi?'Khám phá':'Explore');
+    walkBtn.setAttribute('aria-pressed',String(walkMode));
+  }
+  function walkTo(next){
+    walkMode=next;
+    transitionFrom=walkT;transitionTo=next?1:0;
+    transitionStart=performance.now();
+    if(window.matchMedia('(prefers-reduced-motion: reduce)').matches){
+      walkT=transitionTo;transitionStart=0;schedule();
+    }else{
+      requestAnimationFrame(animateWalk);
+    }
+    setHint();
+  }
+  function animateWalk(now){
+    if(!transitionStart)return;
+    const t=clamp((now-transitionStart)/1100,0,1);
+    const smooth=t*t*(3-2*t);
+    walkT=transitionFrom+(transitionTo-transitionFrom)*smooth;
+    schedule();
+    if(t<1)requestAnimationFrame(animateWalk);
+    else transitionStart=0;
+  }
   setHint();document.getElementById('lang')?.addEventListener('click',()=>queueMicrotask(setHint));
   function render(){
     raf=0;if(!ready||document.hidden)return;
@@ -126,11 +181,14 @@ if(garden){
   }
   function schedule(){if(!raf&&ready&&!document.hidden)raf=requestAnimationFrame(render);}
   function orbit(delta){azimuth=clamp(azimuth+delta,-1.32,1.32);schedule();}
-  function zoom(delta){radius=clamp(radius+delta,17,47);schedule();}
+  function zoom(delta){if(walkMode){walkTo(false);}radius=clamp(radius+delta,17,47);schedule();}
   canvas.addEventListener('pointerdown',e=>{dragging=true;lastX=e.clientX;canvas.setPointerCapture(e.pointerId);});
   canvas.addEventListener('pointermove',e=>{if(!dragging)return;const dx=e.clientX-lastX;lastX=e.clientX;orbit(dx*.006);});
   canvas.addEventListener('pointerup',()=>{dragging=false;});
   canvas.addEventListener('pointercancel',()=>{dragging=false;});
+  walkBtn.addEventListener('click',()=>walkTo(!walkMode));
+  canvas.addEventListener('wheel',e=>{e.preventDefault();zoom(Math.sign(e.deltaY)*2);},{passive:false});
+  canvas.addEventListener('dblclick',()=>walkTo(!walkMode));
   controls.querySelector('#worldLeft').addEventListener('click',()=>orbit(-.24));
   controls.querySelector('#worldRight').addEventListener('click',()=>orbit(.24));
   controls.querySelector('#worldNear').addEventListener('click',()=>zoom(-3));
@@ -154,6 +212,6 @@ if(garden){
   }catch(error){
     ready=false;ro.disconnect();renderer.dispose();canvas.remove();controls.remove();
   }
-  window.WishWorld3D={getState(){return {ready,azimuth,radius,elevation,meshes:scene.children.filter(x=>x.isMesh).length};},orbit,zoom};
+  window.WishWorld3D={getState(){return {ready,azimuth,radius,elevation,walkMode,walkT,meshes:scene.children.filter(x=>x.isMesh).length};},orbit,zoom};
  }
 }
