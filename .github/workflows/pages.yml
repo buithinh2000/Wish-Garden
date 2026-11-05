@@ -36,6 +36,20 @@ jobs:
         run: |
           npm install --no-save playwright@1.56.1 three@0.180.0 esbuild@0.25.12 @gltf-transform/cli@4.5.1
           npx playwright install chromium
+      - name: Download licensed CC0 lotus sanctuary GLB
+        run: |
+          mkdir -p assets/sanctuary
+          curl --fail --location --retry 3 --connect-timeout 15 --max-time 90 'https://cdn.3dassets.dev/assets/36223/v1/model.glb' --output assets/sanctuary/lotus-pond-pavilion.glb
+          python3 - <<'PY'
+          from pathlib import Path
+          import struct
+          p=Path("assets/sanctuary/lotus-pond-pavilion.glb")
+          b=p.read_bytes()
+          assert 10000 < len(b) < 2500000, "Unexpected CC0 pavilion asset size"
+          assert b[:4]==b"glTF", "Sanctuary asset must be binary glTF"
+          assert struct.unpack_from("<I",b,8)[0]==len(b), "GLB internal length mismatch"
+          print("CC0 lotus pavilion GLB verified:", len(b),"bytes")
+          PY
       - name: Fetch pinned CC0 Kenney GLBs from public provenance mirror
         run: |
           mkdir -p assets/nature
