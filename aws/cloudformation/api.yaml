@@ -3,8 +3,8 @@ Description: Wish Garden AWS-only staging API, fail-closed (no participation wri
 Parameters:
   AllowedOrigin:
     Type: String
-    Default: https://buithinh2000.github.io
-    Description: Exact frontend origin; update to CloudFront origin before public release
+    Default: https://d3vvpfv5t9ws76.cloudfront.net
+    Description: Exact approved Wish Garden staging CloudFront origin; no wildcard origins
 Resources:
   ParticipationTable:
     Type: AWS::DynamoDB::Table
