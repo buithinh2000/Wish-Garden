@@ -1,3 +1,5 @@
+#worldRitualRoot{position:fixed;inset:0;z-index:100;pointer-events:none}
+#worldRitualRoot #ritualVeil,#worldRitualRoot #ritualPanel{pointer-events:auto}
 /* A shrine ritual within the same WebGL/Canvas sanctuary, never a page exit. */
 #ritualVeil{position:fixed;inset:0;z-index:42;background:linear-gradient(90deg,#07191fd4,#08161c91,#081319cf);backdrop-filter:blur(3px)}
 #ritualVeil[hidden],#ritualPanel[hidden],#ritualLight[hidden],#ritualPanel [hidden]{display:none!important}
