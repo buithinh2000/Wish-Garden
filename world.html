@@ -40,6 +40,7 @@ body:not(.world-ready) .status:before{background:#e1ad79}
 body.world-ready #softwareWorld,body.world-ready #softwareControls{display:none!important}
 body.software-ready .heading{pointer-events:none}
 body.software-ready .status{bottom:95px}
+#daylightStatus{position:fixed;z-index:22;top:clamp(72px,8vw,100px);right:clamp(18px,4vw,55px);color:#f5dfb1;background:#102936d9;border:1px solid #e2c69a66;padding:7px 11px;border-radius:14px;font:11px ui-monospace,monospace;letter-spacing:.06em}
 #worldBuild{position:fixed;z-index:21;left:clamp(18px,4vw,55px);bottom:9px;color:#e0cfa8b8;font-size:10px;letter-spacing:.08em;font-family:ui-monospace,monospace;pointer-events:none}
 #renderDiagnostics{position:fixed;z-index:40;left:clamp(16px,4vw,54px);bottom:130px;max-width:min(440px,calc(100vw - 32px));padding:15px 18px;background:#09202eea;border:1px solid #d0b48b72;border-radius:14px;box-shadow:0 16px 42px #0008;color:#f1e4cd;font-size:13px;line-height:1.5}
 #renderDiagnostics h2{font-size:15px;margin:0 0 8px}
@@ -73,9 +74,11 @@ body.world-ready #showRenderDetails{display:none}
 <header class="site-head"><a class="brand" href="./index.html">✦ WISH GARDEN</a><a class="back" href="./index.html">← Private wishes</a></header>
 <section class="heading" aria-label="3D exploration introduction"><small>Interactive world · 3D</small><h1>Walk into the garden.</h1><p>Explore the pavilion and lantern path. Drag or swipe to turn; select Explore to move inside.</p></section>
 <div class="status" id="worldStatus" role="status">Starting 3D renderer</div>
+<div id="daylightStatus" role="status" title="Automatically follows this device’s local clock; sunrise and sunset are approximate">LOCAL TIME · AUTO</div>
 <div id="worldBuild" aria-label="World release version" title="GitHub Pages release source commit">Build __WISH_BUILD_SHA__</div>
 <button type="button" id="showRenderDetails" hidden aria-expanded="false" aria-controls="renderDiagnostics">Graphics details</button>
 <section id="renderDiagnostics" hidden aria-label="3D graphics diagnostics"><h2>3D graphics on this browser</h2><p id="renderDetailText"></p><p><a href="./gpu-check.html" id="gpuCheckLink" style="color:#f4d398;text-decoration:underline">Run independent GPU graphics check</a></p><button type="button" id="retryWebGL">Retry 3D graphics</button> <button type="button" id="closeRenderDetails">Close</button></section>
+<script src="assets/daylight-clock.js"></script>
 <script>window.WishWorldAssetStatus='pending';</script>
 <script src="assets/sanctuary-world.bundle.js?v=__WISH_BUILD_SHA__" defer onload="window.WishWorldAssetStatus='loaded'" onerror="window.WishWorldAssetStatus='failed'"></script>
 <script>
@@ -200,14 +203,16 @@ function paint(){
  if(canvas.width!==Math.round(w*dpr)||canvas.height!==Math.round(h*dpr)){canvas.width=Math.round(w*dpr);canvas.height=Math.round(h*dpr);}
  ctx.setTransform(dpr,0,0,dpr,0,0);
  const sky=ctx.createLinearGradient(0,0,0,h);
- sky.addColorStop(0,'#07121e');sky.addColorStop(.39,'#1b3547');sky.addColorStop(.70,'#46635f');sky.addColorStop(1,'#30483e');
+ const phase=window.WishDaylight?.getState().phase||'night';
+ const skyColors=phase==='day'?['#5b9fc9','#8ac9e2','#b9dacc','#708e78']:phase==='dawn'?['#785f85','#d49180','#e9bd95','#596b63']:phase==='dusk'?['#48476b','#a36f83','#dca783','#4e5c57']:['#07121e','#1b3547','#46635f','#30483e'];
+ skyColors.forEach((color,i)=>sky.addColorStop([0,.39,.70,1][i],color));
  ctx.fillStyle=sky;ctx.fillRect(0,0,w,h);
  // Soft moon glow, atmospheric haze and depth cues are CPU-drawn.
  const moon=ctx.createRadialGradient(w*.80,h*.19,7,w*.80,h*.19,Math.min(w,h)*.37);
  moon.addColorStop(0,'#e2dfb65c');moon.addColorStop(.15,'#cdd6bb24');moon.addColorStop(1,'#d2deba00');
- ctx.fillStyle=moon;ctx.fillRect(0,0,w,h);
+ if(phase==='night'){ctx.fillStyle=moon;ctx.fillRect(0,0,w,h);}
  ctx.beginPath();ctx.arc(w*.8,h*.19,Math.max(8,Math.min(w,h)*.025),0,Math.PI*2);
- ctx.fillStyle='#ededd3b0';ctx.fill();
+ ctx.fillStyle=phase==='night'?'#ededd3b0':'#fff0ad';ctx.fill();
  // Camera looks toward center of pavilion. A true 3D perspective matrix.
  const distance=walk?17:32*zoom;
  const camera=[Math.sin(yaw)*distance,(walk?4.1:13*zoom),10+Math.cos(yaw)*distance-(walk?10+walkDistance:0)];
@@ -314,7 +319,8 @@ function start(){
  document.getElementById('closeRenderDetails').addEventListener('click',()=>{panel.hidden=true;details.setAttribute('aria-expanded','false');});
  window.WishRenderDiagnostic={getState:()=>({gl2,gl1,reason,assetStatus,mode:'software'})};
 
- window.WishSoftware3D={getState:()=>({active,yaw,zoom,walk,walkDistance,visitorDrawn,faces:faces.length})};
+ window.addEventListener('wish-daylight-change',paint);
+ window.WishSoftware3D={getState:()=>({active,yaw,zoom,walk,walkDistance,visitorDrawn,daylight:window.WishDaylight?.getState().phase,faces:faces.length})};
  paint();
 }
 function check(){
