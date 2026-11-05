@@ -284,6 +284,6 @@ if(garden){
   }catch(error){
     ready=false;ro.disconnect();renderer.dispose();canvas.remove();controls.remove();
   }
-  window.WishWorld3D={getState(){return {ready,azimuth,radius,elevation,walkMode,walkT,meshes:scene.children.filter(x=>x.isMesh).length};},orbit,zoom};
+  window.WishWorld3D={getState(){return {ready,azimuth,radius,elevation,walkMode,walkT,proceduralMaterials:[earth,path,bark,stone,darkWood,roof,leaf].filter(m=>m.map?.isCanvasTexture).length,waterPads:16,meshes:scene.children.filter(x=>x.isMesh).length};},orbit,zoom};
  }
 }
