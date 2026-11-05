@@ -319,6 +319,11 @@ try{
   const ritualStyle=await worldPage.locator('#ritualPanel').evaluate(el=>({position:getComputedStyle(el).position,z:Number(getComputedStyle(el).zIndex)}));
   assert.equal(ritualStyle.position,'fixed','ritual stylesheet loads as CSS and stays over the scene');
   assert.ok(ritualStyle.z>=40,'ritual content must sit over WebGL canvas');
+  if(viewport.width<650){
+    const ritualBounds=await worldPage.locator('#ritualPanel').boundingBox();
+    assert.ok(ritualBounds && ritualBounds.height<viewport.height*.72,'on phones the shrine remains visible above a compact prayer sheet');
+    assert.ok(ritualBounds.y>viewport.height*.2,'mobile form must not hide the entire 3D sanctuary');
+  }
   await worldPage.screenshot({path:'qa-screenshots/'+viewport.width+'-in-world-prayer.png',fullPage:false});
   assert.equal(await worldPage.locator('#ritualWords').inputValue(),'','private words start blank');
   assert.equal(await worldPage.locator('#ritualRelease').isDisabled(),true,'cannot release empty words');
