@@ -287,6 +287,21 @@ if(garden){
     setHint();
   });
   setHint();document.getElementById('lang')?.addEventListener('click',()=>queueMicrotask(setHint));
+  // A symbolic wish becomes an actual light in the 3D sanctuary.
+  // Small and cheap: no extra model, texture, service or particle engine.
+  const wishLight=new THREE.Mesh(
+    new THREE.SphereGeometry(.48,12,8),
+    new THREE.MeshBasicMaterial({color:0xffe2a0,transparent:true,opacity:0})
+  );
+  wishLight.visible=false;scene.add(wishLight);
+  let wishLightUntil=0,wishLightStart=0;
+  function bless(){
+    wishLightStart=performance.now();
+    wishLightUntil=wishLightStart+2700;
+    wishLight.visible=true;
+    wishLight.material.opacity=.92;
+    schedule();
+  }
   function render(now=performance.now()){
     raf=0;if(!ready||document.hidden)return;
     const moving=walkMode&&now<walkAnimateUntil&&!motion.matches;
@@ -297,8 +312,15 @@ if(garden){
       renderer.setSize(width,height,false);
       camera.aspect=width/height;camera.updateProjectionMatrix();
     }
+    if(wishLight.visible){
+      const progress=Math.min(1,(now-wishLightStart)/2700);
+      wishLight.position.set(0,3+progress*17,-18);
+      wishLight.scale.setScalar(.65+Math.sin(progress*Math.PI)*.8);
+      wishLight.material.opacity=(1-progress)*.92;
+      if(now>=wishLightUntil)wishLight.visible=false;
+    }
     positionCamera();renderer.render(scene,camera);
-    if(moving) schedule();
+    if(moving||wishLight.visible) schedule();
   }
   function schedule(){if(!raf&&ready&&!document.hidden)raf=requestAnimationFrame(render);}
   function orbit(delta){azimuth=clamp(azimuth+delta,-1.32,1.32);schedule();}
@@ -357,6 +379,6 @@ if(garden){
     window.WishWorldWebGLError=String(error?.message||'WebGL scene initialization failed').slice(0,180);
     ro.disconnect();renderer.dispose();canvas.remove();controls.remove();
   }
-  window.WishWorld3D={getState(){return {ready,azimuth,radius,elevation,walkMode,walkT,walkDistance,walkLateral,visitorSource,visitorVisible:!!visitorModel,visitorAnimated:!!visitorMixer,visitorAnimationTime,daylight:window.WishDaylight?.getState().phase||'night',natureSource,natureTreeCount,sanctuarySource,sanctuaryVisible,meshes:scene.children.filter(x=>x.isMesh).length};},orbit,zoom};
+  window.WishWorld3D={getState(){return {ready,azimuth,radius,elevation,walkMode,walkT,walkDistance,walkLateral,visitorSource,visitorVisible:!!visitorModel,visitorAnimated:!!visitorMixer,visitorAnimationTime,daylight:window.WishDaylight?.getState().phase||'night',natureSource,natureTreeCount,sanctuarySource,sanctuaryVisible,wishLightVisible:wishLight.visible,meshes:scene.children.filter(x=>x.isMesh).length};},orbit,zoom,bless};
  }
 }
