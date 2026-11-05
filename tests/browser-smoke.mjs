@@ -294,6 +294,16 @@ try{
   assert.ok(swBefore.faces>1400,'garden has additional spatial landscaping and pavilion geometry');
   await fallbackPage.locator('#softwareExplore').click();
   assert.equal((await fallbackPage.evaluate(()=>window.WishSoftware3D.getState())).walk,true,'software Explore enters near-eye view');
+  assert.equal(await fallbackPage.locator('#softwareForward').isVisible(),true,'Software Mode exposes walk button in Explore');
+  const softwareFirst=await fallbackPage.evaluate(()=>window.WishSoftware3D.getState().walkDistance);
+  await fallbackPage.locator('#softwareForward').click();
+  assert.ok((await fallbackPage.evaluate(()=>window.WishSoftware3D.getState().walkDistance))>softwareFirst,'software camera advances on the real path');
+  await fallbackPage.keyboard.press('w');
+  assert.ok((await fallbackPage.evaluate(()=>window.WishSoftware3D.getState().walkDistance))>softwareFirst+1.8,'keyboard W moves software camera forward');
+  await fallbackPage.locator('#softwareBack').click();
+  await fallbackPage.keyboard.press('s');
+  assert.equal((await fallbackPage.evaluate(()=>window.WishSoftware3D.getState().walkDistance)),softwareFirst,'software path can retreat');
+
   await fallbackPage.locator('#softwareExplore').click();
   assert.equal((await fallbackPage.evaluate(()=>window.WishSoftware3D.getState())).walk,false,'software Overview returns to garden viewpoint');
 
@@ -307,7 +317,7 @@ try{
   await fallbackPage.locator('#closeRenderDetails').click();
   assert.equal(await fallbackPage.locator('#renderDiagnostics').isVisible(),false);
 
-  await fallbackPage.locator('#softwareControls button').last().click();
+  await fallbackPage.locator('#softwareControls button[aria-label="Rotate right"]').click();
   const swAfter=await fallbackPage.evaluate(()=>window.WishSoftware3D.getState());
   assert.ok(swAfter.yaw>swBefore.yaw,'software perspective camera rotates');
   await fallbackPage.screenshot({path:'qa-screenshots/'+viewport.width+'-software-3d-fallback.png',fullPage:false});

@@ -34,6 +34,8 @@ body:not(.world-ready) .status:before{background:#e1ad79}
 #softwareControls button{border:1px solid #e4cba4a3;border-radius:12px;padding:12px 18px;background:#092331eb;color:#f7e4bc;cursor:pointer;font-size:16px}
 #softwareControls #softwareExplore{background:#d6b682;color:#142d37;font-weight:700}
 #softwareControls #softwareExplore[aria-pressed=true]{background:#7dcfc3}
+#softwareControls button[hidden]{display:none!important}
+#softwareControls #softwareForward,#softwareControls #softwareBack{background:#325d60;border-color:#a4c5bb;color:#fff0d5}
 @media(max-width:650px){#softwareControls{left:8px;right:8px;bottom:14px;justify-content:space-between;gap:3px}#softwareControls button{padding:9px 7px;font-size:12px}}
 body.world-ready #softwareWorld,body.world-ready #softwareControls{display:none!important}
 body.software-ready .heading{pointer-events:none}
@@ -88,7 +90,7 @@ body.world-ready #showRenderDetails{display:none}
 (()=>{
 'use strict';
 const garden=document.querySelector('.garden'),status=document.querySelector('#worldStatus');
-let active=false,canvas=null,ctx=null,controls=null,yaw=0.3,zoom=1,walk=false,drag=false,lastX=0;
+let active=false,canvas=null,ctx=null,controls=null,yaw=0.3,zoom=1,walk=false,walkDistance=0,drag=false,lastX=0;
 const clamp=(n,a,b)=>Math.min(b,Math.max(a,n));
 const faces=[];
 const v=(x,y,z)=>[x,y,z];
@@ -206,7 +208,7 @@ function paint(){
  ctx.fillStyle='#ededd3b0';ctx.fill();
  // Camera looks toward center of pavilion. A true 3D perspective matrix.
  const distance=walk?17:32*zoom;
- const camera=[Math.sin(yaw)*distance,(walk?4.1:13*zoom),10+Math.cos(yaw)*distance-(walk?10:0)];
+ const camera=[Math.sin(yaw)*distance,(walk?4.1:13*zoom),10+Math.cos(yaw)*distance-(walk?10+walkDistance:0)];
  const target=[0,walk?4.1:5,-18];
  const norm=a=>{const l=Math.hypot(...a)||1;return a.map(x=>x/l)};
  const cross=(a,b)=>[a[1]*b[2]-a[2]*b[1],a[2]*b[0]-a[0]*b[2],a[0]*b[1]-a[1]*b[0]];
@@ -237,12 +239,15 @@ function start(){
  canvas=document.createElement('canvas');canvas.id='softwareWorld';canvas.setAttribute('role','img');canvas.setAttribute('aria-label','Interactive perspective-rendered garden pavilion, path, forest and lake');garden.append(canvas);ctx=canvas.getContext('2d');
  if(!ctx){status.textContent='Neither WebGL nor Canvas 2D is available';return;}
  controls=document.createElement('div');controls.id='softwareControls';
- controls.innerHTML='<button type="button" id="softwareExplore" aria-pressed="false">Explore</button><button type="button" aria-label="Rotate left">↶ Turn left</button><button type="button" aria-label="Move closer">＋ Closer</button><button type="button" aria-label="Move further">－ Back</button><button type="button" aria-label="Rotate right">Turn right ↷</button>';
+ controls.innerHTML='<button type="button" id="softwareExplore" aria-pressed="false">Explore</button><button type="button" aria-label="Rotate left">↶ Turn left</button><button type="button" aria-label="Move closer">＋ Closer</button><button type="button" aria-label="Move further">－ Back</button><button type="button" aria-label="Rotate right">Turn right ↷</button><button type="button" id="softwareForward" aria-label="Walk forward along the lantern path" hidden>↑ Walk</button><button type="button" id="softwareBack" aria-label="Walk backward along the lantern path" hidden>↓ Back</button>';
  const buttons=[...controls.querySelectorAll('button')];
- buttons[0].onclick=()=>{walk=!walk;buttons[0].textContent=walk?'Overview':'Explore';buttons[0].setAttribute('aria-pressed',String(walk));paint();};
+ function walkStep(delta){if(!walk)return;walkDistance=clamp(walkDistance+delta,0,23);paint();}
+ function toggleWalk(){walk=!walk;buttons[0].textContent=walk?'Overview':'Explore';buttons[0].setAttribute('aria-pressed',String(walk));buttons[5].hidden=!walk;buttons[6].hidden=!walk;paint();}
+ buttons[0].onclick=toggleWalk;
+ buttons[5].onclick=()=>walkStep(1.8);buttons[6].onclick=()=>walkStep(-1.8);
  buttons[1].onclick=()=>move(-.22);buttons[4].onclick=()=>move(.22);
- buttons[2].onclick=()=>{walk=false;buttons[0].textContent='Explore';buttons[0].setAttribute('aria-pressed','false');zoom=clamp(zoom-.13,.47,1.9);paint()};
- buttons[3].onclick=()=>{walk=false;buttons[0].textContent='Explore';buttons[0].setAttribute('aria-pressed','false');zoom=clamp(zoom+.13,.47,1.9);paint()};
+ buttons[2].onclick=()=>{if(walk)toggleWalk();zoom=clamp(zoom-.13,.47,1.9);paint()};
+ buttons[3].onclick=()=>{if(walk)toggleWalk();zoom=clamp(zoom+.13,.47,1.9);paint()};
  document.body.append(controls);
  canvas.addEventListener('pointerdown',e=>{drag=true;lastX=e.clientX;canvas.setPointerCapture(e.pointerId)});
  canvas.addEventListener('pointermove',e=>{if(drag){move((e.clientX-lastX)*.006);lastX=e.clientX}});
@@ -251,8 +256,8 @@ function start(){
    if(!active||event.ctrlKey||event.altKey||event.metaKey||/^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement?.tagName||''))return;
    if(event.key==='ArrowLeft'||event.key.toLowerCase()==='a'){move(-.09);event.preventDefault();}
    if(event.key==='ArrowRight'||event.key.toLowerCase()==='d'){move(.09);event.preventDefault();}
-   if(event.key==='ArrowUp'||event.key.toLowerCase()==='w'){buttons[2].click();event.preventDefault();}
-   if(event.key==='ArrowDown'||event.key.toLowerCase()==='s'){buttons[3].click();event.preventDefault();}
+   if(event.key==='ArrowUp'||event.key.toLowerCase()==='w'){(walk?buttons[5]:buttons[2]).click();event.preventDefault();}
+   if(event.key==='ArrowDown'||event.key.toLowerCase()==='s'){(walk?buttons[6]:buttons[3]).click();event.preventDefault();}
  });
  window.addEventListener('resize',paint);
  status.textContent='INTERACTIVE 3D PERSPECTIVE · SOFTWARE MODE (WEBGL NOT AVAILABLE)';
@@ -284,7 +289,7 @@ function start(){
  document.getElementById('closeRenderDetails').addEventListener('click',()=>{panel.hidden=true;details.setAttribute('aria-expanded','false');});
  window.WishRenderDiagnostic={getState:()=>({gl2,gl1,reason,assetStatus,mode:'software'})};
 
- window.WishSoftware3D={getState:()=>({active,yaw,zoom,walk,faces:faces.length})};
+ window.WishSoftware3D={getState:()=>({active,yaw,zoom,walk,walkDistance,faces:faces.length})};
  paint();
 }
 function check(){
