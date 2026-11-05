@@ -118,4 +118,6 @@ jobs:
       - name: Print AWS preview and API endpoint
         run: |
           aws cloudformation describe-stacks --stack-name wish-garden-staging-site --query 'Stacks[0].Outputs' --output table
-          aws cloudformation describe-stacks --stack-name wish-garden-staging-api --query 'Stacks[0].Outputs' --output table
+          if [ "${{ github.event.inputs.mode }}" = 'deploy' ]; then
+            aws cloudformation describe-stacks --stack-name wish-garden-staging-api --query 'Stacks[0].Outputs' --output table
+          fi
