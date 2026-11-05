@@ -139,27 +139,31 @@ if(garden){
     const mountain=cone(9+(i%4)*3,20+(i%5)*5,5,ridge,x,8,-68);
     mountain.rotation.y=i*.47;
   }
-  // Camera orbit plus a walk-in zoom. User can drag/touch or use buttons.
+  // Camera orbit plus a walkable, bounded path toward the pavilion.
+  // The visitor moves within the lantern corridor, not through the building or lake.
   const showcase=document.body.classList.contains('world-showcase');
   let azimuth=showcase?.18:0, radius=showcase?21:31, elevation=showcase?.10:.26, targetZ=showcase?-17:-15, dragging=false,lastX=0,ready=false,raf=0;
+  let walkDistance=0, walkLateral=0;
   const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
   function positionCamera(){
     const orbitPos=new THREE.Vector3(Math.sin(azimuth)*radius,7+radius*Math.sin(elevation)*.72,targetZ+Math.cos(azimuth)*radius);
-    const eye=new THREE.Vector3(Math.sin(azimuth*.37)*1.5,2.55+Math.sin(elevation)*1.8,3.5);
+    const eye=new THREE.Vector3(walkLateral,2.55+Math.sin(elevation)*1.8,12-walkDistance);
     const lookZ=-19;
     camera.position.copy(orbitPos.lerp(eye,walkT));
-    const lookAt=new THREE.Vector3(0,5,targetZ).lerp(new THREE.Vector3(Math.sin(azimuth)*4,3.8,lookZ),walkT);
+    const lookAt=new THREE.Vector3(0,5,targetZ).lerp(new THREE.Vector3(walkLateral+Math.sin(azimuth)*3.5,3.15,lookZ-walkDistance*.24),walkT);
     camera.lookAt(lookAt);
   }
   const controls=document.createElement('div');controls.id='worldControls';
-  controls.innerHTML='<span id="worldHint"></span><button type="button" id="worldWalk" aria-label="Walk through the 3D garden">Explore</button><button type="button" id="worldLeft" aria-label="Rotate 3D view left">↶</button><button type="button" id="worldNear" aria-label="Move closer in 3D scene">＋</button><button type="button" id="worldFar" aria-label="Move back in 3D scene">－</button><button type="button" id="worldRight" aria-label="Rotate 3D view right">↷</button>';
+  controls.innerHTML='<span id="worldHint"></span><button type="button" id="worldForward" aria-label="Walk forward toward the pavilion" hidden>↑</button><button type="button" id="worldBack" aria-label="Walk backward along the lantern path" hidden>↓</button><button type="button" id="worldWalk" aria-label="Walk through the 3D garden">Explore</button><button type="button" id="worldLeft" aria-label="Rotate 3D view left">↶</button><button type="button" id="worldNear" aria-label="Move closer in 3D scene">＋</button><button type="button" id="worldFar" aria-label="Move back in 3D scene">－</button><button type="button" id="worldRight" aria-label="Rotate 3D view right">↷</button>';
   garden.append(controls);
   const hint=controls.querySelector('#worldHint');
   let walkMode=false,walkT=0,transitionStart=0,transitionFrom=0,transitionTo=0;
   const walkBtn=controls.querySelector('#worldWalk');
   function setHint(){
     const vi=document.documentElement.lang==='vi';
-    hint.textContent=walkMode?(vi?'DẠO TRONG VƯỜN 3D':'WALKING INSIDE 3D'):(vi?'KÉO ĐỂ XOAY CẢNH 3D':'DRAG TO ORBIT 3D');
+    hint.textContent=walkMode?(vi?'↑ ↓ / W S ĐỂ ĐI':'↑ ↓ / W S TO WALK'):(vi?'KÉO ĐỂ XOAY CẢNH 3D':'DRAG TO ORBIT 3D');
+    controls.querySelector('#worldForward').hidden=!walkMode;
+    controls.querySelector('#worldBack').hidden=!walkMode;
     walkBtn.textContent=walkMode?(vi?'Toàn cảnh':'Overview'):(vi?'Khám phá':'Explore');
     walkBtn.setAttribute('aria-pressed',String(walkMode));
   }
@@ -196,11 +200,23 @@ if(garden){
   function schedule(){if(!raf&&ready&&!document.hidden)raf=requestAnimationFrame(render);}
   function orbit(delta){azimuth=clamp(azimuth+delta,-1.32,1.32);schedule();}
   function zoom(delta){if(walkMode){walkTo(false);}radius=clamp(radius+delta,17,47);schedule();}
+  function moveOnPath(delta){if(!walkMode)return;walkDistance=clamp(walkDistance+delta,0,23);schedule();}
+  function strafe(delta){if(!walkMode)return;walkLateral=clamp(walkLateral+delta,-1.15,1.15);schedule();}
   canvas.addEventListener('pointerdown',e=>{dragging=true;lastX=e.clientX;canvas.setPointerCapture(e.pointerId);});
   canvas.addEventListener('pointermove',e=>{if(!dragging)return;const dx=e.clientX-lastX;lastX=e.clientX;orbit(dx*.006);});
   canvas.addEventListener('pointerup',()=>{dragging=false;});
   canvas.addEventListener('pointercancel',()=>{dragging=false;});
   walkBtn.addEventListener('click',()=>walkTo(!walkMode));
+  controls.querySelector('#worldForward').addEventListener('click',()=>moveOnPath(1.8));
+  controls.querySelector('#worldBack').addEventListener('click',()=>moveOnPath(-1.8));
+  window.addEventListener('keydown',event=>{
+    if(!ready||!walkMode||event.repeat||event.ctrlKey||event.metaKey||event.altKey||/^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement?.tagName||''))return;
+    const key=event.key.toLowerCase();
+    if(key==='w'||key==='arrowup'){moveOnPath(1.8);event.preventDefault();}
+    else if(key==='s'||key==='arrowdown'){moveOnPath(-1.8);event.preventDefault();}
+    else if(key==='a'){strafe(-.4);event.preventDefault();}
+    else if(key==='d'){strafe(.4);event.preventDefault();}
+  });
   canvas.addEventListener('wheel',e=>{e.preventDefault();zoom(Math.sign(e.deltaY)*2);},{passive:false});
   canvas.addEventListener('dblclick',()=>walkTo(!walkMode));
   controls.querySelector('#worldLeft').addEventListener('click',()=>orbit(-.24));
@@ -228,6 +244,6 @@ if(garden){
     window.WishWorldWebGLError=String(error?.message||'WebGL scene initialization failed').slice(0,180);
     ro.disconnect();renderer.dispose();canvas.remove();controls.remove();
   }
-  window.WishWorld3D={getState(){return {ready,azimuth,radius,elevation,walkMode,walkT,meshes:scene.children.filter(x=>x.isMesh).length};},orbit,zoom};
+  window.WishWorld3D={getState(){return {ready,azimuth,radius,elevation,walkMode,walkT,walkDistance,walkLateral,meshes:scene.children.filter(x=>x.isMesh).length};},orbit,zoom};
  }
 }
