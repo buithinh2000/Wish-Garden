@@ -294,8 +294,9 @@ if(garden){
     new THREE.MeshBasicMaterial({color:0xffe2a0,transparent:true,opacity:0})
   );
   wishLight.visible=false;scene.add(wishLight);
-  let wishLightUntil=0,wishLightStart=0;
+  let wishLightUntil=0,wishLightStart=0,wishReleaseCount=0;
   function bless(){
+    wishReleaseCount++;
     wishLightStart=performance.now();
     wishLightUntil=wishLightStart+2700;
     wishLight.visible=true;
@@ -379,6 +380,6 @@ if(garden){
     window.WishWorldWebGLError=String(error?.message||'WebGL scene initialization failed').slice(0,180);
     ro.disconnect();renderer.dispose();canvas.remove();controls.remove();
   }
-  window.WishWorld3D={getState(){return {ready,azimuth,radius,elevation,walkMode,walkT,walkDistance,walkLateral,visitorSource,visitorVisible:!!visitorModel,visitorAnimated:!!visitorMixer,visitorAnimationTime,daylight:window.WishDaylight?.getState().phase||'night',natureSource,natureTreeCount,sanctuarySource,sanctuaryVisible,wishLightVisible:wishLight.visible,meshes:scene.children.filter(x=>x.isMesh).length};},orbit,zoom,bless};
+  window.WishWorld3D={getState(){return {ready,azimuth,radius,elevation,walkMode,walkT,walkDistance,walkLateral,visitorSource,visitorVisible:!!visitorModel,visitorAnimated:!!visitorMixer,visitorAnimationTime,daylight:window.WishDaylight?.getState().phase||'night',natureSource,natureTreeCount,sanctuarySource,sanctuaryVisible,wishLightVisible:wishLight.visible,wishReleaseCount,meshes:scene.children.filter(x=>x.isMesh).length};},orbit,zoom,bless};
  }
 }
