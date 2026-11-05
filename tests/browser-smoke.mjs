@@ -54,7 +54,10 @@ try{
   await page.waitForFunction(()=>document.querySelector('.garden')?.classList.contains('world-ready') && document.querySelector('#sanctuary3d')?.dataset.rendered==='true',{timeout:15000});
   assert.equal(sceneVisual.svg,'none','old diagram layer no longer obscures environment');
   assert.equal(await page.locator('#sanctuary3d').isVisible(),true,'full-screen 3D environment visible');
-  const initialWorld=await page.evaluate(()=>window.WishWorld3D?.getState());
+  assert.equal(await page.locator('#worldRight').isVisible(),false,'technical camera controls are hidden by default');
+  await page.locator('#worldOptions').click();
+  assert.equal(await page.locator('#worldRight').isVisible(),true,'view options reveal camera controls when requested');
+    const initialWorld=await page.evaluate(()=>window.WishWorld3D?.getState());
   assert.ok(initialWorld?.ready&&initialWorld.meshes>=30,'real terrain, pavilion, lanterns and trees are GPU meshes');
   await page.locator('#worldRight').click();
   const rotatedWorld=await page.evaluate(()=>window.WishWorld3D.getState());
@@ -300,7 +303,9 @@ try{
   assert.equal(visitorState.visitorVisible,true,'standalone world must include a visible human visitor');
   assert.equal(visitorState.visitorSource,'civilian-glb','world must load the real civilian human asset, not just a primitive substitute');
     const beforeOrbit=await worldPage.evaluate(()=>window.WishWorld3D.getState());
-  await worldPage.locator('#worldRight').click();
+  assert.equal(await worldPage.locator('#worldRight').isVisible(),false,'standalone sanctuary opens without game-like controls');
+  await worldPage.locator('#worldOptions').click();
+    await worldPage.locator('#worldRight').click();
   const afterOrbit=await worldPage.evaluate(()=>window.WishWorld3D.getState());
   assert.ok(afterOrbit.azimuth>beforeOrbit.azimuth,'world orbit must respond');
   await worldPage.screenshot({path:'qa-screenshots/'+viewport.width+'-standalone-world.png',fullPage:false});
