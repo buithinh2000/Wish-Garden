@@ -71,7 +71,7 @@ body.world-ready #showRenderDetails{display:none}
 <section class="heading" aria-label="3D exploration introduction"><small>Interactive world · 3D</small><h1>Walk into the garden.</h1><p>Explore the pavilion and lantern path. Drag or swipe to turn; select Explore to move inside.</p></section>
 <div class="status" id="worldStatus" role="status">Starting 3D renderer</div>
 <button type="button" id="showRenderDetails" hidden aria-expanded="false" aria-controls="renderDiagnostics">Graphics details</button>
-<section id="renderDiagnostics" hidden aria-label="3D graphics diagnostics"><h2>3D graphics on this browser</h2><p id="renderDetailText"></p><button type="button" id="retryWebGL">Retry 3D graphics</button> <button type="button" id="closeRenderDetails">Close</button></section>
+<section id="renderDiagnostics" hidden aria-label="3D graphics diagnostics"><h2>3D graphics on this browser</h2><p id="renderDetailText"></p><p><a href="./gpu-check.html" id="gpuCheckLink" style="color:#f4d398;text-decoration:underline">Run independent GPU graphics check</a></p><button type="button" id="retryWebGL">Retry 3D graphics</button> <button type="button" id="closeRenderDetails">Close</button></section>
 <script>window.WishWorldAssetStatus='pending';</script>
 <script src="assets/sanctuary-world.bundle.js" defer onload="window.WishWorldAssetStatus='loaded'" onerror="window.WishWorldAssetStatus='failed'"></script>
 <script>
