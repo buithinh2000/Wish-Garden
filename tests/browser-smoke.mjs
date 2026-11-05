@@ -11,7 +11,7 @@ const server=createServer(async(req,res)=>{
  const target=normalize(join(root,requested==='/'?'index.html':requested.replace(/^\//,'')));
  if(!target.startsWith(root)){res.writeHead(403).end();return;}
  try{const body=await readFile(target);
-   res.setHeader('Content-Type', target.endsWith('.html')?'text/html':target.endsWith('.jpg')?'image/jpeg':target.endsWith('.mjs')||target.endsWith('.js')?'text/javascript':'text/plain');
+   res.setHeader('Content-Type', target.endsWith('.html')?'text/html':target.endsWith('.jpg')?'image/jpeg':target.endsWith('.mjs')||target.endsWith('.js')?'text/javascript':target.endsWith('.css')?'text/css':'text/plain');
    res.end(body);
  }catch{res.writeHead(404).end();}
 });
