@@ -32,6 +32,9 @@ body:not(.world-ready) .status:before{background:#e1ad79}
 #softwareWorld{position:absolute;inset:0;width:100%;height:100%;z-index:3;touch-action:pan-y;cursor:grab}
 #softwareControls{position:fixed;z-index:30;bottom:25px;right:25px;display:flex;gap:8px}
 #softwareControls button{border:1px solid #e4cba4a3;border-radius:12px;padding:12px 18px;background:#092331eb;color:#f7e4bc;cursor:pointer;font-size:16px}
+#softwareControls #softwareExplore{background:#d6b682;color:#142d37;font-weight:700}
+#softwareControls #softwareExplore[aria-pressed=true]{background:#7dcfc3}
+@media(max-width:650px){#softwareControls{left:8px;right:8px;bottom:14px;justify-content:space-between;gap:3px}#softwareControls button{padding:9px 7px;font-size:12px}}
 body.world-ready #softwareWorld,body.world-ready #softwareControls{display:none!important}
 body.software-ready .heading{pointer-events:none}
 body.software-ready .status{bottom:95px}
@@ -83,7 +86,7 @@ body.world-ready #showRenderDetails{display:none}
 (()=>{
 'use strict';
 const garden=document.querySelector('.garden'),status=document.querySelector('#worldStatus');
-let active=false,canvas=null,ctx=null,controls=null,yaw=0.3,zoom=1,drag=false,lastX=0;
+let active=false,canvas=null,ctx=null,controls=null,yaw=0.3,zoom=1,walk=false,drag=false,lastX=0;
 const clamp=(n,a,b)=>Math.min(b,Math.max(a,n));
 const faces=[];
 const v=(x,y,z)=>[x,y,z];
@@ -133,6 +136,18 @@ function prepare(){
  for(let j=0;j<15;j++){const z=19-j*2.8;
   polygon([v(-2.1,.04,z),v(2.1,.04,z),v(2.1,.04,z-2.65),v(-2.1,.04,z-2.65)],j%2?'#827c67':'#958a70');
  }
+ // Natural edging and layered ground-cover provide real parallax on orbit.
+ for(let j=0;j<90;j++){
+   const z=19-(j%45)*.94, side=j<45?-1:1;
+   const x=side*(2.35+(j%5)*.20), size=.12+(j%4)*.055;
+   cube(x,.02,z,size,.09,size*1.5,j%3?'#777c68':'#5a7659','#536353','#8e8a6b');
+ }
+ // Stepping stones and moss islands near the lake.
+ for(let i=0;i<22;i++){
+   const z=-11-(i%11)*2.2, side=i<11?1:-1;
+   const x=side*(4.8+(i%4)*1.2);
+   cube(x,.02,z,.55+(i%3)*.25,.16,.45+(i%5)*.12,'#526851','#3d5147','#667966');
+ }
  // Stone shoreline, dark lake and lotus-like islands.
  const lake=[];for(let i=0;i<38;i++){const a=i*Math.PI*2/38;lake.push(v(12+Math.cos(a)*13,.06,-22+Math.sin(a)*9));}
  polygon(lake,'#316777','#9bd7d444');
@@ -147,6 +162,22 @@ function prepare(){
  roof(0,8.4,-19,17,14,5,'#334653');
  cube(0,11.7,-19,7,1,7,'#614736','#4a342c','#aa8e65');
  roof(0,12.8,-19,10,9,3.5,'#425a63');
+ // Deep layered timber framing, balustrades and roof tiles.
+ for(const side of [-1,1]){
+   for(let j=0;j<7;j++){
+     const z=-24+j*1.7;
+     cube(side*5.65,2.35,z,.18,.18,1.25,'#8a6248','#463429','#b78b5a');
+     cube(side*5.65,2.95,z,.16,.72,.17,'#9a6b4c','#4c342a','#ae8058');
+   }
+ }
+ for(let j=0;j<18;j++){
+   const z=-25.5+j*.72;
+   for(const side of [-1,1])cube(side*(5.9-j*.13),8.62,z,.12,.12,.65,'#677984','#465c69','#9f9b80');
+ }
+ for(let j=0;j<10;j++){
+   const x=-5+j*1.1;
+   cube(x,4.8,-18.8,.13,.10,8.8,'#8b6346','#4b382d','#b18a61');
+ }
  // Individual lamp posts maintain depth when rotating the camera.
  for(const side of [-1,1])for(let j=0;j<8;j++){
    const z=16-j*4.3,x=side*3.9;
@@ -172,8 +203,9 @@ function paint(){
  ctx.beginPath();ctx.arc(w*.8,h*.19,Math.max(8,Math.min(w,h)*.025),0,Math.PI*2);
  ctx.fillStyle='#ededd3b0';ctx.fill();
  // Camera looks toward center of pavilion. A true 3D perspective matrix.
- const camera=[Math.sin(yaw)*32*zoom,13*zoom,10+Math.cos(yaw)*32*zoom];
- const target=[0,5,-18];
+ const distance=walk?17:32*zoom;
+ const camera=[Math.sin(yaw)*distance,(walk?4.1:13*zoom),10+Math.cos(yaw)*distance-(walk?10:0)];
+ const target=[0,walk?4.1:5,-18];
  const norm=a=>{const l=Math.hypot(...a)||1;return a.map(x=>x/l)};
  const cross=(a,b)=>[a[1]*b[2]-a[2]*b[1],a[2]*b[0]-a[0]*b[2],a[0]*b[1]-a[1]*b[0]];
  const forward=norm(target.map((x,i)=>x-camera[i]));
@@ -203,15 +235,23 @@ function start(){
  canvas=document.createElement('canvas');canvas.id='softwareWorld';canvas.setAttribute('role','img');canvas.setAttribute('aria-label','Interactive perspective-rendered garden pavilion, path, forest and lake');garden.append(canvas);ctx=canvas.getContext('2d');
  if(!ctx){status.textContent='Neither WebGL nor Canvas 2D is available';return;}
  controls=document.createElement('div');controls.id='softwareControls';
- controls.innerHTML='<button type="button" aria-label="Rotate left">↶ Turn left</button><button type="button" aria-label="Move closer">＋ Closer</button><button type="button" aria-label="Move further">－ Back</button><button type="button" aria-label="Rotate right">Turn right ↷</button>';
+ controls.innerHTML='<button type="button" id="softwareExplore" aria-pressed="false">Explore</button><button type="button" aria-label="Rotate left">↶ Turn left</button><button type="button" aria-label="Move closer">＋ Closer</button><button type="button" aria-label="Move further">－ Back</button><button type="button" aria-label="Rotate right">Turn right ↷</button>';
  const buttons=[...controls.querySelectorAll('button')];
- buttons[0].onclick=()=>move(-.22);buttons[3].onclick=()=>move(.22);
- buttons[1].onclick=()=>{zoom=clamp(zoom-.13,.47,1.9);paint()};
- buttons[2].onclick=()=>{zoom=clamp(zoom+.13,.47,1.9);paint()};
+ buttons[0].onclick=()=>{walk=!walk;buttons[0].textContent=walk?'Overview':'Explore';buttons[0].setAttribute('aria-pressed',String(walk));paint();};
+ buttons[1].onclick=()=>move(-.22);buttons[4].onclick=()=>move(.22);
+ buttons[2].onclick=()=>{walk=false;buttons[0].textContent='Explore';buttons[0].setAttribute('aria-pressed','false');zoom=clamp(zoom-.13,.47,1.9);paint()};
+ buttons[3].onclick=()=>{walk=false;buttons[0].textContent='Explore';buttons[0].setAttribute('aria-pressed','false');zoom=clamp(zoom+.13,.47,1.9);paint()};
  document.body.append(controls);
  canvas.addEventListener('pointerdown',e=>{drag=true;lastX=e.clientX;canvas.setPointerCapture(e.pointerId)});
  canvas.addEventListener('pointermove',e=>{if(drag){move((e.clientX-lastX)*.006);lastX=e.clientX}});
  canvas.addEventListener('pointerup',()=>drag=false);canvas.addEventListener('pointercancel',()=>drag=false);
+ window.addEventListener('keydown',event=>{
+   if(!active||event.ctrlKey||event.altKey||event.metaKey||/^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement?.tagName||''))return;
+   if(event.key==='ArrowLeft'||event.key.toLowerCase()==='a'){move(-.09);event.preventDefault();}
+   if(event.key==='ArrowRight'||event.key.toLowerCase()==='d'){move(.09);event.preventDefault();}
+   if(event.key==='ArrowUp'||event.key.toLowerCase()==='w'){buttons[2].click();event.preventDefault();}
+   if(event.key==='ArrowDown'||event.key.toLowerCase()==='s'){buttons[3].click();event.preventDefault();}
+ });
  window.addEventListener('resize',paint);
  status.textContent='INTERACTIVE 3D PERSPECTIVE · SOFTWARE MODE (WEBGL NOT AVAILABLE)';
  // Explain the difference between WebGL being blocked and the WebGL scene
@@ -232,7 +272,7 @@ function start(){
  document.getElementById('closeRenderDetails').addEventListener('click',()=>{panel.hidden=true;details.setAttribute('aria-expanded','false');});
  window.WishRenderDiagnostic={getState:()=>({gl2,gl1,reason,mode:'software'})};
 
- window.WishSoftware3D={getState:()=>({active,yaw,zoom,faces:faces.length})};
+ window.WishSoftware3D={getState:()=>({active,yaw,zoom,walk,faces:faces.length})};
  paint();
 }
 function check(){
