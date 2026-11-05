@@ -284,7 +284,7 @@ if(garden){
   function schedule(){if(!raf&&ready&&!document.hidden)raf=requestAnimationFrame(render);}
   function orbit(delta){azimuth=clamp(azimuth+delta,-1.32,1.32);schedule();}
   function zoom(delta){if(walkMode){walkTo(false);}radius=clamp(radius+delta,17,47);schedule();}
-  function moveOnPath(delta){if(!walkMode)return;const next=clamp(walkDistance+delta,0,23);if(next!==walkDistance){walkDistance=next;walkAnimateUntil=performance.now()+1400;lastRenderTime=0;}schedule();}
+  function moveOnPath(delta){if(!walkMode)return;const next=clamp(walkDistance+delta,0,23);if(next!==walkDistance){walkDistance=next;walkAnimateUntil=performance.now()+3200;lastRenderTime=0;}schedule();}
   function strafe(delta){if(!walkMode)return;walkLateral=clamp(walkLateral+delta,-1.15,1.15);schedule();}
   canvas.addEventListener('pointerdown',e=>{dragging=true;lastX=e.clientX;canvas.setPointerCapture(e.pointerId);});
   canvas.addEventListener('pointermove',e=>{if(!dragging)return;const dx=e.clientX-lastX;lastX=e.clientX;orbit(dx*.006);});
