@@ -279,7 +279,11 @@ try{
   assert.equal(await worldPage.locator('#fallback').isVisible(),false,'world renderer must remove loading cover');
   const worldBounds=await worldPage.locator('#sanctuary3d').boundingBox();
   assert.ok(worldBounds?.height>viewport.height*.9,'world must cover entire screen');
-  const beforeOrbit=await worldPage.evaluate(()=>window.WishWorld3D.getState());
+  await worldPage.waitForFunction(()=>window.WishWorld3D?.getState().visitorSource==='civilian-glb',{timeout:15000});
+  const visitorState=await worldPage.evaluate(()=>window.WishWorld3D.getState());
+  assert.equal(visitorState.visitorVisible,true,'standalone world must include a visible human visitor');
+  assert.equal(visitorState.visitorSource,'civilian-glb','world must load the real civilian human asset, not just a primitive substitute');
+    const beforeOrbit=await worldPage.evaluate(()=>window.WishWorld3D.getState());
   await worldPage.locator('#worldRight').click();
   const afterOrbit=await worldPage.evaluate(()=>window.WishWorld3D.getState());
   assert.ok(afterOrbit.azimuth>beforeOrbit.azimuth,'world orbit must respond');
