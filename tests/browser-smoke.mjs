@@ -277,7 +277,13 @@ try{
   assert.equal(await worldPage.locator('.hero-content').count(),0,'3D world cannot include old hero overlay');
   assert.equal(await worldPage.locator('.avatar').count(),0,'3D world cannot include old SVG avatar');
   assert.equal(await worldPage.locator('#fallback').isVisible(),false,'world renderer must remove loading cover');
-  assert.equal(await worldPage.locator('#worldBuild').isVisible(),true,'build fingerprint always visible in 3D world');
+  assert.equal(await worldPage.locator('#daylightStatus').isVisible(),true,'world displays automatic local day/night status');
+  const phases=await worldPage.evaluate(()=>{
+    const phaseAt=hour=>{const d=new Date();d.setHours(hour,30,0,0);return window.WishDaylight.getState(d).phase;};
+    return [phaseAt(1),phaseAt(6),phaseAt(12),phaseAt(18),phaseAt(21)];
+  });
+  assert.deepEqual(phases,['night','dawn','day','dusk','night'],'local clock maps to distinct day/night atmospheres');
+    assert.equal(await worldPage.locator('#worldBuild').isVisible(),true,'build fingerprint always visible in 3D world');
   const worldBuild=await worldPage.locator('#worldBuild').textContent();
   assert.match(worldBuild,/Build (?:[a-f0-9]{12}|__WISH_BUILD_SHA__)/,'release identity present before or after publish stamping');
   const bundleSrc=await worldPage.locator('script[src*="sanctuary-world.bundle"]').getAttribute('src');
@@ -303,6 +309,7 @@ try{
   assert.equal(await fallbackPage.locator('#softwareWorld').isVisible(),true,'standalone world draws an actual perspective scene despite failed WebGL');
   const swBefore=await fallbackPage.evaluate(()=>window.WishSoftware3D.getState());
   assert.equal(swBefore.visitorDrawn,true,'software world must visibly draw a human in perspective');
+  assert.equal(swBefore.daylight,await fallbackPage.evaluate(()=>window.WishDaylight.getState().phase),'software mode uses the same local daylight phase');
   assert.ok(swBefore.faces>100,'software fallback has substantive 3D scene geometry');
   assert.ok(swBefore.faces>1200,'rounded tree canopies have substantial 3D surface geometry');
   assert.ok(swBefore.faces>1400,'garden has additional spatial landscaping and pavilion geometry');
