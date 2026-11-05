@@ -36,6 +36,16 @@ jobs:
         run: |
           npm install --no-save playwright@1.56.1 three@0.180.0 esbuild@0.25.12 @gltf-transform/cli@4.5.1
           npx playwright install chromium
+      - name: Fetch pinned CC0 Kenney GLBs from public provenance mirror
+        run: |
+          mkdir -p assets/nature
+          BASE='https://raw.githubusercontent.com/rajsinghtech/spurfire/8792fe1404eabd93ff12dd0726460da5db648b02/game/assets/kenney/nature-kit'
+          for NAME in tree_default tree_oak rock_largeA; do
+            curl --fail --location --retry 3 --connect-timeout 15 --max-time 40 "$BASE/$NAME.glb" --output "assets/nature/$NAME.glb"
+          done
+          echo '562d29638c902de3c7bee465d3a53bb77117efbc392ae04ed894faf6b5dc691d  assets/nature/tree_default.glb' | sha256sum -c -
+          echo 'd7fd8773674928c50c11b66d12c636d49bdcc15a8b1c7fbb98e6f63a3439a3f3  assets/nature/tree_oak.glb' | sha256sum -c -
+          echo '6dd15390fd96501dcd1454765a17ba61dbbd8d47705dfe5149c8dd92b353ce25  assets/nature/rock_largeA.glb' | sha256sum -c -
       - name: Build locally hosted 3D visitor
         run: |
           mkdir -p assets
