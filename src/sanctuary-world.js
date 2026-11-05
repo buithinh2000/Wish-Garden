@@ -3,6 +3,7 @@
  * Canvas and controls are progressive: photographic scene remains if WebGL fails.
  */
 import * as THREE from 'three';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 
 const garden=document.querySelector('.garden');
 if(garden){
@@ -139,6 +140,35 @@ if(garden){
     const mountain=cone(9+(i%4)*3,20+(i%5)*5,5,ridge,x,8,-68);
     mountain.rotation.y=i*.47;
   }
+  // The standalone world previously had no human at all. Reuse the first-party
+  // bundled civilian visitor, with a lightweight mannequin only if asset fails.
+  const visitorGroup=new THREE.Group();scene.add(visitorGroup);
+  let visitorSource='loading',visitorModel=null,visitorMixer=null;
+  function createVisitorFallback(){
+    const clothing=mat(0x745a75),skin=mat(0xc79978),boots=mat(0x3b343e);
+    const body=new THREE.Group();
+    const torso=mesh(new THREE.CapsuleGeometry(.43,.93,5,9),clothing,body);torso.position.y=1.45;
+    const head=mesh(new THREE.SphereGeometry(.31,14,10),skin,body);head.position.y=2.48;
+    for(const x of [-.25,.25]){
+      const leg=mesh(new THREE.CapsuleGeometry(.14,.72,4,8),boots,body);leg.position.set(x,.62,0);
+      const arm=mesh(new THREE.CapsuleGeometry(.12,.66,4,8),clothing,body);arm.position.set(x*2,1.5,0);arm.rotation.z=x>0?.20:-.20;
+    }
+    visitorGroup.add(body);visitorModel=body;visitorSource='fallback';
+  }
+  const humanLoader=new GLTFLoader();
+  humanLoader.load('assets/visitor-human.glb',gltf=>{
+    const human=gltf.scene;
+    const bounds=new THREE.Box3().setFromObject(human);
+    const height=Math.max(bounds.max.y-bounds.min.y,.01);
+    const scale=2.65/height;
+    const center=bounds.getCenter(new THREE.Vector3());
+    human.scale.setScalar(scale);
+    human.position.set(-center.x*scale,-bounds.min.y*scale,-center.z*scale);
+    human.rotation.y=Math.PI;
+    visitorGroup.add(human);visitorModel=human;visitorSource='civilian-glb';
+    if(gltf.animations.length){visitorMixer=new THREE.AnimationMixer(human);const clip=gltf.animations.find(a=>/walk/i.test(a.name))||gltf.animations[0];visitorMixer.clipAction(clip).play();}
+    schedule();
+  },undefined,()=>{createVisitorFallback();schedule();});
   // Camera orbit plus a walkable, bounded path toward the pavilion.
   // The visitor moves within the lantern corridor, not through the building or lake.
   const showcase=document.body.classList.contains('world-showcase');
@@ -149,6 +179,9 @@ if(garden){
     const orbitPos=new THREE.Vector3(Math.sin(azimuth)*radius,7+radius*Math.sin(elevation)*.72,targetZ+Math.cos(azimuth)*radius);
     const eye=new THREE.Vector3(walkLateral,2.55+Math.sin(elevation)*1.8,12-walkDistance);
     const lookZ=-19;
+    // Keep a visible third-person visitor between the player camera and pavilion.
+    visitorGroup.position.set(walkLateral,0,(walkT>.5?8-walkDistance:-9));
+    visitorGroup.rotation.y=azimuth*.22;
     camera.position.copy(orbitPos.lerp(eye,walkT));
     const lookAt=new THREE.Vector3(0,5,targetZ).lerp(new THREE.Vector3(walkLateral+Math.sin(azimuth)*3.5,3.15,lookZ-walkDistance*.24),walkT);
     camera.lookAt(lookAt);
@@ -244,6 +277,6 @@ if(garden){
     window.WishWorldWebGLError=String(error?.message||'WebGL scene initialization failed').slice(0,180);
     ro.disconnect();renderer.dispose();canvas.remove();controls.remove();
   }
-  window.WishWorld3D={getState(){return {ready,azimuth,radius,elevation,walkMode,walkT,walkDistance,walkLateral,meshes:scene.children.filter(x=>x.isMesh).length};},orbit,zoom};
+  window.WishWorld3D={getState(){return {ready,azimuth,radius,elevation,walkMode,walkT,walkDistance,walkLateral,visitorSource,visitorVisible:!!visitorModel,meshes:scene.children.filter(x=>x.isMesh).length};},orbit,zoom};
  }
 }
