@@ -292,7 +292,9 @@ try{
   assert.ok(worldBounds?.height>viewport.height*.9,'world must cover entire screen');
   await worldPage.waitForFunction(()=>window.WishWorld3D?.getState().visitorSource==='civilian-glb',{timeout:15000});
   await worldPage.waitForFunction(()=>window.WishWorld3D?.getState().natureSource==='kenney-cc0-glb',{timeout:15000});
-  const natureState=await worldPage.evaluate(()=>window.WishWorld3D.getState());
+  await worldPage.waitForFunction(()=>window.WishWorld3D?.getState().sanctuarySource==='cc0-lotus-glb',{timeout:15000});
+  assert.equal((await worldPage.evaluate(()=>window.WishWorld3D.getState())).sanctuaryVisible,true,'real licensed lotus garden must replace the hand-built pavilion');
+    const natureState=await worldPage.evaluate(()=>window.WishWorld3D.getState());
   assert.equal(natureState.natureTreeCount,12,'authored CC0 nature models replace all 12 hand-made trees');
   const visitorState=await worldPage.evaluate(()=>window.WishWorld3D.getState());
   assert.equal(visitorState.visitorVisible,true,'standalone world must include a visible human visitor');
