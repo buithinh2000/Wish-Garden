@@ -322,12 +322,13 @@ try{
   // MVP return journey: the owner of a wish can reopen private saved wishes
   // directly from the garden without starting the prayer or exposing wish text.
   const memoryPage=await context.newPage();
-  await memoryPage.addInitScript(()=>{
+  await memoryPage.goto('http://127.0.0.1:'+port+'/world.html');
+  await memoryPage.evaluate(()=>{
     localStorage.setItem('wg-preview-local-01',JSON.stringify([
-      {id:'my-wish-1',text:'My saved private hope',topic:0,date:'2026-11-05T02:00:00.000Z'}
+      {id:'my-wish-1',text:'My saved private hope',topic:0,date:'2026-11-05T02:00:00.000Z'},
+      {id:'my-wish-2',text:'Keep this second hope',topic:1,date:'2026-11-05T03:00:00.000Z'}
     ]));
   });
-  await memoryPage.goto('http://127.0.0.1:'+port+'/world.html');
   const memoryEntry=memoryPage.getByRole('link',{name:'View my saved wishes on this device'});
   assert.equal(await memoryEntry.isVisible(),true,'My wishes action is visible in the garden on desktop and mobile');
   await memoryEntry.click();
@@ -338,6 +339,20 @@ try{
   assert.equal(await memoryPage.locator('#savedTitle').evaluate(el=>document.activeElement===el),true,'focus moves to saved wishes heading');
   assert.match(await memoryPage.locator('#savedDeviceNotice').textContent(),/Not synced between devices/,'user sees device-only storage limitation');
   assert.equal(new URL(memoryPage.url()).searchParams.has('mine'),false,'saved-wishes route is removed from the address');
+  assert.equal(await memoryPage.locator('.wish-delete-one').count(),2,'each saved wish has its own delete action');
+  memoryPage.once('dialog',dialog=>dialog.dismiss());
+  await memoryPage.locator('.wish-delete-one').first().click();
+  assert.equal(await memoryPage.locator('.wish-delete-one').count(),2,'cancel must keep both private wishes');
+  memoryPage.once('dialog',dialog=>dialog.accept());
+  await memoryPage.locator('.wish-delete-one').first().click();
+  assert.equal(await memoryPage.locator('.wish-delete-one').count(),1,'delete one wish must retain other wishes');
+  assert.equal(await memoryPage.evaluate(()=>JSON.parse(localStorage.getItem('wg-preview-local-01'))[0].id),'my-wish-2');
+  assert.doesNotMatch(await memoryPage.locator('#list').textContent(),/My saved private hope/,'deleted wish no longer in local list');
+  assert.match(await memoryPage.locator('#list').textContent(),/Keep this second hope/,'remaining wish still visible');
+  await memoryPage.reload();
+  assert.equal(await memoryPage.locator('.wish-delete-one').count(),1,'individual deletion persists after reload');
+  await memoryPage.locator('#mySky').click();
+  assert.equal(await memoryPage.locator('.memory-star').count(),1,'private sky immediately reflects individual deletion');
   await memoryPage.close();
   // Simulate a user's browser failing to load WebGL: never leave an empty page.
   const fallbackPage=await context.newPage();
