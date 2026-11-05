@@ -297,6 +297,7 @@ try{
   assert.equal(await fallbackPage.locator('#fallback').isVisible(),false,'3D software fallback removes waiting overlay');
   assert.equal(await fallbackPage.locator('#softwareWorld').isVisible(),true,'standalone world draws an actual perspective scene despite failed WebGL');
   const swBefore=await fallbackPage.evaluate(()=>window.WishSoftware3D.getState());
+  assert.equal(swBefore.visitorDrawn,true,'software world must visibly draw a human in perspective');
   assert.ok(swBefore.faces>100,'software fallback has substantive 3D scene geometry');
   assert.ok(swBefore.faces>1200,'rounded tree canopies have substantial 3D surface geometry');
   assert.ok(swBefore.faces>1400,'garden has additional spatial landscaping and pavilion geometry');
