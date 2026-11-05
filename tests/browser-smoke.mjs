@@ -277,6 +277,11 @@ try{
   assert.equal(await worldPage.locator('.hero-content').count(),0,'3D world cannot include old hero overlay');
   assert.equal(await worldPage.locator('.avatar').count(),0,'3D world cannot include old SVG avatar');
   assert.equal(await worldPage.locator('#fallback').isVisible(),false,'world renderer must remove loading cover');
+  assert.equal(await worldPage.locator('#worldBuild').isVisible(),true,'build fingerprint always visible in 3D world');
+  const worldBuild=await worldPage.locator('#worldBuild').textContent();
+  assert.match(worldBuild,/Build (?:[a-f0-9]{12}|__WISH_BUILD_SHA__)/,'release identity present before or after publish stamping');
+  const bundleSrc=await worldPage.locator('script[src*="sanctuary-world.bundle"]').getAttribute('src');
+  assert.match(bundleSrc,/sanctuary-world\.bundle\.js\?v=(?:[a-f0-9]{12}|__WISH_BUILD_SHA__)/,'3D bundle cache key matches release stamp');
   const worldBounds=await worldPage.locator('#sanctuary3d').boundingBox();
   assert.ok(worldBounds?.height>viewport.height*.9,'world must cover entire screen');
   await worldPage.waitForFunction(()=>window.WishWorld3D?.getState().visitorSource==='civilian-glb',{timeout:15000});
@@ -291,7 +296,7 @@ try{
   await worldPage.close();
   // Simulate a user's browser failing to load WebGL: never leave an empty page.
   const fallbackPage=await context.newPage();
-  await fallbackPage.route('**/assets/sanctuary-world.bundle.js',route=>route.abort());
+  await fallbackPage.route('**/assets/sanctuary-world.bundle.js*',route=>route.abort());
   await fallbackPage.goto('http://127.0.0.1:'+port+'/world.html');
   await fallbackPage.waitForFunction(()=>window.WishSoftware3D?.getState().active===true,{timeout:12000});
   assert.equal(await fallbackPage.locator('#fallback').isVisible(),false,'3D software fallback removes waiting overlay');
