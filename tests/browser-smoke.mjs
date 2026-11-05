@@ -289,7 +289,17 @@ try{
   const swAfter=await fallbackPage.evaluate(()=>window.WishSoftware3D.getState());
   assert.ok(swAfter.yaw>swBefore.yaw,'software perspective camera rotates');
   await fallbackPage.screenshot({path:'qa-screenshots/'+viewport.width+'-software-3d-fallback.png',fullPage:false});
+  assert.equal(await fallbackPage.locator('#gpuCheckLink').getAttribute('href'),'./gpu-check.html','Software Mode links to a direct WebGL isolation test');
   await fallbackPage.close();
+  // This page must use native WebGL directly, without loading our 3D engine.
+  const gpuPage=await context.newPage();
+  await gpuPage.goto('http://127.0.0.1:'+port+'/gpu-check.html');
+  await gpuPage.waitForFunction(()=>window.WishGpuProbe?.getState().status!=='checking' && window.WishGpuProbe?.getState().status!=='not-run',{timeout:12000});
+  const gpu=await gpuPage.evaluate(()=>window.WishGpuProbe.getState());
+  assert.ok(['rendering','blocked','error'].includes(gpu.status),'GPU probe must report an explicit outcome');
+  assert.equal(await gpuPage.locator('script[src*="sanctuary-world"]').count(),0,'GPU test must not load the main 3D bundle');
+  assert.equal(await gpuPage.locator('#retry').isVisible(),true);
+  await gpuPage.close();
   await context.close();
   // Repeat the key pose transition without reduced motion so animation
   // interpolation is exercised, not merely its final static IK position.
