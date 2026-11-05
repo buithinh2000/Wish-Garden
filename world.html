@@ -29,9 +29,15 @@ button:focus-visible,a:focus-visible{outline:3px solid #f2ce81;outline-offset:3p
 .status{position:fixed;z-index:20;left:clamp(18px,4vw,55px);bottom:clamp(20px,7vh,70px);display:flex;align-items:center;gap:10px;font-size:12px;letter-spacing:.08em;color:#f1dab1}
 .status:before{content:"";width:9px;height:9px;border-radius:50%;background:#96e2cd;box-shadow:0 0 16px #96e2cd}
 body:not(.world-ready) .status:before{background:#e1ad79}
+#softwareWorld{position:absolute;inset:0;width:100%;height:100%;z-index:3;touch-action:pan-y;cursor:grab}
+#softwareControls{position:fixed;z-index:30;bottom:25px;right:25px;display:flex;gap:8px}
+#softwareControls button{border:1px solid #e4cba4a3;border-radius:12px;padding:12px 18px;background:#092331eb;color:#f7e4bc;cursor:pointer;font-size:16px}
+body.world-ready #softwareWorld,body.world-ready #softwareControls{display:none!important}
+body.software-ready .heading{pointer-events:none}
+body.software-ready .status{bottom:95px}
 .fallback{position:fixed;inset:0;display:grid;place-items:center;padding:32px;text-align:center;background:linear-gradient(#0f2832,#06131d);z-index:2}
 .fallback p{max-width:440px;color:#d8e4df;line-height:1.7}
-.garden.world-ready~.fallback{display:none}
+.garden.world-ready~.fallback,body.software-ready .fallback{display:none}
 @media(max-width:650px){
  .heading{top:95px;max-width:75vw}
  .heading h1{font-size:34px}
@@ -58,6 +64,123 @@ body:not(.world-ready) .status:before{background:#e1ad79}
  const check=()=>{if(root.classList.contains('world-ready')){document.body.classList.add('world-ready');status.textContent='3D RENDERER ACTIVE · MOVE THE CAMERA';fallback.hidden=true;observer.disconnect();}};
  const observer=new MutationObserver(check);observer.observe(root,{attributes:true,attributeFilter:['class']});check();
  window.addEventListener('error',()=>{if(!root.classList.contains('world-ready'))status.textContent='3D unavailable on this device';});
+})();
+</script>
+<script>
+/* Self-contained software 3D backup: runs even if the Three.js bundle fails to
+   load or the browser denies WebGL. This is perspective geometry, not a photo. */
+(()=>{
+'use strict';
+const garden=document.querySelector('.garden'),status=document.querySelector('#worldStatus');
+let active=false,canvas=null,ctx=null,controls=null,yaw=0.3,zoom=1,drag=false,lastX=0;
+const clamp=(n,a,b)=>Math.min(b,Math.max(a,n));
+const faces=[];
+const v=(x,y,z)=>[x,y,z];
+function polygon(points,color,edge='#ffffff14'){faces.push({points,color,edge});}
+function cube(x,y,z,w,h,d,front='#6c5846',side='#3c3533',top='#958671'){
+ const x0=x-w/2,x1=x+w/2,y0=y,y1=y+h,z0=z-d/2,z1=z+d/2;
+ polygon([v(x0,y0,z1),v(x1,y0,z1),v(x1,y1,z1),v(x0,y1,z1)],front);
+ polygon([v(x1,y0,z1),v(x1,y0,z0),v(x1,y1,z0),v(x1,y1,z1)],side);
+ polygon([v(x0,y0,z0),v(x0,y0,z1),v(x0,y1,z1),v(x0,y1,z0)],side);
+ polygon([v(x1,y0,z0),v(x0,y0,z0),v(x0,y1,z0),v(x1,y1,z0)],side);
+ polygon([v(x0,y1,z1),v(x1,y1,z1),v(x1,y1,z0),v(x0,y1,z0)],top);
+}
+function roof(x,y,z,w,d,h,color='#38505b'){
+ const base=[v(x-w/2,y,z-d/2),v(x+w/2,y,z-d/2),v(x+w/2,y,z+d/2),v(x-w/2,y,z+d/2)];
+ const peak=v(x,y+h,z);
+ for(let i=0;i<4;i++)polygon([base[i],base[(i+1)%4],peak],i%2?color:'#526c74','#b4a6802c');
+}
+function tree(x,z,s){
+ cube(x,0,z,0.38*s,4*s,.45*s,'#49372b','#382e28','#54402c');
+ for(let i=0;i<3;i++){
+  const y=(3.1+i*.9)*s,r=(2.5-i*.45)*s;
+  const base=[];
+  for(let j=0;j<7;j++){let a=j*2*Math.PI/7;base.push(v(x+Math.cos(a)*r,y,z+Math.sin(a)*r));}
+  const tip=v(x,y+2.6*s,z);
+  for(let j=0;j<7;j++)polygon([base[j],base[(j+1)%7],tip],j%2?'#32685a':'#244e48','#a4bd8a18');
+ }
+}
+function prepare(){
+ faces.length=0;
+ polygon([v(-90,-.10,-95),v(90,-.10,-95),v(90,-.10,60),v(-90,-.10,60)],'#29453e');
+ // A visible winding paved path toward the pavilion.
+ for(let j=0;j<15;j++){const z=19-j*2.8;
+  polygon([v(-2.1,.04,z),v(2.1,.04,z),v(2.1,.04,z-2.65),v(-2.1,.04,z-2.65)],j%2?'#827c67':'#958a70');
+ }
+ // Stone shoreline, dark lake and lotus-like islands.
+ const lake=[];for(let i=0;i<38;i++){const a=i*Math.PI*2/38;lake.push(v(12+Math.cos(a)*13,.06,-22+Math.sin(a)*9));}
+ polygon(lake,'#316777','#9bd7d444');
+ cube(10,.05,-20,7,.5,5,'#3c5b47','#35473b','#52634d');
+ // Grand architectural gateway with layered roofs and strong spatial depth.
+ cube(0,.3,-19,13,1,12,'#594940','#443a35','#8b7a66');
+ for(const x of [-5,5])for(const z of [-23,-15]){
+  cube(x,1.3,z,.75,7,.7,'#7d5140','#52362d','#b38a64');
+  cube(x,1.32,z,1.7,.35,1.7,'#a69a7d','#786f62','#c8b592');
+ }
+ for(const z of [-23,-15])cube(0,4.6,z,11,.34,.35,'#72513d','#523929','#b17b55');
+ roof(0,8.4,-19,17,14,5,'#334653');
+ cube(0,11.7,-19,7,1,7,'#614736','#4a342c','#aa8e65');
+ roof(0,12.8,-19,10,9,3.5,'#425a63');
+ // Individual lamp posts maintain depth when rotating the camera.
+ for(const side of [-1,1])for(let j=0;j<8;j++){
+   const z=16-j*4.3,x=side*3.9;
+   cube(x,0,z,.20,2.4,.20,'#554237');
+   cube(x,2.35,z,.88,1.0,.88,'#ffd395','#9d6638','#ffe5ad');
+   roof(x,3.37,z,1.45,1.45,.55,'#364e59');
+ }
+ [[-13,-8,1.3],[15,-7,1.15],[-23,-24,1.7],[25,-25,1.5],[-10,12,1.0],[11,15,1.0],[-27,12,1.3],[30,16,1.25],[-23,35,1.1],[22,34,1.1]].forEach(t=>tree(...t));
+}
+prepare();
+function paint(){
+ if(!active)return;
+ const w=Math.max(1,innerWidth),h=Math.max(1,innerHeight),dpr=Math.min(devicePixelRatio||1,2);
+ if(canvas.width!==Math.round(w*dpr)||canvas.height!==Math.round(h*dpr)){canvas.width=Math.round(w*dpr);canvas.height=Math.round(h*dpr);}
+ ctx.setTransform(dpr,0,0,dpr,0,0);
+ const sky=ctx.createLinearGradient(0,0,0,h);
+ sky.addColorStop(0,'#071725');sky.addColorStop(.55,'#29495b');sky.addColorStop(1,'#254437');
+ ctx.fillStyle=sky;ctx.fillRect(0,0,w,h);
+ // Camera looks toward center of pavilion. A true 3D perspective matrix.
+ const camera=[Math.sin(yaw)*32*zoom,13*zoom,10+Math.cos(yaw)*32*zoom];
+ const target=[0,5,-18];
+ const norm=a=>{const l=Math.hypot(...a)||1;return a.map(x=>x/l)};
+ const cross=(a,b)=>[a[1]*b[2]-a[2]*b[1],a[2]*b[0]-a[0]*b[2],a[0]*b[1]-a[1]*b[0]];
+ const forward=norm(target.map((x,i)=>x-camera[i]));
+ const right=norm(cross(forward,[0,1,0]));
+ const up=norm(cross(right,forward));
+ const focal=Math.min(w*1.05,h*1.55);
+ const project=p=>{const q=p.map((x,i)=>x-camera[i]);const dot=a=>a.reduce((sum,n,i)=>sum+n*q[i],0);const z=dot(forward);if(z<.2)return null;return [w/2+dot(right)*focal/z,h*.57-dot(up)*focal/z,z]};
+ const drawn=faces.map(face=>{const pts=face.points.map(project);return pts.every(Boolean)?{...face,pts,depth:pts.reduce((a,p)=>a+p[2],0)/pts.length}:null}).filter(Boolean).sort((a,b)=>b.depth-a.depth);
+ for(const face of drawn){ctx.beginPath();face.pts.forEach((p,i)=>i?ctx.lineTo(p[0],p[1]):ctx.moveTo(p[0],p[1]));ctx.closePath();ctx.fillStyle=face.color;ctx.fill();ctx.lineWidth=.7;ctx.strokeStyle=face.edge;ctx.stroke();}
+}
+function move(delta){yaw=clamp(yaw+delta,-1.4,1.4);paint();}
+function start(){
+ if(active||garden.classList.contains('world-ready'))return;
+ active=true;document.body.classList.add('software-ready');garden.classList.add('software-world');
+ canvas=document.createElement('canvas');canvas.id='softwareWorld';canvas.setAttribute('role','img');canvas.setAttribute('aria-label','Interactive perspective-rendered garden pavilion, path, forest and lake');garden.append(canvas);ctx=canvas.getContext('2d');
+ if(!ctx){status.textContent='Neither WebGL nor Canvas 2D is available';return;}
+ controls=document.createElement('div');controls.id='softwareControls';
+ controls.innerHTML='<button type="button" aria-label="Rotate left">↶ Turn left</button><button type="button" aria-label="Move closer">＋ Closer</button><button type="button" aria-label="Move further">－ Back</button><button type="button" aria-label="Rotate right">Turn right ↷</button>';
+ const buttons=[...controls.querySelectorAll('button')];
+ buttons[0].onclick=()=>move(-.22);buttons[3].onclick=()=>move(.22);
+ buttons[1].onclick=()=>{zoom=clamp(zoom-.13,.47,1.9);paint()};
+ buttons[2].onclick=()=>{zoom=clamp(zoom+.13,.47,1.9);paint()};
+ document.body.append(controls);
+ canvas.addEventListener('pointerdown',e=>{drag=true;lastX=e.clientX;canvas.setPointerCapture(e.pointerId)});
+ canvas.addEventListener('pointermove',e=>{if(drag){move((e.clientX-lastX)*.006);lastX=e.clientX}});
+ canvas.addEventListener('pointerup',()=>drag=false);canvas.addEventListener('pointercancel',()=>drag=false);
+ window.addEventListener('resize',paint);
+ status.textContent='INTERACTIVE 3D PERSPECTIVE · SOFTWARE MODE (WEBGL NOT AVAILABLE)';
+ paint();
+}
+function check(){
+ if(garden.classList.contains('world-ready')){
+   active=false;canvas?.remove();controls?.remove();document.body.classList.remove('software-ready');return true;
+ }
+ return false;
+}
+// Give WebGL first chance. No blank loading screen on unsupported hardware or missing script.
+window.addEventListener('DOMContentLoaded',()=>setTimeout(()=>{if(!check())start()},2600));
+new MutationObserver(check).observe(garden,{attributes:true,attributeFilter:['class']});
 })();
 </script>
 </body>
