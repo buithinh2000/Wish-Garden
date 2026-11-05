@@ -35,6 +35,15 @@ body:not(.world-ready) .status:before{background:#e1ad79}
 body.world-ready #softwareWorld,body.world-ready #softwareControls{display:none!important}
 body.software-ready .heading{pointer-events:none}
 body.software-ready .status{bottom:95px}
+#renderDiagnostics{position:fixed;z-index:40;left:clamp(16px,4vw,54px);bottom:130px;max-width:min(440px,calc(100vw - 32px));padding:15px 18px;background:#09202eea;border:1px solid #d0b48b72;border-radius:14px;box-shadow:0 16px 42px #0008;color:#f1e4cd;font-size:13px;line-height:1.5}
+#renderDiagnostics h2{font-size:15px;margin:0 0 8px}
+#renderDiagnostics p{margin:0 0 12px}
+#renderDiagnostics button{border:1px solid #e2c69a;border-radius:12px;padding:9px 13px;background:#27414c;color:#f5e8d0;cursor:pointer}
+#renderDiagnostics[hidden]{display:none}
+#showRenderDetails{position:fixed;z-index:31;left:clamp(16px,4vw,54px);bottom:clamp(18px,6vh,66px);padding:8px 12px;color:#f5e3bd;background:#142f3bd9;border:1px solid #e2c69a7a;border-radius:24px;cursor:pointer;font-size:12px}
+body.world-ready #showRenderDetails{display:none}
+@media(max-width:650px){#showRenderDetails{bottom:130px;left:12px}#renderDiagnostics{bottom:185px}}
+
 .fallback{position:fixed;inset:0;display:grid;place-items:center;padding:32px;text-align:center;background:linear-gradient(#0f2832,#06131d);z-index:2}
 .fallback p{max-width:440px;color:#d8e4df;line-height:1.7}
 .garden.world-ready~.fallback,body.software-ready .fallback{display:none}
@@ -57,6 +66,8 @@ body.software-ready .status{bottom:95px}
 <header class="site-head"><a class="brand" href="./index.html">✦ WISH GARDEN</a><a class="back" href="./index.html">← Private wishes</a></header>
 <section class="heading" aria-label="3D exploration introduction"><small>Interactive world · 3D</small><h1>Walk into the garden.</h1><p>Explore the pavilion and lantern path. Drag or swipe to turn; select Explore to move inside.</p></section>
 <div class="status" id="worldStatus" role="status">Starting 3D renderer</div>
+<button type="button" id="showRenderDetails" hidden aria-expanded="false" aria-controls="renderDiagnostics">Why Software Mode?</button>
+<section id="renderDiagnostics" hidden aria-label="3D graphics diagnostics"><h2>3D graphics on this browser</h2><p id="renderDetailText"></p><button type="button" id="closeRenderDetails">Close</button></section>
 <script src="assets/sanctuary-world.bundle.js" defer></script>
 <script>
 (function(){
@@ -170,6 +181,24 @@ function start(){
  canvas.addEventListener('pointerup',()=>drag=false);canvas.addEventListener('pointercancel',()=>drag=false);
  window.addEventListener('resize',paint);
  status.textContent='INTERACTIVE 3D PERSPECTIVE · SOFTWARE MODE (WEBGL NOT AVAILABLE)';
+ // Explain the difference between WebGL being blocked and the WebGL scene
+ // failing, without sending device information or errors to any server.
+ const details=document.getElementById('showRenderDetails');
+ const panel=document.getElementById('renderDiagnostics');
+ const detailsText=document.getElementById('renderDetailText');
+ let gl2=false,gl1=false;
+ try{const probe=document.createElement('canvas');gl2=!!probe.getContext('webgl2');if(!gl2)gl1=!!probe.getContext('webgl');}
+ catch{}
+ const safeError=(window.WishWorldWebGLError||'').replace(/[<>]/g,'').slice(0,140);
+ const reason=!gl2?(gl1?'WebGL 1 is available, but this scene needs WebGL 2.':'WebGL graphics are unavailable or blocked in this browser.'):
+   safeError?'WebGL 2 exists, but this scene could not initialize: '+safeError:
+   'WebGL 2 is available, but the 3D bundle did not finish loading or initializing.';
+ detailsText.textContent=reason+' This preview is using an interactive software-rendered perspective instead. No diagnostics leave your browser.';
+ details.hidden=false;
+ details.addEventListener('click',()=>{panel.hidden=!panel.hidden;details.setAttribute('aria-expanded',String(!panel.hidden));});
+ document.getElementById('closeRenderDetails').addEventListener('click',()=>{panel.hidden=true;details.setAttribute('aria-expanded','false');});
+ window.WishRenderDiagnostic={getState:()=>({gl2,gl1,reason,mode:'software'})};
+
  window.WishSoftware3D={getState:()=>({active,yaw,zoom,faces:faces.length})};
  paint();
 }
