@@ -18,11 +18,11 @@ class SiteOnlyPermissions(unittest.TestCase):
 
  def test_upload_does_not_touch_existing_stacks(self):
   workflow=(ROOT/'.github/workflows/aws-staging.yml').read_text()
-  self.assertIn("if: github.event.inputs.mode != 'upload'\n        run: |\n          if aws cloudformation deploy --stack-name wish-garden-staging-site",workflow)
+  self.assertIn("if: github.event.inputs.mode == 'site' || github.event.inputs.mode == 'deploy'\n        run: |\n          if aws cloudformation deploy --stack-name wish-garden-staging-site",workflow)
   self.assertIn("test \"$(aws cloudformation describe-stacks --stack-name wish-garden-staging-site --query \"Stacks[0].StackStatus\" --output text)\" = \"CREATE_COMPLETE\"",workflow)
 
  def test_api_only_skips_site_build_and_s3_upload(self):
   workflow=(ROOT/'.github/workflows/aws-staging.yml').read_text()
-  self.assertIn("if: github.event.inputs.mode == 'site' || github.event.inputs.mode == 'deploy'\\n        run: |\\n          if aws cloudformation deploy --stack-name wish-garden-staging-site",workflow)
-  self.assertIn("if: github.event.inputs.mode != 'api'\\n        run: |\\n          mkdir -p assets dist",workflow)
-  self.assertIn("if: github.event.inputs.mode != 'api'\\n        run: |\\n          BUCKET=",workflow)
+  self.assertIn("if: github.event.inputs.mode == 'site' || github.event.inputs.mode == 'deploy'\n        run: |\n          if aws cloudformation deploy --stack-name wish-garden-staging-site",workflow)
+  self.assertIn("if: github.event.inputs.mode != 'api'\n        run: |\n          mkdir -p assets dist",workflow)
+  self.assertIn("if: github.event.inputs.mode != 'api'\n        run: |\n          BUCKET=",workflow)
