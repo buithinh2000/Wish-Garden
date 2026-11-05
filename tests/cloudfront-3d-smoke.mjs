@@ -11,7 +11,7 @@ try{
   const response=await page.goto(url,{waitUntil:'domcontentloaded',timeout:30000});
   assert.equal(response?.status(),200,'public CloudFront must serve page');
   await page.waitForFunction(()=>document.querySelector('#sanctuary3d')?.dataset.rendered==='true' && document.querySelector('.garden')?.classList.contains('world-ready'),{timeout:25000});
-  assert.equal(await page.locator('body').getAttribute('class'),'world-showcase','3D preview must use distinct immersive layout');
+  assert.equal(await page.locator('body').evaluate(el=>el.classList.contains('world-showcase')),true,'3D preview must use distinct immersive layout even when accessibility motion classes are added');
   assert.equal(await page.locator('.hero-content').isVisible(),false,'old landing text must not cover the 3D scene');
   assert.equal(await page.locator('#visitorRig').isVisible(),false,'legacy 3D avatar must not block architecture in showcase');
   const viewportScene=await page.locator('#sanctuary3d').boundingBox();
