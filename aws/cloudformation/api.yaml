@@ -1,33 +1,11 @@
 AWSTemplateFormatVersion: '2010-09-09'
-Description: Wish Garden AWS-only staging API, fail-closed (no participation writes)
+Description: Wish Garden AWS-only read-only staging API; no database or participation writes
 Parameters:
   AllowedOrigin:
     Type: String
     Default: https://d3vvpfv5t9ws76.cloudfront.net
     Description: Exact approved Wish Garden staging CloudFront origin; no wildcard origins
 Resources:
-  ParticipationTable:
-    Type: AWS::DynamoDB::Table
-    DeletionPolicy: Retain
-    UpdateReplacePolicy: Retain
-    Properties:
-      TableName: !Sub 'wish-garden-staging-participation-${AWS::AccountId}'
-      BillingMode: PAY_PER_REQUEST
-      AttributeDefinitions:
-        - AttributeName: receiptHash
-          AttributeType: S
-      KeySchema:
-        - AttributeName: receiptHash
-          KeyType: HASH
-      PointInTimeRecoverySpecification:
-        PointInTimeRecoveryEnabled: false
-      SSESpecification:
-        SSEEnabled: true
-      Tags:
-        - Key: Project
-          Value: Wish-Garden
-        - Key: Environment
-          Value: staging
   ApiLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
@@ -68,7 +46,6 @@ Resources:
       Environment:
         Variables:
           ALLOWED_ORIGIN: !Ref AllowedOrigin
-          TABLE_NAME: !Ref ParticipationTable
           REGISTRATION_ENABLED: 'false'
       Code:
         ZipFile: |
@@ -122,7 +99,5 @@ Outputs:
     Value: !GetAtt ApiGateway.ApiEndpoint
   LambdaName:
     Value: !Ref ApiFunction
-  TableName:
-    Value: !Ref ParticipationTable
   RegistrationEnabled:
     Value: 'false'
