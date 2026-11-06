@@ -350,7 +350,7 @@ try{
   await worldPage.locator('#reflectionPick').click();
   assert.equal(await worldPage.locator('#reflectionLeafText').isVisible(),true,'a reflection question appears within the tree ritual');
   assert.ok((await worldPage.locator('#reflectionLeafText').textContent()).length>15,'the reflection has meaningful text');
-  assert.equal((await worldPage.evaluate(()=>window.WishInWorldRitual.getState())).reflectionDrawCount,1,'reflection draw is observable without storing or revealing the user's wish');
+  assert.equal((await worldPage.evaluate(()=>window.WishInWorldRitual.getState())).reflectionDrawCount,1,"reflection draw is observable without storing or revealing private words");
   assert.equal(await worldPage.locator('#ritualRelease').isDisabled(),true,'drawing a reflection never submits a wish');
 
   const ritualStyle=await worldPage.locator('#ritualPanel').evaluate(el=>({position:getComputedStyle(el).position,z:Number(getComputedStyle(el).zIndex)}));
