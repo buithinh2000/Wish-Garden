@@ -59,6 +59,12 @@ try{
   assert.equal(await page.locator('#worldRight').isVisible(),true,'view options reveal camera controls when requested');
     const initialWorld=await page.evaluate(()=>window.WishWorld3D?.getState());
   assert.ok(initialWorld?.ready&&initialWorld.meshes>=30,'real terrain, pavilion, lanterns and trees are GPU meshes');
+  // The hero tree must be the licensed detailed GLB, not silent procedural fallback.
+  await page.waitForFunction(()=>window.WishWorld3D?.getState().heroTreeVisible===true,{timeout:20000});
+  const heroTree=await page.evaluate(()=>window.WishWorld3D.getState());
+  assert.equal(heroTree.heroTreeSource,'innerscene-cc0-oak-glb','hero tree must load real CC0 GLB');
+  await page.screenshot({path:'qa-screenshots/'+viewport.width+'-hero-oak.png',fullPage:false});
+
   await page.locator('#worldRight').click();
   const rotatedWorld=await page.evaluate(()=>window.WishWorld3D.getState());
   assert.ok(rotatedWorld.azimuth>initialWorld.azimuth,'orbit controls rotate actual 3D camera');
