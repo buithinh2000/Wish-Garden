@@ -485,6 +485,7 @@ try{
   assert.equal(await fallbackPage.locator('#softwareWorld').isVisible(),true,'standalone world draws an actual perspective scene despite failed WebGL');
   const swBefore=await fallbackPage.evaluate(()=>window.WishSoftware3D.getState());
   assert.equal(swBefore.visitorDrawn,true,'software world must visibly draw a human in perspective');
+  assert.equal(swBefore.heroTree,'centered-canvas-wishing-tree','no-WebGL visitors must see a central Wishing Tree rather than an unrelated pavilion');
   assert.equal(swBefore.daylight,await fallbackPage.evaluate(()=>window.WishDaylight.getState().phase),'software mode uses the same local daylight phase');
   assert.ok(swBefore.faces>100,'software fallback has substantive 3D scene geometry');
   assert.ok(swBefore.faces>1200,'rounded tree canopies have substantial 3D surface geometry');
