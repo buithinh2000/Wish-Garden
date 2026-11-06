@@ -314,7 +314,7 @@ try{
   assert.equal(await wishEntry.isVisible(),true,'prayer entry is visible on desktop and mobile');
   // A visitor may be looking away from the temple; the ritual reorients
   // them to the shrine and returns them to their exact earlier view.
-  await worldPage.locator('#worldOptions').click();
+  // View controls are already open in the orbit test above.
   await worldPage.locator('#worldRight').click();
   const beforeRitual=await worldPage.evaluate(()=>window.WishWorld3D.getState());
   await wishEntry.click();
