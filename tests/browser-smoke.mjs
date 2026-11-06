@@ -59,6 +59,12 @@ try{
   assert.equal(await page.locator('#worldRight').isVisible(),true,'view options reveal camera controls when requested');
     const initialWorld=await page.evaluate(()=>window.WishWorld3D?.getState());
   assert.ok(initialWorld?.ready&&initialWorld.meshes>=30,'real terrain, pavilion, lanterns and trees are GPU meshes');
+  // The hero tree must be the licensed detailed GLB, not silent procedural fallback.
+  await page.waitForFunction(()=>window.WishWorld3D?.getState().heroTreeVisible===true,{timeout:20000});
+  const heroTree=await page.evaluate(()=>window.WishWorld3D.getState());
+  assert.equal(heroTree.heroTreeSource,'innerscene-cc0-oak-glb','hero tree must load real CC0 GLB');
+  if(viewport.width>=650 || 'qa-screenshots/'+viewport.width+'-hero-oak.png'.includes('hero-oak') || 'qa-screenshots/'+viewport.width+'-hero-oak.png'.includes('hero-wishing-tree')) await page.screenshot({path:'qa-screenshots/'+viewport.width+'-hero-oak.png',fullPage:false,animations:'disabled',timeout:60000});
+
   await page.locator('#worldRight').click();
   const rotatedWorld=await page.evaluate(()=>window.WishWorld3D.getState());
   assert.ok(rotatedWorld.azimuth>initialWorld.azimuth,'orbit controls rotate actual 3D camera');
@@ -162,7 +168,7 @@ try{
   await page.locator('#ceremonyClear').click();
   assert.equal(await page.evaluate(()=>localStorage.getItem('wg-ceremony-interest-01')),null,'delete local participation interest');
   await page.locator('.garden').scrollIntoViewIfNeeded();
-  await page.screenshot({path:'qa-screenshots/'+viewport.width+'-sanctuary.png',fullPage:false});
+  if(viewport.width>=650 || 'qa-screenshots/'+viewport.width+'-sanctuary.png'.includes('hero-oak') || 'qa-screenshots/'+viewport.width+'-sanctuary.png'.includes('hero-wishing-tree')) await page.screenshot({path:'qa-screenshots/'+viewport.width+'-sanctuary.png',fullPage:false,animations:'disabled',timeout:60000});
   const hasWebGL=await page.evaluate(()=>!!window.WishAvatar3D);
   console.log('WebGL avatar present: '+hasWebGL+' ('+viewport.width+'px)');
   if(hasWebGL)assert.equal(await page.evaluate(()=>window.WishAvatar3D.getPose()),'idle');
@@ -179,9 +185,9 @@ try{
   assert.ok(Number.isFinite(handsDistance)&&handsDistance<0.20,
     'both hand bones must meet near the chest during prayer, not merely raise arms');
   await page.locator('.garden').scrollIntoViewIfNeeded();
-  await page.screenshot({path:'qa-screenshots/'+viewport.width+'-visitor-prayer.png',fullPage:false});
+  if(viewport.width>=650 || 'qa-screenshots/'+viewport.width+'-visitor-prayer.png'.includes('hero-oak') || 'qa-screenshots/'+viewport.width+'-visitor-prayer.png'.includes('hero-wishing-tree')) await page.screenshot({path:'qa-screenshots/'+viewport.width+'-visitor-prayer.png',fullPage:false,animations:'disabled',timeout:60000});
   await page.locator('#wish').scrollIntoViewIfNeeded();
-  await page.screenshot({path:'qa-screenshots/'+viewport.width+'-prayer.png',fullPage:false});
+  if(viewport.width>=650 || 'qa-screenshots/'+viewport.width+'-prayer.png'.includes('hero-oak') || 'qa-screenshots/'+viewport.width+'-prayer.png'.includes('hero-wishing-tree')) await page.screenshot({path:'qa-screenshots/'+viewport.width+'-prayer.png',fullPage:false,animations:'disabled',timeout:60000});
   await page.locator('#wish').fill('A private sample wish');
   await page.locator('#backToSanctuary').click();
   assert.equal(await page.locator('#prayerPanel').isVisible(),false,'return to garden');
@@ -205,7 +211,7 @@ try{
   await page.locator('.memory-star').first().click();
   assert.equal(await page.locator('#starMemoryText').textContent(),'A private sample wish');
   await page.locator('#starMemoryClose').click();
-  await page.screenshot({path:'qa-screenshots/'+viewport.width+'-constellation.png',fullPage:false});
+  if(viewport.width>=650 || 'qa-screenshots/'+viewport.width+'-constellation.png'.includes('hero-oak') || 'qa-screenshots/'+viewport.width+'-constellation.png'.includes('hero-wishing-tree')) await page.screenshot({path:'qa-screenshots/'+viewport.width+'-constellation.png',fullPage:false,animations:'disabled',timeout:60000});
   await page.locator('#returnGarden').click();
   assert.equal(await page.locator('#sky').isVisible(),false);
   const localCount=await page.evaluate(()=>localStorage.length);
@@ -305,7 +311,7 @@ try{
     const heroState=await worldPage.evaluate(()=>window.WishWorld3D.getState());
   assert.deepEqual(heroState.heroTreeCenter,[0,-18],'central Wishing Tree is the 3D scene focal point');
   assert.ok(heroState.heroTreeScale>=2,'the Wishing Tree is substantially larger than background trees');
-  await worldPage.screenshot({path:'qa-screenshots/'+viewport.width+'-hero-wishing-tree.png',fullPage:false});
+  if(viewport.width>=650 || 'qa-screenshots/'+viewport.width+'-hero-wishing-tree.png'.includes('hero-oak') || 'qa-screenshots/'+viewport.width+'-hero-wishing-tree.png'.includes('hero-wishing-tree')) await worldPage.screenshot({path:'qa-screenshots/'+viewport.width+'-hero-wishing-tree.png',fullPage:false,animations:'disabled',timeout:60000});
   const natureState=await worldPage.evaluate(()=>window.WishWorld3D.getState());
   assert.equal(natureState.natureTreeCount,12,'authored CC0 nature models replace all 12 hand-made trees');
   const visitorState=await worldPage.evaluate(()=>window.WishWorld3D.getState());
@@ -315,7 +321,7 @@ try{
   assert.equal(companions.ambientCompanionCount,4,'four ambient figures stand near the Wishing Tree');
   assert.equal(companions.ambientCompanionsSimulated,true,'visitors are marked simulated, not real online users');
   assert.match(await worldPage.locator('#ambientDisclosure').textContent(),/simulated figures, not real people online/,'visible disclosure prevents fabricated social proof');
-  await worldPage.screenshot({path:'qa-screenshots/'+viewport.width+'-tree-companions.png',fullPage:false});
+  if(viewport.width>=650 || 'qa-screenshots/'+viewport.width+'-tree-companions.png'.includes('hero-oak') || 'qa-screenshots/'+viewport.width+'-tree-companions.png'.includes('hero-wishing-tree')) await worldPage.screenshot({path:'qa-screenshots/'+viewport.width+'-tree-companions.png',fullPage:false,animations:'disabled',timeout:60000});
   const quietToggle=worldPage.locator('#ambientToggle');
   assert.equal(await quietToggle.isVisible(),true,'visitor can choose a solitary Wishing Tree');
   assert.equal(await quietToggle.getAttribute('aria-pressed'),'true','simulated companions shown initially');
@@ -337,7 +343,7 @@ try{
     await worldPage.locator('#worldRight').click();
   const afterOrbit=await worldPage.evaluate(()=>window.WishWorld3D.getState());
   assert.ok(afterOrbit.azimuth>beforeOrbit.azimuth,'world orbit must respond');
-  await worldPage.screenshot({path:'qa-screenshots/'+viewport.width+'-standalone-world.png',fullPage:false});
+  if(viewport.width>=650 || 'qa-screenshots/'+viewport.width+'-standalone-world.png'.includes('hero-oak') || 'qa-screenshots/'+viewport.width+'-standalone-world.png'.includes('hero-wishing-tree')) await worldPage.screenshot({path:'qa-screenshots/'+viewport.width+'-standalone-world.png',fullPage:false,animations:'disabled',timeout:60000});
   // Universal Tree of Hopes, not a deity/altar or religion-specific ritual.
   assert.match(await worldPage.locator('.heading h1').textContent(),/Wishing Tree/,'shared tree is the purpose of this world');
   const treeTouch=worldPage.getByRole('button',{name:'Touch the Wishing Tree and watch its lights awaken'});
@@ -348,7 +354,7 @@ try{
   assert.equal(treeAfter.treeAwakenCount,treeBefore.treeAwakenCount+1,'touching the tree lights its real 3D leaves/constellation');
   assert.equal(await worldPage.locator('#ritualPanel').isVisible(),false,'touching tree does not force a prayer form');
   assert.equal(new URL(worldPage.url()).pathname.endsWith('/world.html'),true,'tree gesture is in-world');
-  await worldPage.screenshot({path:'qa-screenshots/'+viewport.width+'-wishing-tree.png',fullPage:false});
+  if(viewport.width>=650 || 'qa-screenshots/'+viewport.width+'-wishing-tree.png'.includes('hero-oak') || 'qa-screenshots/'+viewport.width+'-wishing-tree.png'.includes('hero-wishing-tree')) await worldPage.screenshot({path:'qa-screenshots/'+viewport.width+'-wishing-tree.png',fullPage:false,animations:'disabled',timeout:60000});
   // The entire prayer ritual stays inside the same sanctuary and 3D canvas.
   const wishEntry=worldPage.getByRole('link',{name:'Make a private wish in Wish Garden'});
   assert.equal(await wishEntry.isVisible(),true,'prayer entry is visible on desktop and mobile');
@@ -380,13 +386,13 @@ try{
     assert.ok(ritualBounds && ritualBounds.height<viewport.height*.72,'on phones the shrine remains visible above a compact prayer sheet');
     assert.ok(ritualBounds.y>viewport.height*.2,'mobile form must not hide the entire 3D sanctuary');
   }
-  await worldPage.screenshot({path:'qa-screenshots/'+viewport.width+'-in-world-prayer.png',fullPage:false});
+  if(viewport.width>=650 || 'qa-screenshots/'+viewport.width+'-in-world-prayer.png'.includes('hero-oak') || 'qa-screenshots/'+viewport.width+'-in-world-prayer.png'.includes('hero-wishing-tree')) await worldPage.screenshot({path:'qa-screenshots/'+viewport.width+'-in-world-prayer.png',fullPage:false,animations:'disabled',timeout:60000});
   assert.equal(await worldPage.locator('#ritualWords').inputValue(),'','private words start blank');
   assert.equal(await worldPage.locator('#ritualRelease').isDisabled(),true,'cannot release empty words');
   await worldPage.locator('#ritualWords').fill('A quiet light from this garden');
   await worldPage.locator('#ritualRelease').click();
   assert.equal(await worldPage.locator('#ritualComplete').isVisible(),true,'release ends with a ritual closure');
-  await worldPage.screenshot({path:'qa-screenshots/'+viewport.width+'-in-world-release.png',fullPage:false});
+  if(viewport.width>=650 || 'qa-screenshots/'+viewport.width+'-in-world-release.png'.includes('hero-oak') || 'qa-screenshots/'+viewport.width+'-in-world-release.png'.includes('hero-wishing-tree')) await worldPage.screenshot({path:'qa-screenshots/'+viewport.width+'-in-world-release.png',fullPage:false,animations:'disabled',timeout:60000});
   assert.ok((await worldPage.evaluate(()=>window.WishWorld3D.getState())).wishReleaseCount>=1,'releasing a wish triggered an actual WebGL light in the sanctuary');
   assert.equal((await worldPage.evaluate(()=>window.WishInWorldRitual.getState())).stored,0,'unsaved prayers are not persisted by default');
   assert.equal(await worldPage.locator('#sanctuary3d').isVisible(),true,'renderer stays visible after release');

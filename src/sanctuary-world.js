@@ -187,9 +187,30 @@ if(garden){
       blossom.position.set(x,.88,z);
     }
   }
-  // The Wishing Tree is the central place of reflection for every culture.
-  // Use the existing light-weight tree geometry on the island, not an altar or shrine.
+  // Load a documented CC0 oak GLB for the *hero* tree; procedural geometry is
+  // retained only until loading completes or if the asset is unavailable.
+  // Source: Innerscene original, oak street tree detailed leaves, CC0.
+  const heroFallbackStart=scene.children.length;
   tree(0,-18,2.15,2.3,true);
+  const heroFallback=scene.children[heroFallbackStart];
+  let heroTreeSource='procedural-fallback',heroTreeVisible=false;
+  new GLTFLoader().load('assets/nature/wishing-oak-detailed.glb',gltf=>{
+    const oak=gltf.scene;
+    const bounds=new THREE.Box3().setFromObject(oak);
+    const size=bounds.getSize(new THREE.Vector3());
+    if(!Number.isFinite(size.y)||size.y<1||!Number.isFinite(size.x)||size.x<1)return;
+    // Preserve the original 3D ritual anchor: (0, -18). The real oak is enlarged
+    // into a dramatic landmark, without changing the walk path or camera target.
+    const scale=17/size.y;
+    const center=bounds.getCenter(new THREE.Vector3());
+    oak.scale.setScalar(scale);
+    oak.position.set(-center.x*scale,-bounds.min.y*scale,-18-center.z*scale);
+    oak.traverse(part=>{if(part.isMesh){part.frustumCulled=true;part.castShadow=false;part.receiveShadow=false;}});
+    scene.add(oak);
+    scene.remove(heroFallback);
+    heroTreeSource='innerscene-cc0-oak-glb';heroTreeVisible=true;
+    schedule();
+  },undefined,()=>{heroTreeSource='procedural-fallback';schedule();});
   const treeGround=mesh(new THREE.CircleGeometry(8,48),new THREE.MeshStandardMaterial({color:0x334f3d,roughness:1}));
   treeGround.rotation.x=-Math.PI/2;treeGround.position.set(0,.08,-18);
   const wishingTreeLight=new THREE.PointLight(0xffdda1,8,18,2);
@@ -476,6 +497,6 @@ if(garden){
     window.WishWorldWebGLError=String(error?.message||'WebGL scene initialization failed').slice(0,180);
     ro.disconnect();renderer.dispose();canvas.remove();controls.remove();
   }
-  window.WishWorld3D={getState(){return {ready,azimuth,radius,elevation,walkMode,walkT,walkDistance,walkLateral,visitorSource,visitorVisible:!!visitorModel,visitorAnimated:!!visitorMixer,visitorAnimationTime,daylight:window.WishDaylight?.getState().phase||'night',natureSource,natureTreeCount,sanctuarySource,sanctuaryVisible,wishLightVisible:wishLight.visible,wishReleaseCount,ritualFocus:!!ritualCamera,treeAwakenCount,heroTreeCenter:[0,-18],heroTreeScale:2.15,ambientCompanionCount:ambientCompanions.length,ambientCompanionsVisible:companionsVisible,ambientCompanionsSimulated:true,meshes:scene.children.filter(x=>x.isMesh).length};},orbit,zoom,bless,focusShrine,restoreView,awakenTree,setCompanionsVisible};
+  window.WishWorld3D={getState(){return {ready,azimuth,radius,elevation,walkMode,walkT,walkDistance,walkLateral,visitorSource,visitorVisible:!!visitorModel,visitorAnimated:!!visitorMixer,visitorAnimationTime,daylight:window.WishDaylight?.getState().phase||'night',natureSource,natureTreeCount,sanctuarySource,sanctuaryVisible,wishLightVisible:wishLight.visible,wishReleaseCount,ritualFocus:!!ritualCamera,treeAwakenCount,heroTreeCenter:[0,-18],heroTreeScale:2.15,heroTreeSource,heroTreeVisible,ambientCompanionCount:ambientCompanions.length,ambientCompanionsVisible:companionsVisible,ambientCompanionsSimulated:true,meshes:scene.children.filter(x=>x.isMesh).length};},orbit,zoom,bless,focusShrine,restoreView,awakenTree,setCompanionsVisible};
  }
 }

@@ -48,6 +48,20 @@ jobs:
           assert struct.unpack_from("<I",b,8)[0]==len(b), "GLB internal length mismatch"
           print("CC0 lotus pavilion GLB verified:", len(b),"bytes")
           PY
+      - name: Download CC0 detailed hero oak GLB
+        run: |
+          mkdir -p assets/nature
+          curl --fail --location --retry 3 --retry-all-errors --connect-timeout 15 --max-time 120 'https://files.innerscene.com/library/oak-street-tree-detailed-leaves-a273fef9/4a26d0fea7474835bf61/oak-detailed.glb' --output assets/nature/wishing-oak-detailed.glb
+          python3 - <<'PY'
+          from pathlib import Path
+          import struct
+          p=Path('assets/nature/wishing-oak-detailed.glb')
+          b=p.read_bytes()
+          assert 100000 < len(b) < 10000000, 'Unexpected oak GLB size'
+          assert b[:4] == b'glTF', 'Oak asset is not a GLB'
+          assert struct.unpack_from('<I',b,8)[0] == len(b), 'GLB payload incomplete'
+          print('CC0 detailed oak GLB verified',len(b),'bytes')
+          PY
       - name: Fetch pinned CC0 Kenney GLBs from public provenance mirror
         run: |
           mkdir -p assets/nature
