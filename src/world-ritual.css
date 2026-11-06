@@ -37,3 +37,7 @@
 
 /* Let the altar, not the navigation UI, frame a prayer. */
 body.ritual-open #worldControls,body.ritual-open #softwareControls{visibility:hidden;pointer-events:none}
+
+#ritualPanel .ritual-backup-actions{display:flex;flex-wrap:wrap;justify-content:center;gap:9px;margin:15px 0 7px}
+#ritualPanel .ritual-backup-actions button{font-size:13px;padding:10px 14px;min-height:43px}
+#ritualPanel #ritualBackupNote{text-align:center;margin:7px 0 5px}
