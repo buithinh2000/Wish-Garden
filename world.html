@@ -23,6 +23,7 @@ button:focus-visible,a:focus-visible{outline:3px solid #f2ce81;outline-offset:3p
 .heading p{font-size:clamp(13px,1.3vw,16px);color:#e0e8e2;line-height:1.6;max-width:300px}
 .world-prayer-link{display:inline-flex;margin-top:16px;align-items:center;justify-content:center;min-height:47px;padding:12px 19px;border-radius:28px;background:#eed4a5;color:#172a31;text-decoration:none;font-weight:750;font-size:14px;pointer-events:auto;box-shadow:0 8px 30px #06101899}
 .world-prayer-link:hover{background:#fff0cf}
+#touchWishingTree{border:1px solid #e7d7ac;cursor:pointer;background:#294753;color:#ffe7b9}#touchWishingTree:hover{background:#385b67}
 .world-actions{display:flex;gap:9px;flex-wrap:wrap;align-items:center}.world-prayer-link.secondary{background:#183c49e8;color:#f6e5c8;border:1px solid #dfc9a57d;box-shadow:none}.world-prayer-link.secondary:hover{background:#31515b}
 
 #worldControls{position:fixed;z-index:30;right:clamp(15px,4vw,58px);bottom:clamp(20px,7vh,70px);display:flex;align-items:center;gap:7px;background:#0a202ce8;border:1px solid #c7c9b07b;border-radius:18px;padding:11px;box-shadow:0 12px 35px #000b}
@@ -78,7 +79,7 @@ body.world-ready #showRenderDetails{display:none}
 <div class="garden" role="region" aria-label="Interactive 3D wishing garden with a central Wishing Tree"></div>
 <div class="fallback" id="fallback"><div><h2>Opening the 3D sanctuary…</h2><p>If your device blocks WebGL, try Chrome with graphics acceleration enabled. The private wishing ceremony remains available on the main site.</p></div></div>
 <header class="site-head"><a class="brand" href="./index.html">✦ WISH GARDEN</a><a class="back" href="./index.html">← Private wishes</a></header>
-<section class="heading" aria-label="3D exploration introduction"><small>Wish Garden · A place for every hope</small><h1>The Wishing Tree.</h1><p>Come as you are. Stand before the tree, take a quiet moment, and let your wish become a light among its branches.</p><div class="world-actions"><a class="world-prayer-link" href="./index.html?ritual=1" aria-label="Make a private wish in Wish Garden">✦ Make a wish at the tree</a><a class="world-prayer-link secondary" href="./index.html?mine=1" aria-label="View my saved wishes on this device">✧ My wishes</a></div></section>
+<section class="heading" aria-label="3D exploration introduction"><small>Wish Garden · A place for every hope</small><h1>The Wishing Tree.</h1><p>Come as you are. Stand before the tree, take a quiet moment, and let your wish become a light among its branches.</p><div class="world-actions"><button type="button" class="world-prayer-link" id="touchWishingTree" aria-label="Touch the Wishing Tree and watch its lights awaken">✧ Touch the tree</button><a class="world-prayer-link" href="./index.html?ritual=1" aria-label="Make a private wish in Wish Garden">✦ Make a wish at the tree</a><a class="world-prayer-link secondary" href="./index.html?mine=1" aria-label="View my saved wishes on this device">✧ My wishes</a></div></section>
 <div class="status" id="worldStatus" role="status">Starting 3D renderer</div>
 <div id="daylightStatus" role="status" title="Automatically follows this device’s local clock; sunrise and sunset are approximate">LOCAL TIME · AUTO</div>
 <div id="worldBuild" aria-label="World release version" title="GitHub Pages release source commit">Build __WISH_BUILD_SHA__</div>
