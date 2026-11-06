@@ -65,6 +65,28 @@ if(treeButton){
   treeButton.focus({preventScroll:true});
  });
 }
+// Solitude is as valid as companionship. Mirror the 3D world's local-only
+// visibility preference, while remaining usable before WebGL is ready.
+const presenceToggle=$('ambientToggle');
+const presenceKey='wg-ambient-companions-v1';
+function companionsVisible(){
+  try{return localStorage.getItem(presenceKey)!=='hidden';}catch{return true;}
+}
+function syncCompanionToggle(){
+  const visible=companionsVisible();
+  presenceToggle.setAttribute('aria-pressed',String(visible));
+  presenceToggle.textContent=visible?'✧ Quiet space':'✧ Show companions';
+  presenceToggle.setAttribute('aria-label',visible?'Hide illustrative companions':'Show illustrative companions');
+  window.WishWorld3D?.setCompanionsVisible?.(visible);
+}
+if(presenceToggle){
+  presenceToggle.addEventListener('click',()=>{
+    const next=!companionsVisible();
+    try{localStorage.setItem(presenceKey,next?'shown':'hidden');}catch{}
+    syncCompanionToggle();
+  });
+  syncCompanionToggle();
+}
 let mode='',lastFocus=null,session=[];
 const reflections=[
  'What matters most to you at this moment?',
