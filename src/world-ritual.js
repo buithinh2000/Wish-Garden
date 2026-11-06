@@ -65,6 +65,7 @@ const treeButton=$('touchWishingTree');
 if(treeButton){
  treeButton.addEventListener('click',()=>{
   window.WishWorld3D?.awakenTree?.();
+  window.WishSoftware3D?.awakenTree?.();
   treeButton.textContent='✧ The tree is glowing';
   treeButton.setAttribute('aria-label','Wishing Tree is glowing with light');
   // No suggestion that the universe has scientifically received a signal.
@@ -235,6 +236,7 @@ function release(){
  $('ritualWords').value='';$('ritualSave').checked=false;$('ritualRelease').disabled=true;
  view('complete');animateLight();
  window.WishWorld3D?.bless?.();
+ window.WishSoftware3D?.bless?.();
  presentReleaseMoment();
 }
 function renderMemories(){
