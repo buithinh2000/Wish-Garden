@@ -41,3 +41,9 @@ body.ritual-open #worldControls,body.ritual-open #softwareControls{visibility:hi
 #ritualPanel .ritual-backup-actions{display:flex;flex-wrap:wrap;justify-content:center;gap:9px;margin:15px 0 7px}
 #ritualPanel .ritual-backup-actions button{font-size:13px;padding:10px 14px;min-height:43px}
 #ritualPanel #ritualBackupNote{text-align:center;margin:7px 0 5px}
+
+/* A secular, opt-in pause based on reflective questions, not predictions. */
+#ritualPanel .reflection-leaf{margin:10px 0 14px;padding:10px 12px;border:1px solid #e7cb9761;border-radius:15px;background:#fff5dc0b}
+#ritualPanel #reflectionPick{font:600 13px system-ui,sans-serif;min-height:40px;background:#3c5251;color:#fff1d1}
+#ritualPanel .reflection-help{font-size:11px;color:#c9d6c9;margin:7px 0;line-height:1.5}
+#ritualPanel #reflectionLeafText{font:italic 17px/1.5 Georgia,serif;color:#ffe0a5;margin:10px 0 3px;border-left:2px solid #e6ca88;padding-left:11px}
