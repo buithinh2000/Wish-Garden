@@ -50,7 +50,32 @@ root.innerHTML=`
 <div id="ritualLight" aria-hidden="true" hidden><span>✦</span></div>
 `;
 document.body.append(root);
+// A simple temple visit begins with meaningful gestures, not a text form.
+const templeActions=document.createElement('nav');
+templeActions.id='templeActions';
+templeActions.setAttribute('aria-label','Offerings at the sanctuary');
+templeActions.innerHTML=`
+ <button type="button" id="templeIncense" aria-label="Light incense at the altar">🪔 <span>Light incense</span></button>
+ <button type="button" id="templeBell" aria-label="Ring the temple bell">🔔 <span>Ring bell</span></button>
+ <p id="templeActionStatus" role="status" aria-live="polite">A quiet gesture, offered freely.</p>
+`;
+document.body.append(templeActions);
 let mode='',lastFocus=null,session=[];
+let incenseOfferings=0,bellOfferings=0;
+function templeGesture(action){
+ const engine=window.WishWorld3D;
+ if(action==='incense'){
+  incenseOfferings++;
+  engine?.lightIncense?.();
+  $('templeActionStatus').textContent='An incense offering glows by the altar. Take a quiet moment.';
+ }else{
+  bellOfferings++;
+  engine?.ringBell?.();
+  $('templeActionStatus').textContent='A single bell has been offered. Let its sound fade.';
+ }
+}
+$('templeIncense').addEventListener('click',()=>templeGesture('incense'));
+$('templeBell').addEventListener('click',()=>templeGesture('bell'));
 function load(){
  try{const items=JSON.parse(localStorage.getItem(KEY)||'[]');return Array.isArray(items)?items.filter(x=>x&&typeof x.text==='string'):[]}catch{return []}
 }
@@ -183,5 +208,5 @@ document.addEventListener('keydown',event=>{
  if(event.shiftKey&&document.activeElement===focusable[0]){event.preventDefault();focusable[focusable.length-1].focus();}
  else if(!event.shiftKey&&document.activeElement===focusable[focusable.length-1]){event.preventDefault();focusable[0].focus();}
 });
-window.WishInWorldRitual={getState:()=>({mode,open:!$('ritualPanel').hidden,stored:load().length,session:session.length}),open,close};
+window.WishInWorldRitual={getState:()=>({mode,open:!$('ritualPanel').hidden,stored:load().length,session:session.length,incenseOfferings,bellOfferings}),open,close};
 })();
