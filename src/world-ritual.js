@@ -53,7 +53,6 @@ document.body.append(root);
 const treeButton=$('touchWishingTree');
 if(treeButton){
  treeButton.addEventListener('click',()=>{
-  window.WishWorld3D?.focusShrine?.();
   window.WishWorld3D?.awakenTree?.();
   treeButton.textContent='✧ The tree is glowing';
   treeButton.setAttribute('aria-label','Wishing Tree is glowing with light');
