@@ -314,6 +314,17 @@ try{
   const afterOrbit=await worldPage.evaluate(()=>window.WishWorld3D.getState());
   assert.ok(afterOrbit.azimuth>beforeOrbit.azimuth,'world orbit must respond');
   await worldPage.screenshot({path:'qa-screenshots/'+viewport.width+'-standalone-world.png',fullPage:false});
+  // Universal Tree of Hopes, not a deity/altar or religion-specific ritual.
+  assert.match(await worldPage.locator('.heading h1').textContent(),/Wishing Tree/,'shared tree is the purpose of this world');
+  const treeTouch=worldPage.getByRole('button',{name:'Touch the Wishing Tree and watch its lights awaken'});
+  assert.equal(await treeTouch.isVisible(),true,'visitor can interact with the tree without writing a wish');
+  const treeBefore=await worldPage.evaluate(()=>window.WishWorld3D.getState());
+  await treeTouch.click();
+  const treeAfter=await worldPage.evaluate(()=>window.WishWorld3D.getState());
+  assert.equal(treeAfter.treeAwakenCount,treeBefore.treeAwakenCount+1,'touching the tree lights its real 3D leaves/constellation');
+  assert.equal(await worldPage.locator('#ritualPanel').isVisible(),false,'touching tree does not force a prayer form');
+  assert.equal(new URL(worldPage.url()).pathname.endsWith('/world.html'),true,'tree gesture is in-world');
+  await worldPage.screenshot({path:'qa-screenshots/'+viewport.width+'-wishing-tree.png',fullPage:false});
   // The entire prayer ritual stays inside the same sanctuary and 3D canvas.
   const wishEntry=worldPage.getByRole('link',{name:'Make a private wish in Wish Garden'});
   assert.equal(await wishEntry.isVisible(),true,'prayer entry is visible on desktop and mobile');
@@ -324,8 +335,8 @@ try{
   const beforeRitual=await worldPage.evaluate(()=>window.WishWorld3D.getState());
   await wishEntry.click();
   const focusedRitual=await worldPage.evaluate(()=>window.WishWorld3D.getState());
-  assert.equal(focusedRitual.ritualFocus,true,'prayer moves attention to the sanctuary altar');
-  assert.notEqual(focusedRitual.azimuth,beforeRitual.azimuth,'prayer camera reorients to altar');
+  assert.equal(focusedRitual.ritualFocus,true,'wish centers attention on the Wishing Tree');
+  assert.notEqual(focusedRitual.azimuth,beforeRitual.azimuth,'wish camera turns toward the Wishing Tree');
   assert.equal(await worldPage.locator('#worldControls').isVisible(),false,'exploration controls disappear during prayer');
   assert.equal(new URL(worldPage.url()).pathname.endsWith('/world.html'),true,'prayer does not exit 3D world');
   assert.equal(await worldPage.locator('#sanctuary3d').isVisible(),true,'3D sanctuary remains behind ritual');
