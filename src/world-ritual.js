@@ -55,7 +55,7 @@ if(treeButton){
  treeButton.addEventListener('click',()=>{
   window.WishWorld3D?.focusShrine?.();
   window.WishWorld3D?.awakenTree?.();
-  treeButton.textContent='✧ The tree is listening';
+  treeButton.textContent='✧ The tree is glowing';
   treeButton.setAttribute('aria-label','Wishing Tree is glowing with light');
   // No suggestion that the universe has scientifically received a signal.
   treeButton.focus({preventScroll:true});
