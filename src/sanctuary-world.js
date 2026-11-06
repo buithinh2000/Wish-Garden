@@ -287,6 +287,76 @@ if(garden){
     setHint();
   });
   setHint();document.getElementById('lang')?.addEventListener('click',()=>queueMicrotask(setHint));
+  // Lightweight temple rituals. These objects live in the actual 3D shrine,
+  // and change visibly in response to the visitor, not to a form submission.
+  const altarRitual=new THREE.Group();altarRitual.position.set(0,2.6,-17.6);scene.add(altarRitual);
+  const bronze=mat(0x8a6040,.7,.15),stick=mat(0x664d38),ember=new THREE.MeshBasicMaterial({color:0xffbd60}),smokeMat=new THREE.MeshBasicMaterial({color:0xd5c9b7,transparent:true,opacity:.0,depthWrite:false});
+  const incenseBowl=mesh(new THREE.CylinderGeometry(.65,.5,.35,12),bronze,altarRitual);
+  incenseBowl.position.y=0;
+  const incenseSticks=[];
+  for(const x of [-.19,0,.19]){
+    const incense=mesh(new THREE.CylinderGeometry(.021,.025,1.3,6),stick,altarRitual);
+    incense.position.set(x,.72,0);incenseSticks.push(incense);
+    const tip=mesh(new THREE.SphereGeometry(.06,8,6),ember,altarRitual);
+    tip.position.set(x,1.4,0);tip.visible=false;
+    incenseSticks.push(tip);
+  }
+  const smoke=[];
+  for(let i=0;i<6;i++){
+    const puff=mesh(new THREE.SphereGeometry(.10+i*.018,8,6),smokeMat.clone(),altarRitual);
+    puff.position.set(Math.sin(i*2.3)*.2,1.7+i*.22,.04);
+    puff.visible=false;smoke.push(puff);
+  }
+  const bellMesh=mesh(new THREE.CylinderGeometry(.22,.39,.48,16,1,true),gold,altarRitual);
+  bellMesh.position.set(1.45,.35,0);
+  const bellCrown=mesh(new THREE.SphereGeometry(.24,10,8),gold,altarRitual);
+  bellCrown.position.set(1.45,.62,0);
+  const bellGlow=new THREE.PointLight(0xffd18b,0,6,2);bellGlow.position.set(1.45,.5,.5);altarRitual.add(bellGlow);
+  let incenseUntil=0,incenseStart=0,incenseCount=0,bellUntil=0,bellCount=0;
+  function lightIncense(){
+    incenseCount++;
+    incenseStart=performance.now();incenseUntil=incenseStart+25000;
+    for(const tip of incenseSticks.filter((_,i)=>i%2===1))tip.visible=true;
+    schedule();
+  }
+  function ringBell(){
+    bellCount++;bellUntil=performance.now()+1400;
+    schedule();
+    // Short original synthetic bell tone; only triggered from an explicit tap.
+    try{
+      const AudioCtx=window.AudioContext||window.webkitAudioContext;
+      if(!AudioCtx)return;
+      const audio=new AudioCtx(),gain=audio.createGain(),now=audio.currentTime;
+      gain.gain.setValueAtTime(.0001,now);
+      gain.gain.exponentialRampToValueAtTime(.1,now+.02);
+      gain.gain.exponentialRampToValueAtTime(.0001,now+1.8);
+      gain.connect(audio.destination);
+      for(const hz of [523.25,784.9,1046.5]){
+        const osc=audio.createOscillator();osc.type='sine';osc.frequency.setValueAtTime(hz,now);
+        osc.connect(gain);osc.start(now);osc.stop(now+1.85);
+      }
+      setTimeout(()=>audio.close().catch(()=>{}),2300);
+    }catch{/* Silent visual ritual remains usable if browser blocks audio. */}
+  }
+  function animateTemple(now){
+    const burning=now<incenseUntil;
+    if(!burning){
+      for(const tip of incenseSticks.filter((_,i)=>i%2===1))tip.visible=false;
+    }
+    smoke.forEach((puff,i)=>{
+      puff.visible=burning;
+      if(burning){
+        const t=((now-incenseStart)/1800+i/6)%1;
+        puff.position.set(Math.sin(t*6+i)*.16,1.55+t*2.3,.03);
+        puff.material.opacity=Math.sin(t*Math.PI)*.20;
+        puff.scale.setScalar(.45+t*.85);
+      }
+    });
+    const chiming=now<bellUntil;
+    bellMesh.rotation.z=chiming?Math.sin(now*.035)*.12*(Math.max(0,(bellUntil-now)/1400)):0;
+    bellGlow.intensity=chiming?2.8*Math.max(0,(bellUntil-now)/1400):0;
+    return burning||chiming;
+  }
   // A symbolic wish becomes an actual light in the 3D sanctuary.
   // Small and cheap: no extra model, texture, service or particle engine.
   const wishLight=new THREE.Mesh(
@@ -336,8 +406,9 @@ if(garden){
       wishLight.material.opacity=(1-progress)*.92;
       if(now>=wishLightUntil)wishLight.visible=false;
     }
+    const templeAnimating=animateTemple(now);
     positionCamera();renderer.render(scene,camera);
-    if(moving||wishLight.visible) schedule();
+    if(moving||wishLight.visible||templeAnimating) schedule();
   }
   function schedule(){if(!raf&&ready&&!document.hidden)raf=requestAnimationFrame(render);}
   function orbit(delta){azimuth=clamp(azimuth+delta,-1.32,1.32);schedule();}
@@ -396,6 +467,6 @@ if(garden){
     window.WishWorldWebGLError=String(error?.message||'WebGL scene initialization failed').slice(0,180);
     ro.disconnect();renderer.dispose();canvas.remove();controls.remove();
   }
-  window.WishWorld3D={getState(){return {ready,azimuth,radius,elevation,walkMode,walkT,walkDistance,walkLateral,visitorSource,visitorVisible:!!visitorModel,visitorAnimated:!!visitorMixer,visitorAnimationTime,daylight:window.WishDaylight?.getState().phase||'night',natureSource,natureTreeCount,sanctuarySource,sanctuaryVisible,wishLightVisible:wishLight.visible,wishReleaseCount,ritualFocus:!!ritualCamera,meshes:scene.children.filter(x=>x.isMesh).length};},orbit,zoom,bless,focusShrine,restoreView};
+  window.WishWorld3D={getState(){return {ready,azimuth,radius,elevation,walkMode,walkT,walkDistance,walkLateral,visitorSource,visitorVisible:!!visitorModel,visitorAnimated:!!visitorMixer,visitorAnimationTime,daylight:window.WishDaylight?.getState().phase||'night',natureSource,natureTreeCount,sanctuarySource,sanctuaryVisible,wishLightVisible:wishLight.visible,wishReleaseCount,ritualFocus:!!ritualCamera,incenseCount,bellCount,incenseBurning:performance.now()<incenseUntil,meshes:scene.children.filter(x=>x.isMesh).length};},orbit,zoom,bless,focusShrine,restoreView,lightIncense,ringBell};
  }
 }
