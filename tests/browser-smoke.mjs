@@ -289,6 +289,11 @@ try{
     assert.equal(await worldPage.locator('#worldBuild').isVisible(),true,'build fingerprint always visible in 3D world');
   const worldBuild=await worldPage.locator('#worldBuild').textContent();
   assert.match(worldBuild,/Build (?:[a-f0-9]{12}|__WISH_BUILD_SHA__)/,'release identity present before or after publish stamping');
+  const ritualCss=await worldPage.locator('link[href*="world-ritual.css"]').getAttribute('href');
+  const ritualJs=await worldPage.locator('script[src*="world-ritual.js"]').getAttribute('src');
+  assert.match(ritualCss,/world-ritual\.css\?v=(?:[a-f0-9]{12}|__WISH_BUILD_SHA__)/,'ritual CSS has the exact Pages release cache key');
+  assert.match(ritualJs,/world-ritual\.js\?v=(?:[a-f0-9]{12}|__WISH_BUILD_SHA__)/,'ritual JavaScript has the exact Pages release cache key');
+  assert.equal(await worldPage.evaluate(()=>typeof window.WishInWorldRitual?.open),'function','the new ritual controller actually loads');
   const bundleSrc=await worldPage.locator('script[src*="sanctuary-world.bundle"]').getAttribute('src');
   assert.match(bundleSrc,/sanctuary-world\.bundle\.js\?v=(?:[a-f0-9]{12}|__WISH_BUILD_SHA__)/,'3D bundle cache key matches release stamp');
   const worldBounds=await worldPage.locator('#sanctuary3d').boundingBox();
