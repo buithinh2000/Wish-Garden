@@ -201,10 +201,13 @@ if(garden){
     if(!Number.isFinite(size.y)||size.y<1||!Number.isFinite(size.x)||size.x<1)return;
     // Preserve the original 3D ritual anchor: (0, -18). The real oak is enlarged
     // into a dramatic landmark, without changing the walk path or camera target.
-    const scale=17/size.y;
+    // The authored CC0 oak remains the asset: enlarge its canopy silhouette
+    // without introducing procedural branches or another asset download.
+    const scale=22/size.y;
+    const canopyWidth=1.28;
     const center=bounds.getCenter(new THREE.Vector3());
-    oak.scale.setScalar(scale);
-    oak.position.set(-center.x*scale,-bounds.min.y*scale,-18-center.z*scale);
+    oak.scale.set(scale*canopyWidth,scale,scale*canopyWidth);
+    oak.position.set(-center.x*scale*canopyWidth,-bounds.min.y*scale,-18-center.z*scale*canopyWidth);
     oak.traverse(part=>{if(part.isMesh){part.frustumCulled=true;part.castShadow=false;part.receiveShadow=false;}});
     scene.add(oak);
     scene.remove(heroFallback);
@@ -222,9 +225,9 @@ if(garden){
   const hopeMat=new THREE.MeshBasicMaterial({color:0xffd789,transparent:true,opacity:.84,depthWrite:false});
   for(let i=0;i<64;i++){
     const theta=i*2.399963229728653;
-    const radius=1.1+(i%4)*.37;
+    const radius=1.4+(i%4)*.42;
     const node=mesh(new THREE.SphereGeometry(.10+(i%3)*.045,8,6),hopeMat.clone(),hopeTreeLights);
-    node.position.set(Math.cos(theta)*radius*2.7,10+(i%13)*.81,Math.sin(theta)*radius*2.5);
+    node.position.set(Math.cos(theta)*radius*2.9,11+(i%13)*.90,Math.sin(theta)*radius*2.7);
     hopeNodes.push(node);
   }
   let treeAwakeUntil=0,treeAwakenCount=0;
@@ -307,7 +310,7 @@ if(garden){
   // Camera orbit plus a walkable, bounded path toward the pavilion.
   // The visitor moves within the lantern corridor, not through the building or lake.
   const showcase=document.body.classList.contains('world-showcase');
-  let azimuth=0, radius=window.matchMedia('(max-width:650px)').matches?38:34, elevation=.08, targetZ=-18, dragging=false,lastX=0,ready=false,raf=0;
+  let azimuth=0, radius=window.matchMedia('(max-width:650px)').matches?42:38, elevation=.08, targetZ=-18, dragging=false,lastX=0,ready=false,raf=0;
   let walkDistance=0, walkLateral=0;
   const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
   function positionCamera(){
@@ -318,7 +321,7 @@ if(garden){
     visitorGroup.position.set(walkLateral,0,(walkT>.5?8-walkDistance:-9));
     visitorGroup.rotation.y=azimuth*.22;
     camera.position.copy(orbitPos.lerp(eye,walkT));
-    const lookAt=new THREE.Vector3(0,9,targetZ).lerp(new THREE.Vector3(walkLateral+Math.sin(azimuth)*3.5,3.15,lookZ-walkDistance*.24),walkT);
+    const lookAt=new THREE.Vector3(0,11,targetZ).lerp(new THREE.Vector3(walkLateral+Math.sin(azimuth)*3.5,3.15,lookZ-walkDistance*.24),walkT);
     camera.lookAt(lookAt);
   }
   const controls=document.createElement('div');controls.id='worldControls';
@@ -389,7 +392,7 @@ if(garden){
   function focusShrine(){
     if(ritualCamera)return;
     ritualCamera={azimuth,radius,elevation,targetZ,walkMode,walkT,walkDistance,walkLateral};
-    azimuth=.08;radius=window.matchMedia('(max-width:650px)').matches?38:30;elevation=.08;targetZ=-18;
+    azimuth=.08;radius=window.matchMedia('(max-width:650px)').matches?42:34;elevation=.08;targetZ=-18;
     walkMode=false;walkT=0;transitionStart=0;
     setHint();schedule();
   }
@@ -497,6 +500,6 @@ if(garden){
     window.WishWorldWebGLError=String(error?.message||'WebGL scene initialization failed').slice(0,180);
     ro.disconnect();renderer.dispose();canvas.remove();controls.remove();
   }
-  window.WishWorld3D={getState(){return {ready,azimuth,radius,elevation,walkMode,walkT,walkDistance,walkLateral,visitorSource,visitorVisible:!!visitorModel,visitorAnimated:!!visitorMixer,visitorAnimationTime,daylight:window.WishDaylight?.getState().phase||'night',natureSource,natureTreeCount,sanctuarySource,sanctuaryVisible,wishLightVisible:wishLight.visible,wishReleaseCount,ritualFocus:!!ritualCamera,treeAwakenCount,heroTreeCenter:[0,-18],heroTreeScale:2.15,heroTreeSource,heroTreeVisible,ambientCompanionCount:ambientCompanions.length,ambientCompanionsVisible:companionsVisible,ambientCompanionsSimulated:true,meshes:scene.children.filter(x=>x.isMesh).length};},orbit,zoom,bless,focusShrine,restoreView,awakenTree,setCompanionsVisible};
+  window.WishWorld3D={getState(){return {ready,azimuth,radius,elevation,walkMode,walkT,walkDistance,walkLateral,visitorSource,visitorVisible:!!visitorModel,visitorAnimated:!!visitorMixer,visitorAnimationTime,daylight:window.WishDaylight?.getState().phase||'night',natureSource,natureTreeCount,sanctuarySource,sanctuaryVisible,wishLightVisible:wishLight.visible,wishReleaseCount,ritualFocus:!!ritualCamera,treeAwakenCount,heroTreeCenter:[0,-18],heroTreeScale:2.15,heroTreeSource,heroTreeVisible,heroTreeHeight:heroTreeVisible?22:0,heroTreeCanopyWidthMultiplier:heroTreeVisible?1.28:1,ambientCompanionCount:ambientCompanions.length,ambientCompanionsVisible:companionsVisible,ambientCompanionsSimulated:true,meshes:scene.children.filter(x=>x.isMesh).length};},orbit,zoom,bless,focusShrine,restoreView,awakenTree,setCompanionsVisible};
  }
 }

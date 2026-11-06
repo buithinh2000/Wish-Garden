@@ -63,6 +63,8 @@ try{
   await page.waitForFunction(()=>window.WishWorld3D?.getState().heroTreeVisible===true,{timeout:20000});
   const heroTree=await page.evaluate(()=>window.WishWorld3D.getState());
   assert.equal(heroTree.heroTreeSource,'innerscene-cc0-oak-glb','hero tree must load real CC0 GLB');
+  assert.equal(heroTree.heroTreeHeight,22,'hero oak must render at focal 22m height');
+  assert.equal(heroTree.heroTreeCanopyWidthMultiplier,1.28,'authored canopy must read as landmark');
   if(viewport.width>=650 || 'qa-screenshots/'+viewport.width+'-hero-oak.png'.includes('hero-oak') || 'qa-screenshots/'+viewport.width+'-hero-oak.png'.includes('hero-wishing-tree')) await page.screenshot({path:'qa-screenshots/'+viewport.width+'-hero-oak.png',fullPage:false,animations:'disabled',timeout:60000});
 
   await page.locator('#worldRight').click();
