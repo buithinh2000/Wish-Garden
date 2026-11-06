@@ -17,6 +17,11 @@ root.innerHTML=`
  <div id="ritualWrite">
   <h2 id="ritualTitle">A moment beneath the tree</h2>
   <p class="ritual-note">Stand before the tree. Take your time; your words belong to you.</p>
+  <div class="reflection-leaf" aria-label="Optional reflection leaf">
+    <button type="button" id="reflectionPick">✧ Draw a reflection leaf</button>
+    <p class="reflection-help">A gentle question for you to consider. Not fortune-telling or a prediction.</p>
+    <p id="reflectionLeafText" role="status" hidden></p>
+  </div>
   <label for="ritualTopic">What is this wish for?</label>
   <select id="ritualTopic">
    <option>Peace & calm</option><option>Family & loved ones</option><option>Health & strength</option>
@@ -61,6 +66,30 @@ if(treeButton){
  });
 }
 let mode='',lastFocus=null,session=[];
+const reflections=[
+ 'What matters most to you at this moment?',
+ 'What is one kindness you could offer yourself today?',
+ 'Who makes you feel less alone?',
+ 'What small step could make tomorrow gentler?',
+ 'Which memory gives you strength?',
+ 'What can you release without losing hope?',
+ 'What are you grateful to have learned?',
+ 'Who might welcome a message from you today?',
+ 'What does a peaceful day look like for you?',
+ 'What is within your reach, even if the future is uncertain?'
+];
+let reflectionDrawCount=0;
+function drawReflection(){
+ const last=$('reflectionLeafText').dataset.index;
+ const random=new Uint32Array(1);crypto.getRandomValues(random);
+ let index=random[0]%reflections.length;
+ if(reflections.length>1 && String(index)===last)index=(index+1)%reflections.length;
+ const el=$('reflectionLeafText');el.textContent=reflections[index];
+ el.dataset.index=String(index);el.hidden=false;reflectionDrawCount++;
+ window.WishWorld3D?.awakenTree?.();
+}
+$('reflectionPick').addEventListener('click',drawReflection);
+
 function load(){
  try{const items=JSON.parse(localStorage.getItem(KEY)||'[]');return Array.isArray(items)?items.filter(x=>x&&typeof x.text==='string'):[]}catch{return []}
 }
@@ -194,5 +223,5 @@ document.addEventListener('keydown',event=>{
  if(event.shiftKey&&document.activeElement===focusable[0]){event.preventDefault();focusable[focusable.length-1].focus();}
  else if(!event.shiftKey&&document.activeElement===focusable[focusable.length-1]){event.preventDefault();focusable[0].focus();}
 });
-window.WishInWorldRitual={getState:()=>({mode,open:!$('ritualPanel').hidden,stored:load().length,session:session.length}),open,close};
+window.WishInWorldRitual={getState:()=>({mode,open:!$('ritualPanel').hidden,stored:load().length,session:session.length,reflectionDrawCount}),open,close};
 })();

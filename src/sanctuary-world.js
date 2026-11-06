@@ -200,6 +200,30 @@ if(garden){
     treeAwakenCount++;treeAwakeUntil=performance.now()+2800;
     schedule();
   }
+  // The tree never feels abandoned. These are intentionally stylised
+  // AMBIENT FIGURES, NOT accounts, online players or simulated real users.
+  // Static locally rendered figures cost zero network/API calls.
+  const ambientCompanions=[];
+  const companionColors=[0x637d84,0x8f7c87,0x657f69,0x9a846c];
+  const companionSpots=[[5.1,-16.3,0.19],[12.7,-16.4,-.21],[6.3,-21.7,.36],[12.3,-21.8,-.34]];
+  for(let i=0;i<companionSpots.length;i++){
+    const [x,z,angle]=companionSpots[i];
+    const group=new THREE.Group();group.position.set(x,.30,z);group.rotation.y=angle;scene.add(group);
+    const bodyMat=new THREE.MeshStandardMaterial({color:companionColors[i],roughness:1,transparent:true,opacity:.78});
+    const headMat=new THREE.MeshStandardMaterial({color:0xb6a894,roughness:1,transparent:true,opacity:.78});
+    const torso=mesh(new THREE.CapsuleGeometry(.28,.73,4,7),bodyMat,group);
+    torso.position.set(0,1.32,0);
+    const head=mesh(new THREE.SphereGeometry(.23,9,7),headMat,group);
+    head.position.set(0,2.05,0);
+    for(const side of [-1,1]){
+      const arm=mesh(new THREE.CapsuleGeometry(.075,.57,4,6),bodyMat,group);
+      arm.position.set(side*.37,1.30,.04);arm.rotation.z=side*.14;
+      const leg=mesh(new THREE.CapsuleGeometry(.105,.64,4,6),bodyMat,group);
+      leg.position.set(side*.15,.53,.01);
+    }
+    group.lookAt(new THREE.Vector3(9,.3,-18));
+    ambientCompanions.push(group);
+  }
   // Distant ridge silhouettes stay physically in the scene while camera moves.
   const ridge=mat(0x253e44);
   for(let i=0;i<12;i++){
@@ -429,6 +453,6 @@ if(garden){
     window.WishWorldWebGLError=String(error?.message||'WebGL scene initialization failed').slice(0,180);
     ro.disconnect();renderer.dispose();canvas.remove();controls.remove();
   }
-  window.WishWorld3D={getState(){return {ready,azimuth,radius,elevation,walkMode,walkT,walkDistance,walkLateral,visitorSource,visitorVisible:!!visitorModel,visitorAnimated:!!visitorMixer,visitorAnimationTime,daylight:window.WishDaylight?.getState().phase||'night',natureSource,natureTreeCount,sanctuarySource,sanctuaryVisible,wishLightVisible:wishLight.visible,wishReleaseCount,ritualFocus:!!ritualCamera,treeAwakenCount,meshes:scene.children.filter(x=>x.isMesh).length};},orbit,zoom,bless,focusShrine,restoreView,awakenTree};
+  window.WishWorld3D={getState(){return {ready,azimuth,radius,elevation,walkMode,walkT,walkDistance,walkLateral,visitorSource,visitorVisible:!!visitorModel,visitorAnimated:!!visitorMixer,visitorAnimationTime,daylight:window.WishDaylight?.getState().phase||'night',natureSource,natureTreeCount,sanctuarySource,sanctuaryVisible,wishLightVisible:wishLight.visible,wishReleaseCount,ritualFocus:!!ritualCamera,treeAwakenCount,ambientCompanionCount:ambientCompanions.length,ambientCompanionsSimulated:true,meshes:scene.children.filter(x=>x.isMesh).length};},orbit,zoom,bless,focusShrine,restoreView,awakenTree};
  }
 }
