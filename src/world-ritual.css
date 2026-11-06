@@ -41,3 +41,11 @@ body.ritual-open #worldControls,body.ritual-open #softwareControls{visibility:hi
 #ritualPanel .ritual-backup-actions{display:flex;flex-wrap:wrap;justify-content:center;gap:9px;margin:15px 0 7px}
 #ritualPanel .ritual-backup-actions button{font-size:13px;padding:10px 14px;min-height:43px}
 #ritualPanel #ritualBackupNote{text-align:center;margin:7px 0 5px}
+
+/* No game HUD: small actions a temple visitor immediately recognises. */
+#templeActions{position:fixed;z-index:36;left:clamp(18px,4vw,55px);bottom:clamp(75px,12vh,120px);display:flex;flex-wrap:wrap;gap:9px;max-width:min(420px,calc(100vw - 32px));align-items:center}
+#templeActions button{display:inline-flex;gap:8px;align-items:center;justify-content:center;min-height:46px;padding:10px 14px;border:1px solid #e9cd91a6;border-radius:20px;background:#16303ddf;color:#ffedc5;font:600 13px/1.2 system-ui,sans-serif;box-shadow:0 6px 24px #0008;cursor:pointer;backdrop-filter:blur(5px)}
+#templeActions button:hover,#templeActions button:focus-visible{background:#31515b}
+#templeActions p{flex-basis:100%;font-size:11px;color:#f2dbb8;margin:0;padding-left:3px;text-shadow:0 2px 8px #000}
+body.ritual-open #templeActions{visibility:hidden;pointer-events:none}
+@media(max-width:650px){#templeActions{left:12px;right:12px;bottom:clamp(175px,24vh,230px);gap:7px;max-width:none}#templeActions button{font-size:12px;min-height:43px;padding:8px 10px}#templeActions p{font-size:10px;line-height:1.3}}
