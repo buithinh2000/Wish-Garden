@@ -118,7 +118,7 @@ if(garden){
       const a=seed+j*2.1,rad=2.2+j*.22;
       const branch=cylinder(.12,.20,3.3,bark,Math.cos(a)*1.1,5.9,Math.sin(a)*1.1,group);
       branch.rotation.z=Math.sin(a)*.6;branch.rotation.x=Math.cos(a)*.6;
-      const canopyMaterial=hero?new THREE.MeshStandardMaterial({color:0x548261,emissive:0x7e6528,emissiveIntensity:.55,roughness:1}):leaf;
+      const canopyMaterial=hero?new THREE.MeshStandardMaterial({color:0x367853,emissive:0x1f5c42,emissiveIntensity:.28,roughness:1}):leaf;
       const canopy=mesh(new THREE.IcosahedronGeometry(rad,hero?2:1),canopyMaterial,group);
       canopy.position.set(Math.cos(a)*2.1,7.1+(j%2)*.9,Math.sin(a)*2.1);
       canopy.scale.set(hero?1.25:1,hero?.78:.56,hero?1.13:.90);
@@ -127,7 +127,7 @@ if(garden){
       for(let k=0;k<9;k++){
         const angle=k*2.39996,r=1.4+(k%3)*.58;
         const cluster=mesh(new THREE.IcosahedronGeometry(1.1+(k%3)*.28,1),
-          new THREE.MeshStandardMaterial({color:k%2?0x4d7b60:0x62865a,emissive:0x5b4520,emissiveIntensity:.4,roughness:1}),group);
+          new THREE.MeshStandardMaterial({color:k%2?0x427e5d:0x58906b,emissive:0x24513b,emissiveIntensity:.32,roughness:1}),group);
         cluster.position.set(Math.sin(angle)*r,7.9+(k%4)*.69,Math.cos(angle)*r);
       }
     }
@@ -198,12 +198,12 @@ if(garden){
   // lights woven around the real 3D tree, activated by a visitor's wish.
   const hopeTreeLights=new THREE.Group();hopeTreeLights.position.set(0,0,-18);scene.add(hopeTreeLights);
   const hopeNodes=[];
-  const hopeMat=new THREE.MeshBasicMaterial({color:0xffdeab,transparent:true,opacity:.25,depthWrite:false});
-  for(let i=0;i<18;i++){
+  const hopeMat=new THREE.MeshBasicMaterial({color:0xffd789,transparent:true,opacity:.84,depthWrite:false});
+  for(let i=0;i<64;i++){
     const theta=i*2.399963229728653;
     const radius=1.1+(i%4)*.37;
-    const node=mesh(new THREE.SphereGeometry(.10+(i%3)*.035,8,6),hopeMat.clone(),hopeTreeLights);
-    node.position.set(Math.cos(theta)*radius*2.5,9.7+(i%7)*1.05,Math.sin(theta)*radius*2.4);
+    const node=mesh(new THREE.SphereGeometry(.10+(i%3)*.045,8,6),hopeMat.clone(),hopeTreeLights);
+    node.position.set(Math.cos(theta)*radius*2.7,10+(i%13)*.81,Math.sin(theta)*radius*2.5);
     hopeNodes.push(node);
   }
   let treeAwakeUntil=0,treeAwakenCount=0;
@@ -395,12 +395,12 @@ if(garden){
     if(now<treeAwakeUntil){
       const t=(treeAwakeUntil-now)/2800;
       hopeNodes.forEach((node,i)=>{
-        node.material.opacity=.35+Math.sin(now*.004+i)*.3+.2*t;
+        node.material.opacity=.58+Math.max(0,Math.sin(now*.004+i))*.40+.10*t;
         node.scale.setScalar(1+(.3*Math.sin(now*.003+i)));
       });
       wishingTreeLight.intensity=8+5*t;
     }else{
-      hopeNodes.forEach(node=>{node.material.opacity=.24;node.scale.setScalar(1);});
+      hopeNodes.forEach(node=>{node.material.opacity=.78;node.scale.setScalar(1);});
       wishingTreeLight.intensity=8;
     }
     const width=Math.max(1,garden.clientWidth),height=Math.max(1,garden.clientHeight);
