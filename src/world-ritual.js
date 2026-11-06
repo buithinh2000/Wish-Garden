@@ -11,12 +11,12 @@ root.id='worldRitualRoot';
 root.innerHTML=`
 <div id="ritualVeil" hidden></div>
 <section id="ritualPanel" role="dialog" aria-modal="true" aria-labelledby="ritualTitle" hidden>
- <button type="button" id="ritualClose" class="ritual-close" aria-label="Return to the sanctuary">✕</button>
- <div class="ritual-kicker">✦ THE QUIET SANCTUARY</div>
- <div class="ritual-lamp" aria-hidden="true">🪔</div>
+ <button type="button" id="ritualClose" class="ritual-close" aria-label="Return to the garden">✕</button>
+ <div class="ritual-kicker">✦ THE WISHING TREE</div>
+ <div class="ritual-lamp" aria-hidden="true">✧</div>
  <div id="ritualWrite">
-  <h2 id="ritualTitle">A moment for your hope</h2>
-  <p class="ritual-note">Pause here. Your words belong to you.</p>
+  <h2 id="ritualTitle">A moment beneath the tree</h2>
+  <p class="ritual-note">Stand before the tree. Take your time; your words belong to you.</p>
   <label for="ritualTopic">What is this wish for?</label>
   <select id="ritualTopic">
    <option>Peace & calm</option><option>Family & loved ones</option><option>Health & strength</option>
@@ -29,10 +29,10 @@ root.innerHTML=`
   <button type="button" id="ritualRelease" disabled>Release my wish · ✨</button>
  </div>
  <div id="ritualComplete" hidden role="status">
-  <h2>Your light has joined the sky</h2>
+  <h2>Your light has risen through the Wishing Tree</h2>
   <p>One small moment of hope. This is a symbolic release, not a real transmission.</p>
   <button type="button" id="ritualAgain">Offer another wish</button>
-  <button type="button" id="ritualReturn">Return to the sanctuary</button>
+  <button type="button" id="ritualReturn">Return to the garden</button>
  </div>
  <div id="ritualMemories" hidden>
   <h2 id="ritualMemoriesTitle" tabindex="-1">My wishes</h2>
@@ -102,7 +102,7 @@ function view(next){
  $('ritualWrite').hidden=next!=='write';
  $('ritualComplete').hidden=next!=='complete';
  $('ritualMemories').hidden=next!=='memories';
- $('ritualPanel').setAttribute('aria-label',next==='memories'?'My saved wishes':'Wishing sanctuary');
+ $('ritualPanel').setAttribute('aria-label',next==='memories'?'My saved wishes':'Wishing Tree');
  if(next==='write'){$('ritualWords').focus({preventScroll:true});}
  if(next==='memories'){renderMemories();$('ritualMemoriesTitle').focus({preventScroll:true});}
  if(next==='complete'){$('ritualReturn').focus({preventScroll:true});}
