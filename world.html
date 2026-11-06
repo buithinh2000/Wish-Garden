@@ -46,11 +46,11 @@ body.world-ready #softwareWorld,body.world-ready #softwareControls{display:none!
 body.software-ready .heading{pointer-events:none}
 body.software-ready .status{bottom:95px}
 #daylightStatus{position:fixed;z-index:22;top:clamp(72px,8vw,100px);right:clamp(18px,4vw,55px);color:#f5dfb1;background:#102936d9;border:1px solid #e2c69a66;padding:7px 11px;border-radius:14px;font:11px ui-monospace,monospace;letter-spacing:.06em}
-#ambientPresence{position:fixed;left:clamp(18px,4vw,55px);bottom:clamp(95px,15vh,155px);max-width:300px;z-index:32;background:#102734dd;border:1px solid #e1d3a64f;border-radius:14px;padding:9px 11px;display:flex;flex-wrap:wrap;align-items:center;gap:7px}
+#ambientPresence{position:fixed;right:14px;top:105px;left:auto;bottom:auto;max-width:260px;z-index:32;background:#102734dd;border:1px solid #e1d3a64f;border-radius:14px;padding:9px 11px;display:flex;flex-wrap:wrap;align-items:center;gap:7px}
 #ambientPresence #ambientDisclosure{position:static;max-width:none;flex:1 1 100%;font-size:11px;line-height:1.45;color:#e9ddc8;opacity:.95;margin:0;padding:0;background:none;text-shadow:0 2px 10px #000}
 #ambientToggle{background:#294653;color:#ffedc3;border:1px solid #dfc79a90;border-radius:15px;min-height:38px;padding:7px 13px;font-size:12px;cursor:pointer}
 #ambientToggle:hover,#ambientToggle:focus-visible{background:#385e69}
-@media(max-width:650px){#ambientPresence{bottom:clamp(225px,32vh,330px);left:12px;max-width:min(290px,calc(100vw - 24px));padding:7px 9px}#ambientPresence #ambientDisclosure{font-size:10px}#ambientToggle{min-height:36px}}
+@media(max-width:650px){#ambientPresence{top:96px;right:9px;left:auto;bottom:auto;max-width:min(185px,calc(100vw - 18px));padding:7px 9px}#ambientPresence #ambientDisclosure{font-size:10px}#ambientToggle{min-height:36px}}
 body.ritual-open #ambientPresence{visibility:hidden;pointer-events:none}
 
 
