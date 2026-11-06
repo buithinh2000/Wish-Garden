@@ -63,7 +63,7 @@ if(garden){
     pebble.rotation.y=a;
   }
   // Pavilion: elevated platform, load-bearing pillars, roof with deep eaves.
-  const pavilion=new THREE.Group();scene.add(pavilion);pavilion.position.set(0,0,-18);
+  const pavilion=new THREE.Group();scene.add(pavilion);pavilion.position.set(-29,0,-49);pavilion.scale.setScalar(.40);
   box(12,.8,11,darkWood,0,.70,0,pavilion);
   box(13,.22,12,stone,0,.27,0,pavilion);
   for(const x of [-4.6,4.6])for(const z of [-3.8,3.8]){
@@ -92,9 +92,9 @@ if(garden){
     const dimensions=bounds.getSize(new THREE.Vector3());
     if(!Number.isFinite(dimensions.x)||!Number.isFinite(dimensions.y)||dimensions.x<.5||dimensions.y<.5)throw Error('Invalid pavilion dimensions');
     const center=bounds.getCenter(new THREE.Vector3());
-    const scale=Math.min(1.35,24/Math.max(dimensions.x,dimensions.z));
+    const scale=Math.min(.52,9/Math.max(dimensions.x,dimensions.z));
     lotus.scale.setScalar(scale);
-    lotus.position.set(-center.x*scale,-bounds.min.y*scale,-18-center.z*scale);
+    lotus.position.set(-29-center.x*scale,-bounds.min.y*scale,-49-center.z*scale);
     scene.add(lotus);
     scene.remove(pavilion);
     sanctuarySource='cc0-lotus-glb';sanctuaryVisible=true;
@@ -111,16 +111,25 @@ if(garden){
     const light=new THREE.PointLight(0xffb46d,3.8,6,2);light.position.set(x,2.9,z);scene.add(light);
   }
   // Trunks, branches and foliage are actual meshes at different depths.
-  function tree(x,z,scale,seed){
+  function tree(x,z,scale,seed,hero=false){
     const group=new THREE.Group();group.position.set(x,0,z);group.scale.setScalar(scale);scene.add(group);
     cylinder(.39,.57,6.5,bark,0,3.10,0,group);
     for(let j=0;j<4;j++){
       const a=seed+j*2.1,rad=2.2+j*.22;
       const branch=cylinder(.12,.20,3.3,bark,Math.cos(a)*1.1,5.9,Math.sin(a)*1.1,group);
       branch.rotation.z=Math.sin(a)*.6;branch.rotation.x=Math.cos(a)*.6;
-      const canopy=mesh(new THREE.IcosahedronGeometry(rad,1),leaf,group);
+      const canopyMaterial=hero?new THREE.MeshStandardMaterial({color:0x548261,emissive:0x7e6528,emissiveIntensity:.55,roughness:1}):leaf;
+      const canopy=mesh(new THREE.IcosahedronGeometry(rad,hero?2:1),canopyMaterial,group);
       canopy.position.set(Math.cos(a)*2.1,7.1+(j%2)*.9,Math.sin(a)*2.1);
-      canopy.scale.set(1,.56,.90);
+      canopy.scale.set(hero?1.25:1,hero?.78:.56,hero?1.13:.90);
+    }
+    if(hero){
+      for(let k=0;k<9;k++){
+        const angle=k*2.39996,r=1.4+(k%3)*.58;
+        const cluster=mesh(new THREE.IcosahedronGeometry(1.1+(k%3)*.28,1),
+          new THREE.MeshStandardMaterial({color:k%2?0x4d7b60:0x62865a,emissive:0x5b4520,emissiveIntensity:.4,roughness:1}),group);
+        cluster.position.set(Math.sin(angle)*r,7.9+(k%4)*.69,Math.cos(angle)*r);
+      }
     }
   }
   const trees=[[-13,-9,1.3],[15,-9,1.2],[-20,-22,1.55],[22,-30,1.5],[-11,16,1.1],[12,19,1.4],[-24,6,1.5],[27,10,1.4],[-31,-31,1.7],[32,-43,1.8],[-24,32,1.4],[24,35,1.4]];
@@ -180,19 +189,21 @@ if(garden){
   }
   // The Wishing Tree is the central place of reflection for every culture.
   // Use the existing light-weight tree geometry on the island, not an altar or shrine.
-  tree(9,-18,1.4,2.3);
+  tree(0,-18,2.15,2.3,true);
+  const treeGround=mesh(new THREE.CircleGeometry(8,48),new THREE.MeshStandardMaterial({color:0x334f3d,roughness:1}));
+  treeGround.rotation.x=-Math.PI/2;treeGround.position.set(0,.08,-18);
   const wishingTreeLight=new THREE.PointLight(0xffdda1,8,18,2);
-  wishingTreeLight.position.set(9,7,-18);scene.add(wishingTreeLight);
+  wishingTreeLight.position.set(0,11,-18);scene.add(wishingTreeLight);
   // Universal, non-religious tree-of-hopes: a small original constellation of
   // lights woven around the real 3D tree, activated by a visitor's wish.
-  const hopeTreeLights=new THREE.Group();hopeTreeLights.position.set(9,0,-18);scene.add(hopeTreeLights);
+  const hopeTreeLights=new THREE.Group();hopeTreeLights.position.set(0,0,-18);scene.add(hopeTreeLights);
   const hopeNodes=[];
   const hopeMat=new THREE.MeshBasicMaterial({color:0xffdeab,transparent:true,opacity:.25,depthWrite:false});
   for(let i=0;i<18;i++){
     const theta=i*2.399963229728653;
     const radius=1.1+(i%4)*.37;
     const node=mesh(new THREE.SphereGeometry(.10+(i%3)*.035,8,6),hopeMat.clone(),hopeTreeLights);
-    node.position.set(Math.cos(theta)*radius,5.1+(i%7)*.55,Math.sin(theta)*radius);
+    node.position.set(Math.cos(theta)*radius*2.5,9.7+(i%7)*1.05,Math.sin(theta)*radius*2.4);
     hopeNodes.push(node);
   }
   let treeAwakeUntil=0,treeAwakenCount=0;
@@ -205,7 +216,7 @@ if(garden){
   // Static locally rendered figures cost zero network/API calls.
   const ambientCompanions=[];
   const companionColors=[0x637d84,0x8f7c87,0x657f69,0x9a846c];
-  const companionSpots=[[5.1,-16.3,0.19],[12.7,-16.4,-.21],[6.3,-21.7,.36],[12.3,-21.8,-.34]];
+  const companionSpots=[[-4.7,-13.8,0.1],[4.8,-14.2,-0.1],[-5.8,-20.4,0.18],[5.6,-21.4,-0.2]];
   for(let i=0;i<companionSpots.length;i++){
     const [x,z,angle]=companionSpots[i];
     const group=new THREE.Group();group.position.set(x,.30,z);group.rotation.y=angle;scene.add(group);
@@ -221,7 +232,7 @@ if(garden){
       const leg=mesh(new THREE.CapsuleGeometry(.105,.64,4,6),bodyMat,group);
       leg.position.set(side*.15,.53,.01);
     }
-    group.lookAt(new THREE.Vector3(9,.3,-18));
+    group.lookAt(new THREE.Vector3(0,.3,-18));
     ambientCompanions.push(group);
   }
   // A visitor can choose solitude. This preference is kept only in this
@@ -275,7 +286,7 @@ if(garden){
   // Camera orbit plus a walkable, bounded path toward the pavilion.
   // The visitor moves within the lantern corridor, not through the building or lake.
   const showcase=document.body.classList.contains('world-showcase');
-  let azimuth=showcase?.18:0, radius=showcase?21:31, elevation=showcase?.10:.26, targetZ=showcase?-17:-15, dragging=false,lastX=0,ready=false,raf=0;
+  let azimuth=0, radius=window.matchMedia('(max-width:650px)').matches?38:34, elevation=.08, targetZ=-18, dragging=false,lastX=0,ready=false,raf=0;
   let walkDistance=0, walkLateral=0;
   const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
   function positionCamera(){
@@ -286,7 +297,7 @@ if(garden){
     visitorGroup.position.set(walkLateral,0,(walkT>.5?8-walkDistance:-9));
     visitorGroup.rotation.y=azimuth*.22;
     camera.position.copy(orbitPos.lerp(eye,walkT));
-    const lookAt=new THREE.Vector3(ritualCamera?9:0,ritualCamera?8:5,targetZ).lerp(new THREE.Vector3(walkLateral+Math.sin(azimuth)*3.5,3.15,lookZ-walkDistance*.24),walkT);
+    const lookAt=new THREE.Vector3(0,9,targetZ).lerp(new THREE.Vector3(walkLateral+Math.sin(azimuth)*3.5,3.15,lookZ-walkDistance*.24),walkT);
     camera.lookAt(lookAt);
   }
   const controls=document.createElement('div');controls.id='worldControls';
@@ -357,7 +368,7 @@ if(garden){
   function focusShrine(){
     if(ritualCamera)return;
     ritualCamera={azimuth,radius,elevation,targetZ,walkMode,walkT,walkDistance,walkLateral};
-    azimuth=.20;radius=26;elevation=.12;targetZ=-18;
+    azimuth=.08;radius=window.matchMedia('(max-width:650px)').matches?38:30;elevation=.08;targetZ=-18;
     walkMode=false;walkT=0;transitionStart=0;
     setHint();schedule();
   }
@@ -400,7 +411,7 @@ if(garden){
     if(wishLight.visible){
       const progress=Math.min(1,(now-wishLightStart)/2700);
       // A private wish rises from the Wishing Tree, not from a temple altar.
-      wishLight.position.set(9+Math.sin(progress*7)*.5,5+progress*17,-18);
+      wishLight.position.set(Math.sin(progress*7)*.5,11+progress*19,-18);
       wishLight.scale.setScalar(.65+Math.sin(progress*Math.PI)*.8);
       wishLight.material.opacity=(1-progress)*.92;
       if(now>=wishLightUntil)wishLight.visible=false;
@@ -465,6 +476,6 @@ if(garden){
     window.WishWorldWebGLError=String(error?.message||'WebGL scene initialization failed').slice(0,180);
     ro.disconnect();renderer.dispose();canvas.remove();controls.remove();
   }
-  window.WishWorld3D={getState(){return {ready,azimuth,radius,elevation,walkMode,walkT,walkDistance,walkLateral,visitorSource,visitorVisible:!!visitorModel,visitorAnimated:!!visitorMixer,visitorAnimationTime,daylight:window.WishDaylight?.getState().phase||'night',natureSource,natureTreeCount,sanctuarySource,sanctuaryVisible,wishLightVisible:wishLight.visible,wishReleaseCount,ritualFocus:!!ritualCamera,treeAwakenCount,ambientCompanionCount:ambientCompanions.length,ambientCompanionsVisible:companionsVisible,ambientCompanionsSimulated:true,meshes:scene.children.filter(x=>x.isMesh).length};},orbit,zoom,bless,focusShrine,restoreView,awakenTree,setCompanionsVisible};
+  window.WishWorld3D={getState(){return {ready,azimuth,radius,elevation,walkMode,walkT,walkDistance,walkLateral,visitorSource,visitorVisible:!!visitorModel,visitorAnimated:!!visitorMixer,visitorAnimationTime,daylight:window.WishDaylight?.getState().phase||'night',natureSource,natureTreeCount,sanctuarySource,sanctuaryVisible,wishLightVisible:wishLight.visible,wishReleaseCount,ritualFocus:!!ritualCamera,treeAwakenCount,heroTreeCenter:[0,-18],heroTreeScale:2.15,ambientCompanionCount:ambientCompanions.length,ambientCompanionsVisible:companionsVisible,ambientCompanionsSimulated:true,meshes:scene.children.filter(x=>x.isMesh).length};},orbit,zoom,bless,focusShrine,restoreView,awakenTree,setCompanionsVisible};
  }
 }
