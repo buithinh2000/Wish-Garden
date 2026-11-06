@@ -64,7 +64,7 @@ function validateBackup(raw){
   if(typeof id!=='string'||!id||id.length>120||seen.has(id))throw Error('Invalid ID');
   if(typeof text!=='string'||!text.trim()||text.length>2000)throw Error('Invalid words');
   if(!Number.isInteger(topic)||topic<0||topic>5)throw Error('Invalid topic');
-  if(typeof date!=='string'||!Number.isFinite(Date.parse(date))||!/^\\d{4}-\\d{2}-\\d{2}T/.test(date))throw Error('Invalid date');
+  if(typeof date!=='string'||!Number.isFinite(Date.parse(date))||!/^\d{4}-\d{2}-\d{2}T/.test(date))throw Error('Invalid date');
   seen.add(id);return {id,text,topic,date};
  });
 }
