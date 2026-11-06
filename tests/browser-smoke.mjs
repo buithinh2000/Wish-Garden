@@ -307,6 +307,11 @@ try{
   const visitorState=await worldPage.evaluate(()=>window.WishWorld3D.getState());
   assert.equal(visitorState.visitorVisible,true,'standalone world must include a visible human visitor');
   assert.equal(visitorState.visitorSource,'civilian-glb','world must load the real civilian human asset, not just a primitive substitute');
+  const companions=await worldPage.evaluate(()=>window.WishWorld3D.getState());
+  assert.equal(companions.ambientCompanionCount,4,'four ambient figures stand near the Wishing Tree');
+  assert.equal(companions.ambientCompanionsSimulated,true,'visitors are marked simulated, not real online users');
+  assert.match(await worldPage.locator('#ambientDisclosure').textContent(),/illustrative figures, not real visitors online/,'visible disclosure prevents fabricated social proof');
+  await worldPage.screenshot({path:'qa-screenshots/'+viewport.width+'-tree-companions.png',fullPage:false});
     const beforeOrbit=await worldPage.evaluate(()=>window.WishWorld3D.getState());
   assert.equal(await worldPage.locator('#worldRight').isVisible(),false,'standalone sanctuary opens without game-like controls');
   await worldPage.locator('#worldOptions').click();
@@ -341,6 +346,13 @@ try{
   assert.equal(new URL(worldPage.url()).pathname.endsWith('/world.html'),true,'prayer does not exit 3D world');
   assert.equal(await worldPage.locator('#sanctuary3d').isVisible(),true,'3D sanctuary remains behind ritual');
   assert.equal(await worldPage.locator('#ritualPanel').isVisible(),true,'in-scene prayer form opens');
+  assert.equal(await worldPage.locator('#reflectionLeafText').isVisible(),false,'reflection is voluntary and hidden before drawing');
+  await worldPage.locator('#reflectionPick').click();
+  assert.equal(await worldPage.locator('#reflectionLeafText').isVisible(),true,'a reflection question appears within the tree ritual');
+  assert.ok((await worldPage.locator('#reflectionLeafText').textContent()).length>15,'the reflection has meaningful text');
+  assert.equal((await worldPage.evaluate(()=>window.WishInWorldRitual.getState())).reflectionDrawCount,1,'reflection draw is observable without storing or revealing the user's wish');
+  assert.equal(await worldPage.locator('#ritualRelease').isDisabled(),true,'drawing a reflection never submits a wish');
+
   const ritualStyle=await worldPage.locator('#ritualPanel').evaluate(el=>({position:getComputedStyle(el).position,z:Number(getComputedStyle(el).zIndex)}));
   assert.equal(ritualStyle.position,'fixed','ritual stylesheet loads as CSS and stays over the scene');
   assert.ok(ritualStyle.z>=40,'ritual content must sit over WebGL canvas');
