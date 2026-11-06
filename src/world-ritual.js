@@ -38,6 +38,12 @@ root.innerHTML=`
   <h2 id="ritualMemoriesTitle" tabindex="-1">My wishes</h2>
   <p class="ritual-privacy">Only saved wishes from this browser appear here. Not synced between devices.</p>
   <ul id="ritualMemoryList"></ul>
+  <div class="ritual-backup-actions">
+    <button type="button" id="ritualExport">Download backup</button>
+    <button type="button" id="ritualImport">Restore backup</button>
+    <input type="file" id="ritualImportFile" accept=".json,application/json" hidden aria-label="Choose a Wish Garden backup JSON file">
+  </div>
+  <p id="ritualBackupNote" role="status" class="ritual-privacy">Backup stays on your device. Restoring will ask before replacing saved wishes.</p>
   <button type="button" id="ritualNewWish">Make a new wish</button>
  </div>
 </section>
@@ -47,6 +53,42 @@ document.body.append(root);
 let mode='',lastFocus=null,session=[];
 function load(){
  try{const items=JSON.parse(localStorage.getItem(KEY)||'[]');return Array.isArray(items)?items.filter(x=>x&&typeof x.text==='string'):[]}catch{return []}
+}
+const MAX_BACKUP_BYTES=131072,MAX_BACKUP_WISHES=100;
+function validateBackup(raw){
+ if(!Array.isArray(raw)||raw.length>MAX_BACKUP_WISHES)throw Error('Invalid Wish Garden backup');
+ const seen=new Set();
+ return raw.map(x=>{
+  if(!x||typeof x!=='object'||Array.isArray(x))throw Error('Invalid wish');
+  const {id,text,topic,date}=x;
+  if(typeof id!=='string'||!id||id.length>120||seen.has(id))throw Error('Invalid ID');
+  if(typeof text!=='string'||!text.trim()||text.length>2000)throw Error('Invalid words');
+  if(!Number.isInteger(topic)||topic<0||topic>5)throw Error('Invalid topic');
+  if(typeof date!=='string'||!Number.isFinite(Date.parse(date))||!/^\\d{4}-\\d{2}-\\d{2}T/.test(date))throw Error('Invalid date');
+  seen.add(id);return {id,text,topic,date};
+ });
+}
+function exportBackup(){
+ const blob=new Blob([JSON.stringify(load(),null,2)],{type:'application/json'});
+ const url=URL.createObjectURL(blob),a=document.createElement('a');
+ a.href=url;a.download='wish-garden-export.json';document.body.append(a);a.click();a.remove();
+ setTimeout(()=>URL.revokeObjectURL(url),1000);
+ $('ritualBackupNote').textContent='Backup downloaded. Keep the file somewhere private.';
+}
+async function importBackup(){
+ const file=$('ritualImportFile').files?.[0];
+ if(!file)return;
+ try{
+  if(!file.size||file.size>MAX_BACKUP_BYTES)throw Error('Invalid file size');
+  const wishes=validateBackup(JSON.parse(await file.text()));
+  const ok=confirm('Replace ALL saved wishes on this device with '+wishes.length+' from this backup?');
+  if(!ok){$('ritualBackupNote').textContent='Restore cancelled. Existing wishes are unchanged.';return;}
+  localStorage.setItem(KEY,JSON.stringify(wishes));
+  renderMemories();
+  $('ritualBackupNote').textContent='Backup restored on this device. '+wishes.length+' saved wishes.';
+ }catch{
+  $('ritualBackupNote').textContent='Import rejected. Use a Wish Garden JSON export (max 128 KiB, 100 wishes). Existing wishes are unchanged.';
+ }finally{$('ritualImportFile').value='';}
 }
 function close(){
  $('ritualPanel').hidden=true;$('ritualVeil').hidden=true;
@@ -129,6 +171,9 @@ $('ritualVeil').addEventListener('click',close);
 $('ritualReturn').addEventListener('click',close);
 $('ritualAgain').addEventListener('click',()=>view('write'));
 $('ritualNewWish').addEventListener('click',()=>view('write'));
+$('ritualExport').addEventListener('click',exportBackup);
+$('ritualImport').addEventListener('click',()=>{$('ritualImportFile').value='';$('ritualImportFile').click();});
+$('ritualImportFile').addEventListener('change',importBackup);
 document.addEventListener('keydown',event=>{
  if($('ritualPanel').hidden)return;
  if(event.key==='Escape'){event.preventDefault();close();return;}
