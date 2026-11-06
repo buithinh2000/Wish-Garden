@@ -47,3 +47,60 @@ body.ritual-open #worldControls,body.ritual-open #softwareControls{visibility:hi
 #ritualPanel #reflectionPick{font:600 13px system-ui,sans-serif;min-height:40px;background:#3c5251;color:#fff1d1}
 #ritualPanel .reflection-help{font-size:11px;color:#c9d6c9;margin:7px 0;line-height:1.5}
 #ritualPanel #reflectionLeafText{font:italic 17px/1.5 Georgia,serif;color:#ffe0a5;margin:10px 0 3px;border-left:2px solid #e6ca88;padding-left:11px}
+
+/* v0.6 — Reveal the actual tree, rather than masking the wish release with a form. */
+#ritualSkyMoment[hidden]{display:none!important}
+body.ritual-complete #ritualVeil{display:none!important}
+body.ritual-complete #ritualPanel{
+ top:auto;bottom:clamp(20px,4vh,38px);left:50%;transform:translateX(-50%);
+ width:min(420px,calc(100vw - 30px));max-height:35dvh;overflow-y:auto;
+ background:linear-gradient(135deg,#0a2029e9,#173a3edb);
+ border:1px solid #efdaa099;padding:17px 22px;box-shadow:0 10px 50px #0008;
+ backdrop-filter:blur(9px)
+}
+body.ritual-complete #ritualPanel .ritual-kicker,body.ritual-complete #ritualPanel .ritual-lamp{display:none}
+body.ritual-complete #ritualComplete h2{font:normal clamp(19px,3vw,25px)/1.25 Georgia,serif;margin:0 0 6px}
+body.ritual-complete #ritualComplete p{margin:5px auto 7px;line-height:1.35}
+body.ritual-complete #ritualComplete button{display:inline-block;font-size:13px;min-height:39px;margin:6px 4px 0;padding:8px 12px}
+body.ritual-complete #ritualPanel .ritual-close{top:4px;right:4px}
+#ritualSkyMoment{
+ position:fixed;inset:0;z-index:43;pointer-events:none;overflow:hidden;
+ --wish-glow:#ffe3a0;
+}
+#ritualSkyMoment .sky-moment-message{
+ position:absolute;top:15%;left:50%;transform:translateX(-50%);
+ color:#fff5d3;font:normal clamp(21px,3vw,37px)/1.2 Georgia,serif;
+ text-align:center;letter-spacing:.025em;text-shadow:0 0 18px #ffd78b,0 3px 18px #000;
+ width:min(82vw,620px);animation:sky-message 4.7s ease-out both;
+}
+#ritualSkyMoment .sky-moment-star{
+ position:absolute;left:50%;top:72%;font-size:54px;line-height:1;color:#fff1bc;
+ filter:drop-shadow(0 0 20px #ffe092) drop-shadow(0 0 40px #ffb951);
+ animation:sky-star-flight 4.6s ease-in-out both;
+}
+#ritualSkyMoment .sky-moment-path{
+ position:absolute;left:50%;top:16%;height:56%;width:3px;
+ transform:translateX(-50%);background:linear-gradient(transparent,#ffe1a5,transparent);
+ box-shadow:0 0 20px 8px #ffc86f66;transform-origin:bottom;
+ animation:sky-trail 4.6s ease-out both;
+}
+#ritualSkyMoment .sky-moment-sparks{position:absolute;left:50%;top:38%}
+#ritualSkyMoment .sky-moment-sparks i{
+ display:block;position:absolute;width:5px;height:5px;border-radius:50%;background:#fff5c9;
+ box-shadow:0 0 12px 5px #ffd379b0;
+ animation:sky-spark 3.2s ease-out var(--delay) both;
+}
+@keyframes sky-message{0%,13%{opacity:0;transform:translate(-50%,12px)}28%,70%{opacity:1;transform:translate(-50%,0)}100%{opacity:0}}
+@keyframes sky-star-flight{0%{opacity:0;transform:translate(-50%,30px) scale(.2)}17%{opacity:1}58%{opacity:1;transform:translate(-50%,-26vh) scale(1.5)}100%{opacity:0;transform:translate(-50%,-65vh) scale(.15)}}
+@keyframes sky-trail{0%,10%{opacity:0;scale:1 .03}38%{opacity:1;scale:1 1}100%{opacity:0;scale:1 .03}}
+@keyframes sky-spark{0%,25%{opacity:0;transform:rotate(var(--angle)) translateX(0) scale(.1)}48%{opacity:1}100%{opacity:0;transform:rotate(var(--angle)) translateX(var(--distance)) scale(.3)}}
+@media(max-width:650px){
+ body.ritual-complete #ritualPanel{top:auto;bottom:18px;left:50%;max-height:32dvh;padding:12px 14px}
+ body.ritual-complete #ritualComplete p{font-size:12px}
+ body.ritual-complete #ritualComplete h2{font-size:18px}
+ #ritualSkyMoment .sky-moment-message{top:17%;font-size:23px}
+}
+@media(prefers-reduced-motion:reduce){
+ #ritualSkyMoment{display:none!important}
+ body.ritual-complete #ritualPanel{transition:none}
+}
