@@ -52,6 +52,7 @@ function close(){
  $('ritualPanel').hidden=true;$('ritualVeil').hidden=true;
  document.body.classList.remove('ritual-open');
  $('ritualLight').hidden=true;mode='';
+ window.WishWorld3D?.restoreView?.();
  lastFocus?.focus?.({preventScroll:true});
 }
 function view(next){
@@ -67,7 +68,9 @@ function view(next){
 function open(next='write',trigger){
  if($('ritualPanel').hidden)lastFocus=trigger||document.activeElement;
  $('ritualVeil').hidden=false;$('ritualPanel').hidden=false;
- document.body.classList.add('ritual-open');view(next);
+ document.body.classList.add('ritual-open');
+ window.WishWorld3D?.focusShrine?.();
+ view(next);
 }
 function animateLight(){
  const light=$('ritualLight');
@@ -82,6 +85,8 @@ function release(){
  const text=$('ritualWords').value.trim();if(!text)return;
  const item={id:crypto.randomUUID?.()||Date.now()+'-'+Math.random().toString(36).slice(2),text:text.slice(0,MAX),topic:$('ritualTopic').selectedIndex,date:new Date().toISOString()};
  const save=$('ritualSave').checked;
+ // A failed previous save must not leave a false warning on a later release.
+ $('ritualComplete').querySelector('p').textContent='One small moment of hope. This is a symbolic release, not a real transmission.';
  if(save){
   try{
    const entries=load();entries.push(item);
