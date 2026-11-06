@@ -314,6 +314,20 @@ try{
   const afterOrbit=await worldPage.evaluate(()=>window.WishWorld3D.getState());
   assert.ok(afterOrbit.azimuth>beforeOrbit.azimuth,'world orbit must respond');
   await worldPage.screenshot({path:'qa-screenshots/'+viewport.width+'-standalone-world.png',fullPage:false});
+  // Temple rituals are real 3D actions, independent from the wish form.
+  assert.equal(await worldPage.locator('#templeIncense').isVisible(),true,'incense offering can be made in the temple');
+  assert.equal(await worldPage.locator('#templeBell').isVisible(),true,'temple bell can be rung');
+  const beforeTemple=await worldPage.evaluate(()=>window.WishWorld3D.getState());
+  await worldPage.locator('#templeIncense').click();
+  const incenseTemple=await worldPage.evaluate(()=>window.WishWorld3D.getState());
+  assert.equal(incenseTemple.incenseCount,beforeTemple.incenseCount+1,'light incense visibly activates the 3D incense altar');
+  assert.equal(incenseTemple.incenseBurning,true,'incense stays lit within 3D environment');
+  assert.equal(await worldPage.locator('#ritualPanel').isVisible(),false,'incense is a direct action, not a form redirect');
+  await worldPage.locator('#templeBell').click();
+  assert.equal((await worldPage.evaluate(()=>window.WishWorld3D.getState())).bellCount,beforeTemple.bellCount+1,'ring bell moves the temple bell in the actual 3D scene');
+  assert.match(await worldPage.locator('#templeActionStatus').textContent(),/bell has been offered/,'temple action has accessible feedback');
+  assert.equal(new URL(worldPage.url()).pathname.endsWith('/world.html'),true,'offerings stay inside temple');
+  await worldPage.screenshot({path:'qa-screenshots/'+viewport.width+'-temple-offerings.png',fullPage:false});
   // The entire prayer ritual stays inside the same sanctuary and 3D canvas.
   const wishEntry=worldPage.getByRole('link',{name:'Make a private wish in Wish Garden'});
   assert.equal(await wishEntry.isVisible(),true,'prayer entry is visible on desktop and mobile');
