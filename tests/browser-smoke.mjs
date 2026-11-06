@@ -310,8 +310,23 @@ try{
   const companions=await worldPage.evaluate(()=>window.WishWorld3D.getState());
   assert.equal(companions.ambientCompanionCount,4,'four ambient figures stand near the Wishing Tree');
   assert.equal(companions.ambientCompanionsSimulated,true,'visitors are marked simulated, not real online users');
-  assert.match(await worldPage.locator('#ambientDisclosure').textContent(),/illustrative figures, not real visitors online/,'visible disclosure prevents fabricated social proof');
+  assert.match(await worldPage.locator('#ambientDisclosure').textContent(),/simulated figures, not real people online/,'visible disclosure prevents fabricated social proof');
   await worldPage.screenshot({path:'qa-screenshots/'+viewport.width+'-tree-companions.png',fullPage:false});
+  const quietToggle=worldPage.locator('#ambientToggle');
+  assert.equal(await quietToggle.isVisible(),true,'visitor can choose a solitary Wishing Tree');
+  assert.equal(await quietToggle.getAttribute('aria-pressed'),'true','simulated companions shown initially');
+  await quietToggle.click();
+  assert.equal((await worldPage.evaluate(()=>window.WishWorld3D.getState())).ambientCompanionsVisible,false,'Quiet space actually hides simulated 3D figures');
+  assert.equal(await quietToggle.getAttribute('aria-pressed'),'false','quiet preference is accessible');
+  assert.equal(await worldPage.evaluate(()=>localStorage.getItem('wg-ambient-companions-v1')),'hidden','quiet preference saved only in this browser');
+  await worldPage.reload();
+  await worldPage.waitForFunction(()=>window.WishWorld3D?.getState().ready,{timeout:15000});
+  assert.equal((await worldPage.evaluate(()=>window.WishWorld3D.getState())).ambientCompanionsVisible,false,'solitary preference persists after page reload');
+  assert.match(await worldPage.locator('#ambientToggle').textContent(),/Show companions/,'user has a visible way to restore companions');
+  await worldPage.locator('#ambientToggle').click();
+  assert.equal((await worldPage.evaluate(()=>window.WishWorld3D.getState())).ambientCompanionsVisible,true,'user can restore figures without navigating or creating an account');
+  assert.match(await worldPage.locator('#ambientDisclosure').textContent(),/simulated figures, not real people online/,'presence remains transparently fictional');
+
     const beforeOrbit=await worldPage.evaluate(()=>window.WishWorld3D.getState());
   assert.equal(await worldPage.locator('#worldRight').isVisible(),false,'standalone sanctuary opens without game-like controls');
   await worldPage.locator('#worldOptions').click();
