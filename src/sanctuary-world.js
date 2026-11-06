@@ -178,8 +178,11 @@ if(garden){
       blossom.position.set(x,.88,z);
     }
   }
-  // Small lit garden tree in the central island is a distinct navigation landmark.
-  tree(9,-18,.85,2.3);
+  // The Wishing Tree is the central place of reflection for every culture.
+  // Use the existing light-weight tree geometry on the island, not an altar or shrine.
+  tree(9,-18,1.4,2.3);
+  const wishingTreeLight=new THREE.PointLight(0xffdda1,8,18,2);
+  wishingTreeLight.position.set(9,7,-18);scene.add(wishingTreeLight);
   // Distant ridge silhouettes stay physically in the scene while camera moves.
   const ridge=mat(0x253e44);
   for(let i=0;i<12;i++){
@@ -230,7 +233,7 @@ if(garden){
     visitorGroup.position.set(walkLateral,0,(walkT>.5?8-walkDistance:-9));
     visitorGroup.rotation.y=azimuth*.22;
     camera.position.copy(orbitPos.lerp(eye,walkT));
-    const lookAt=new THREE.Vector3(0,5,targetZ).lerp(new THREE.Vector3(walkLateral+Math.sin(azimuth)*3.5,3.15,lookZ-walkDistance*.24),walkT);
+    const lookAt=new THREE.Vector3(ritualCamera?9:0,ritualCamera?8:5,targetZ).lerp(new THREE.Vector3(walkLateral+Math.sin(azimuth)*3.5,3.15,lookZ-walkDistance*.24),walkT);
     camera.lookAt(lookAt);
   }
   const controls=document.createElement('div');controls.id='worldControls';
@@ -301,7 +304,7 @@ if(garden){
   function focusShrine(){
     if(ritualCamera)return;
     ritualCamera={azimuth,radius,elevation,targetZ,walkMode,walkT,walkDistance,walkLateral};
-    azimuth=-.16;radius=21;elevation=.14;targetZ=-18;
+    azimuth=.20;radius=26;elevation=.12;targetZ=-18;
     walkMode=false;walkT=0;transitionStart=0;
     setHint();schedule();
   }
@@ -331,7 +334,8 @@ if(garden){
     }
     if(wishLight.visible){
       const progress=Math.min(1,(now-wishLightStart)/2700);
-      wishLight.position.set(0,3+progress*17,-18);
+      // A private wish rises from the Wishing Tree, not from a temple altar.
+      wishLight.position.set(9+Math.sin(progress*7)*.5,5+progress*17,-18);
       wishLight.scale.setScalar(.65+Math.sin(progress*Math.PI)*.8);
       wishLight.material.opacity=(1-progress)*.92;
       if(now>=wishLightUntil)wishLight.visible=false;
