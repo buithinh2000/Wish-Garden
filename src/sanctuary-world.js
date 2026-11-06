@@ -224,6 +224,18 @@ if(garden){
     group.lookAt(new THREE.Vector3(9,.3,-18));
     ambientCompanions.push(group);
   }
+  // A visitor can choose solitude. This preference is kept only in this
+  // browser and is never treated as a real community presence metric.
+  const companionsKey='wg-ambient-companions-v1';
+  let companionsVisible=true;
+  try{companionsVisible=localStorage.getItem(companionsKey)!=='hidden';}catch{}
+  function setCompanionsVisible(visible){
+    companionsVisible=!!visible;
+    for(const figure of ambientCompanions)figure.visible=companionsVisible;
+    try{localStorage.setItem(companionsKey,companionsVisible?'shown':'hidden');}catch{}
+    schedule();
+  }
+  ambientCompanions.forEach(figure=>{figure.visible=companionsVisible;});
   // Distant ridge silhouettes stay physically in the scene while camera moves.
   const ridge=mat(0x253e44);
   for(let i=0;i<12;i++){
@@ -453,6 +465,6 @@ if(garden){
     window.WishWorldWebGLError=String(error?.message||'WebGL scene initialization failed').slice(0,180);
     ro.disconnect();renderer.dispose();canvas.remove();controls.remove();
   }
-  window.WishWorld3D={getState(){return {ready,azimuth,radius,elevation,walkMode,walkT,walkDistance,walkLateral,visitorSource,visitorVisible:!!visitorModel,visitorAnimated:!!visitorMixer,visitorAnimationTime,daylight:window.WishDaylight?.getState().phase||'night',natureSource,natureTreeCount,sanctuarySource,sanctuaryVisible,wishLightVisible:wishLight.visible,wishReleaseCount,ritualFocus:!!ritualCamera,treeAwakenCount,ambientCompanionCount:ambientCompanions.length,ambientCompanionsSimulated:true,meshes:scene.children.filter(x=>x.isMesh).length};},orbit,zoom,bless,focusShrine,restoreView,awakenTree};
+  window.WishWorld3D={getState(){return {ready,azimuth,radius,elevation,walkMode,walkT,walkDistance,walkLateral,visitorSource,visitorVisible:!!visitorModel,visitorAnimated:!!visitorMixer,visitorAnimationTime,daylight:window.WishDaylight?.getState().phase||'night',natureSource,natureTreeCount,sanctuarySource,sanctuaryVisible,wishLightVisible:wishLight.visible,wishReleaseCount,ritualFocus:!!ritualCamera,treeAwakenCount,ambientCompanionCount:ambientCompanions.length,ambientCompanionsVisible:companionsVisible,ambientCompanionsSimulated:true,meshes:scene.children.filter(x=>x.isMesh).length};},orbit,zoom,bless,focusShrine,restoreView,awakenTree,setCompanionsVisible};
  }
 }
