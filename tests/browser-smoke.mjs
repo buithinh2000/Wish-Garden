@@ -393,6 +393,29 @@ try{
   await memoryPage.getByRole('link',{name:'View my saved wishes on this device'}).click();
   assert.match(await memoryPage.locator('#ritualMemoryList').textContent(),/Saved directly from the sanctuary/,'saved wish persists after reload');
   assert.doesNotMatch(await memoryPage.locator('#ritualMemoryList').textContent(),/My saved private hope/,'deleted wish stays deleted');
+  // Complete backup cycle without leaving the 3D sanctuary, using the same
+  // JSON-array export format as the existing lightweight 2D fallback.
+  const worldBackupDownload=memoryPage.waitForEvent('download');
+  await memoryPage.locator('#ritualExport').click();
+  const worldBackup=await worldBackupDownload;
+  assert.equal(worldBackup.suggestedFilename(),'wish-garden-export.json','in-world backup uses the portable Wish Garden format');
+  const exported=JSON.parse(await readFile(await worldBackup.path(),'utf8'));
+  assert.equal(exported.length,2,'all locally saved wishes are in the downloaded backup');
+  assert.ok(exported.every(x=>typeof x.id==='string'&&typeof x.text==='string'),'backup entries contain real private data');
+  const importInput=memoryPage.locator('#ritualImportFile');
+  const backupFile={name:'wish-garden-export.json',mimeType:'application/json',buffer:Buffer.from(JSON.stringify([{id:'restored-one',text:'Restored inside the temple',topic:1,date:'2026-11-05T02:00:00.000Z'}]))};
+  memoryPage.once('dialog',d=>d.dismiss());
+  await importInput.setInputFiles(backupFile);
+  assert.equal((await memoryPage.evaluate(()=>window.WishInWorldRitual.getState())).stored,2,'cancelled restore cannot overwrite saved wishes');
+  await importInput.setInputFiles({name:'bad.json',mimeType:'application/json',buffer:Buffer.from('{invalid')});
+  await memoryPage.waitForFunction(()=>document.querySelector('#ritualBackupNote')?.textContent?.includes('Import rejected'));
+  assert.equal((await memoryPage.evaluate(()=>window.WishInWorldRitual.getState())).stored,2,'invalid backup must be rejected');
+  memoryPage.once('dialog',d=>d.accept());
+  await importInput.setInputFiles(backupFile);
+  await memoryPage.waitForFunction(()=>document.querySelector('#ritualMemoryList')?.textContent?.includes('Restored inside the temple'));
+  assert.equal((await memoryPage.evaluate(()=>window.WishInWorldRitual.getState())).stored,1,'confirmed restore replaces local wishes');
+  assert.equal(new URL(memoryPage.url()).pathname.endsWith('/world.html'),true,'backup remains entirely in the sanctuary');
+
   await memoryPage.keyboard.press('Escape');
   assert.equal(await memoryPage.locator('#ritualPanel').isVisible(),false,'Escape returns to sanctuary');
   await memoryPage.close();
