@@ -31,6 +31,8 @@ try{
   // Follow the same homepage-to-3D path a real visitor uses on both screen sizes.
   const worldEntry=page.getByRole('link',{name:'Open the separate interactive 3D garden'});
   assert.equal(await worldEntry.isVisible(),true,'3D entry must be discoverable on the homepage');
+  assert.equal(await page.getByRole('link',{name:'Enter the 3D Wishing Tree and send a wish there'}).isVisible(),true,'homepage offers a prominent direct route to the 3D Wishing Tree');
+
   assert.equal(await worldEntry.getAttribute('href'),'./world.html','3D entry must route to the independent world');
   await worldEntry.click();
   await page.waitForURL('**/world.html');
@@ -394,6 +396,11 @@ try{
   await worldPage.locator('#ritualWords').fill('A quiet light from this garden');
   await worldPage.locator('#ritualRelease').click();
   assert.equal(await worldPage.locator('#ritualComplete').isVisible(),true,'release ends with a ritual closure');
+  assert.equal(await worldPage.locator('#ritualVeil').isVisible(),false,'release unveils tree instead of masking it with the dark veil');
+  assert.equal(await worldPage.evaluate(()=>window.WishInWorldRitual.getState().releaseMoments),1,'release triggers a cinematic moment');
+  assert.equal(await worldPage.locator('#ritualPanel').evaluate(el=>getComputedStyle(el).position),'fixed','compact closure floats over the sanctuary');
+  assert.equal(await worldPage.locator('#sanctuary3d').isVisible(),true,'WebGL tree is still visible through the release');
+
   if(viewport.width>=650 || 'qa-screenshots/'+viewport.width+'-in-world-release.png'.includes('hero-oak') || 'qa-screenshots/'+viewport.width+'-in-world-release.png'.includes('hero-wishing-tree')) await worldPage.screenshot({path:'qa-screenshots/'+viewport.width+'-in-world-release.png',fullPage:false,animations:'disabled',timeout:60000});
   assert.ok((await worldPage.evaluate(()=>window.WishWorld3D.getState())).wishReleaseCount>=1,'releasing a wish triggered an actual WebGL light in the sanctuary');
   assert.equal((await worldPage.evaluate(()=>window.WishInWorldRitual.getState())).stored,0,'unsaved prayers are not persisted by default');

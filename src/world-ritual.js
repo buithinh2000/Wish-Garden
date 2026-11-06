@@ -53,6 +53,12 @@ root.innerHTML=`
  </div>
 </section>
 <div id="ritualLight" aria-hidden="true" hidden><span>✦</span></div>
+<div id="ritualSkyMoment" hidden aria-hidden="true">
+ <div class="sky-moment-path"></div>
+ <div class="sky-moment-star">✦</div>
+ <div class="sky-moment-message">A light for the universe</div>
+ <div class="sky-moment-sparks"></div>
+</div>
 `;
 document.body.append(root);
 const treeButton=$('touchWishingTree');
@@ -87,7 +93,7 @@ if(presenceToggle){
   });
   syncCompanionToggle();
 }
-let mode='',lastFocus=null,session=[];
+let mode='',lastFocus=null,session=[],releaseTimer=null,releaseMoments=0;
 const reflections=[
  'What matters most to you at this moment?',
  'What is one kindness you could offer yourself today?',
@@ -152,6 +158,9 @@ async function importBackup(){
  }finally{$('ritualImportFile').value='';}
 }
 function close(){
+ if(releaseTimer!==null){clearTimeout(releaseTimer);releaseTimer=null;}
+ $('ritualSkyMoment').hidden=true;
+ document.body.classList.remove('ritual-celebrating');
  $('ritualPanel').hidden=true;$('ritualVeil').hidden=true;
  document.body.classList.remove('ritual-open');
  $('ritualLight').hidden=true;mode='';
@@ -159,6 +168,7 @@ function close(){
  lastFocus?.focus?.({preventScroll:true});
 }
 function view(next){
+ document.body.classList.toggle('ritual-complete',next==='complete');
  mode=next;
  $('ritualWrite').hidden=next!=='write';
  $('ritualComplete').hidden=next!=='complete';
@@ -185,6 +195,28 @@ function animateLight(){
  if(reduced.matches){light.hidden=true;return;}
  light.addEventListener('animationend',()=>{light.hidden=true;},{once:true});
 }
+function presentReleaseMoment(){
+ // Reveal the WebGL tree while retaining an accessible completion card.
+ // CSS-only particles remain visible when WebGL is unsupported; no personal
+ // words are ever copied into effects, URLs or analytics.
+ if(releaseTimer!==null)clearTimeout(releaseTimer);
+ $('ritualVeil').hidden=true;
+ document.body.classList.add('ritual-celebrating');
+ const moment=$('ritualSkyMoment'),sparks=moment.querySelector('.sky-moment-sparks');
+ sparks.replaceChildren();
+ for(let i=0;i<28;i++){
+   const spark=document.createElement('i');
+   spark.style.setProperty('--angle',String(i*137.508)+'deg');
+   spark.style.setProperty('--distance',String(75+(i%6)*23)+'px');
+   spark.style.setProperty('--delay',String((i%7)*.11)+'s');
+   sparks.append(spark);
+ }
+ moment.hidden=false;releaseMoments++;
+ if(reduced.matches){moment.hidden=true;document.body.classList.remove('ritual-celebrating');return;}
+ releaseTimer=setTimeout(()=>{
+   moment.hidden=true;document.body.classList.remove('ritual-celebrating');releaseTimer=null;
+ },4800);
+}
 function release(){
  const text=$('ritualWords').value.trim();if(!text)return;
  const item={id:crypto.randomUUID?.()||Date.now()+'-'+Math.random().toString(36).slice(2),text:text.slice(0,MAX),topic:$('ritualTopic').selectedIndex,date:new Date().toISOString()};
@@ -203,6 +235,7 @@ function release(){
  $('ritualWords').value='';$('ritualSave').checked=false;$('ritualRelease').disabled=true;
  view('complete');animateLight();
  window.WishWorld3D?.bless?.();
+ presentReleaseMoment();
 }
 function renderMemories(){
  const list=$('ritualMemoryList');list.replaceChildren();
@@ -245,5 +278,5 @@ document.addEventListener('keydown',event=>{
  if(event.shiftKey&&document.activeElement===focusable[0]){event.preventDefault();focusable[focusable.length-1].focus();}
  else if(!event.shiftKey&&document.activeElement===focusable[focusable.length-1]){event.preventDefault();focusable[0].focus();}
 });
-window.WishInWorldRitual={getState:()=>({mode,open:!$('ritualPanel').hidden,stored:load().length,session:session.length,reflectionDrawCount}),open,close};
+window.WishInWorldRitual={getState:()=>({mode,open:!$('ritualPanel').hidden,stored:load().length,session:session.length,reflectionDrawCount,releaseMoments,celebrating:!$('ritualSkyMoment').hidden}),open,close};
 })();
