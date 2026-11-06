@@ -50,6 +50,17 @@ root.innerHTML=`
 <div id="ritualLight" aria-hidden="true" hidden><span>✦</span></div>
 `;
 document.body.append(root);
+const treeButton=$('touchWishingTree');
+if(treeButton){
+ treeButton.addEventListener('click',()=>{
+  window.WishWorld3D?.focusShrine?.();
+  window.WishWorld3D?.awakenTree?.();
+  treeButton.textContent='✧ The tree is listening';
+  treeButton.setAttribute('aria-label','Wishing Tree is glowing with light');
+  // No suggestion that the universe has scientifically received a signal.
+  treeButton.focus({preventScroll:true});
+ });
+}
 let mode='',lastFocus=null,session=[];
 function load(){
  try{const items=JSON.parse(localStorage.getItem(KEY)||'[]');return Array.isArray(items)?items.filter(x=>x&&typeof x.text==='string'):[]}catch{return []}
@@ -112,6 +123,7 @@ function open(next='write',trigger){
  $('ritualVeil').hidden=false;$('ritualPanel').hidden=false;
  document.body.classList.add('ritual-open');
  window.WishWorld3D?.focusShrine?.();
+ window.WishWorld3D?.awakenTree?.();
  view(next);
 }
 function animateLight(){
