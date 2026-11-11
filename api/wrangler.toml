@@ -1,0 +1,19 @@
+name = "wish-garden-private-api"
+main = "src/worker.mjs"
+compatibility_date = "2026-11-04"
+workers_dev = false
+
+# This is a NON-DEPLOYED configuration template. Before any deployment:
+# 1) Create an independent Cloudflare account/project and D1 database.
+# 2) Configure your identity provider OIDC issuer/audience and JWKS.
+# 3) Replace database_id and configure secrets (never commit credentials).
+# 4) Complete security/privacy and production-release review.
+[[d1_databases]]
+binding = "DB"
+database_name = "wish-garden-private-staging"
+database_id = "REPLACE_WITH_NEW_D1_ID"
+
+[vars]
+ALLOW_ORIGIN = "https://buithinh2000.github.io"
+FEATURE_COLLECTIVE_HOPE = "false"
+# AUTH_ISSUER / AUTH_AUDIENCE / AUTH_JWKS_URL are intentionally UNCONFIGURED.
