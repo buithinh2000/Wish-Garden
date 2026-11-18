@@ -83,6 +83,13 @@ body.world-ready #showRenderDetails{display:none}
  .status{bottom:168px;left:12px;right:12px;font-size:10px}
  .site-head{padding:14px 20px}
 }
+
+/* Keep graphics diagnostics away from the primary wish actions on mobile.
+   The bottom-left diagnostics button previously covered "Touch the tree". */
+@media(max-width:650px){
+ body.software-ready #showRenderDetails{top:66px;bottom:auto;left:12px;right:auto;z-index:31}
+ body.software-ready #renderDiagnostics{top:113px;bottom:auto;max-height:calc(100dvh - 135px);overflow:auto}
+}
 </style>
 <link rel="stylesheet" href="src/world-ritual.css?v=__WISH_BUILD_SHA__">
 </head>
