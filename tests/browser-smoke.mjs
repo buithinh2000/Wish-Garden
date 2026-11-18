@@ -522,6 +522,18 @@ try{
   await fallbackPage.locator('#softwareControls button[aria-label="Rotate right"]').click();
   const swAfter=await fallbackPage.evaluate(()=>window.WishSoftware3D.getState());
   assert.ok(swAfter.yaw>swBefore.yaw,'software perspective camera rotates');
+  // The no-WebGL fallback must participate in the wish ritual, not remain
+  // a frozen tree while only a CSS overlay animates.
+  await fallbackPage.locator('#touchWishingTree').click();
+  assert.equal((await fallbackPage.evaluate(()=>window.WishSoftware3D.getState())).wishBurstCount,1,'touching the tree awakens Canvas canopy');
+  await fallbackPage.getByRole('link',{name:'Make a private wish in Wish Garden'}).click();
+  await fallbackPage.locator('#ritualWords').fill('A brighter tomorrow');
+  await fallbackPage.locator('#ritualRelease').click();
+  assert.equal((await fallbackPage.evaluate(()=>window.WishSoftware3D.getState())).wishBurstCount,2,'releasing a wish visibly animates the actual Canvas tree');
+  assert.equal((await fallbackPage.evaluate(()=>window.WishSoftware3D.getState())).wishAnimating,true,'Canvas glow and ascending star are animated');
+  assert.equal(await fallbackPage.locator('#ritualVeil').isVisible(),false,'Canvas wishing releases remove the dark backdrop');
+  await fallbackPage.screenshot({path:'qa-screenshots/'+viewport.width+'-software-wish-release.png',fullPage:false});
+  await fallbackPage.locator('#ritualReturn').click();
   await fallbackPage.screenshot({path:'qa-screenshots/'+viewport.width+'-software-3d-fallback.png',fullPage:false});
   assert.equal(await fallbackPage.locator('#gpuCheckLink').getAttribute('href'),'./gpu-check.html','Software Mode links to a direct WebGL isolation test');
   await fallbackPage.close();
